@@ -174,10 +174,11 @@ legend { font-weight: 600; font-size: .88rem; padding: 0; margin-bottom: 6px; }
 
 .filterbar { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; }
 .filterbar label.fb-field { margin: 0; font-size: .75rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-.filterbar label.fb-field > * { margin-top: 0; }
+/* the generic `label > input { margin-top: 5px }` form rule is more specific than this bar, so it needs !important */
+.filterbar label.fb-field > * { margin-top: 0 !important; }
 /* every control in the bar has the same height */
 .filterbar { --fb-h: 34px; }
-.filterbar input, .filterbar select { padding: 0 9px; font-size: .88rem; width: auto; height: var(--fb-h); box-sizing: border-box; }
+.filterbar input, .filterbar select { padding: 0 9px; font-size: .88rem; line-height: normal; width: auto; height: var(--fb-h); box-sizing: border-box; }
 .filterbar .btn { height: var(--fb-h); padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
 .fb-actions { display: flex; gap: 6px; margin-left: auto; }
 details.multi { position: relative; }

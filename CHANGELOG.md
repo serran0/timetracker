@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.10 – 2026-10-08
+
+- Calendar filter bar, properly this time: the date pickers carried a stray 5px top margin from the generic form styling (it outranked the filter bar's own rule), so they sat lower than the other controls. All controls now have identical size (34px) and identical position (11px above and below) in the bar.
+
 ## 0.2.9 – 2026-10-08
 
 - Calendar filter bar: every control (date picker, dropdowns, selects and buttons) now has the same height (34px). The date picker used to be taller than the rest.
