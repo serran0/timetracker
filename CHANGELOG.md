@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.21 – 2026-10-08
+
+- Clients page: the client table can be sorted by *Client* (name), *Rate / h*, *Actions* and *Reports*. Click a header to sort (numbers start with the highest first), click again to reverse; the active column shows an arrow. Clients without a rate always come last, archived clients stay at the bottom, and equal values fall back to name order. The choice is remembered for the session, so it survives editing or archiving a client.
+
 ## 0.2.20 – 2026-10-08
 
 - Summary at the bottom of every calendar view: the *Per action* list now shows the client in parentheses to the left of the action, e.g. `(Acme AB) Overtime`. Since actions belong to a client, the same action name is listed once per client instead of being merged. Exports are unchanged.

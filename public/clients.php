@@ -68,11 +68,39 @@ if ($form === null) {
     $form = $row ?? ['id' => null, 'name' => '', 'reference' => '', 'color' => Clients::nextColor($uid), 'hourly_rate' => null, 'vat_percent' => 0, 'notes' => ''];
 }
 
+// Sorting of the client table; the choice is remembered for the session so it survives edits and archiving.
+$sortKeys = ['name', 'rate', 'actions', 'reports'];
+$remembered = $_SESSION['clients_sort'] ?? ['name', 'asc'];
+$sort = in_array($_GET['sort'] ?? '', $sortKeys, true) ? $_GET['sort'] : $remembered[0];
+$dir = isset($_GET['sort']) ? (($_GET['dir'] ?? '') === 'desc' ? 'desc' : 'asc') : $remembered[1];
+$_SESSION['clients_sort'] = [$sort, $dir];
+$clients = Clients::all($uid);
+usort($clients, static function (array $a, array $b) use ($sort, $dir): int {
+    if ($a['is_archived'] !== $b['is_archived']) {
+        return $a['is_archived'] <=> $b['is_archived']; // archived clients always last
+    }
+    $sign = $dir === 'desc' ? -1 : 1;
+    $byName = strnatcasecmp((string) $a['name'], (string) $b['name']);
+    if ($sort === 'rate') {
+        if (($a['hourly_rate'] === null) !== ($b['hourly_rate'] === null)) {
+            return $a['hourly_rate'] === null ? 1 : -1; // clients without a rate always last
+        }
+        return $sign * ((float) $a['hourly_rate'] <=> (float) $b['hourly_rate']) ?: $byName;
+    }
+    if ($sort === 'actions' || $sort === 'reports') {
+        $k = $sort === 'actions' ? 'action_count' : 'entry_count';
+        return $sign * ((int) $a[$k] <=> (int) $b[$k]) ?: $byName;
+    }
+    return $sign * $byName;
+});
+
 View::render('clients', [
     'title'   => t('Clients'),
     'active'  => 'clients',
     'user'    => $user,
-    'clients' => Clients::all($uid),
+    'clients' => $clients,
+    'sort'    => $sort,
+    'dir'     => $dir,
     'form'    => $form,
     'errors'  => $errors,
     'palette' => Clients::PALETTE,

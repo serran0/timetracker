@@ -20,7 +20,17 @@ $editing = !empty($form['id']);
         <?php else: ?>
         <div class="table-wrap">
         <table class="table">
-            <thead><tr><th><?= te('Client') ?></th><th class="num"><?= te('Rate / h') ?></th><th class="num"><?= te('VAT') ?></th><th class="num"><?= te('Actions') ?></th><th class="num"><?= te('Reports') ?></th><th></th></tr></thead>
+            <?php
+            /** Sortable column header: the first click sorts ascending (numbers: highest first), a second click reverses. */
+            $th = static function (string $key, string $label, bool $num = false) use ($sort, $dir): string {
+                $active = $sort === $key;
+                $next = $active ? ($dir === 'asc' ? 'desc' : 'asc') : ($num ? 'desc' : 'asc');
+                $arrow = $active ? '<span class="sort-arrow" aria-hidden="true">' . ($dir === 'asc' ? '▲' : '▼') . '</span>' : '';
+                return '<th class="' . ($num ? 'num ' : '') . ($active ? 'sorted' : '') . '"' . ($active ? ' aria-sort="' . ($dir === 'asc' ? 'ascending' : 'descending') . '"' : '') . '>'
+                    . '<a class="sort-link" href="' . e(url('clients.php', ['sort' => $key, 'dir' => $next])) . '">' . e(t($label)) . $arrow . '</a></th>';
+            };
+            ?>
+            <thead><tr><?= $th('name', 'Client') ?><?= $th('rate', 'Rate / h', true) ?><th class="num"><?= te('VAT') ?></th><?= $th('actions', 'Actions', true) ?><?= $th('reports', 'Reports', true) ?><th></th></tr></thead>
             <tbody>
             <?php foreach ($clients as $c): ?>
                 <tr class="<?= $c['is_archived'] ? 'is-archived' : '' ?>">
