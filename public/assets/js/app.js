@@ -133,9 +133,10 @@
     const monday = (d) => addDays(d, -((d.getDay() + 6) % 7));
     // ISO 8601 week number: the week belongs to the year of its Thursday.
     const isoWeek = (d) => {
+        // UTC arithmetic: local-time differences are an hour short across daylight saving and round down a week.
         const th = addDays(monday(d), 3);
-        const jan1 = new Date(th.getFullYear(), 0, 1);
-        return Math.floor((th - jan1) / 864e5 / 7) + 1;
+        const days = (Date.UTC(th.getFullYear(), th.getMonth(), th.getDate()) - Date.UTC(th.getFullYear(), 0, 1)) / 864e5;
+        return Math.floor(days / 7) + 1;
     };
     const mondayFirst = [1, 2, 3, 4, 5, 6, 0].map((i) => (i18n.dow || [])[i] || '');
 

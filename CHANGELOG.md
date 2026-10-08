@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.15 – 2026-10-08
+
+- Fix: the week numbers in the week picker were one too low for most of the year in time zones with daylight saving (the browser computed them from local-time differences that are an hour short in summer). They are now calculated in UTC and match the calendar's own ISO week numbers.
+
 ## 0.2.14 – 2026-10-08
 
 - New setting under *Account & settings*: **Default calendar colouring** (by client or by action). The calendar opens with it, and the *Colour by* menu in the filter bar still overrides it for the current session of browsing. Existing users keep colouring by client. (Database schema 6: `users.default_color`; existing installs upgrade automatically.)
