@@ -25,9 +25,9 @@ if (is_post()) {
         $lsm = parse_time_minutes($ls);
         $lem = parse_time_minutes($le);
         if ($lsm === null || $lem === null) {
-            $errors[] = 'Lunch window: enter both times as HH:MM, or leave both empty.';
+            $errors[] = t('Lunch window: enter both times as HH:MM, or leave both empty.');
         } elseif ($lem <= $lsm) {
-            $errors[] = 'Lunch window: the end must be after the start.';
+            $errors[] = t('Lunch window: the end must be after the start.');
         } else {
             $lunch = [minutes_to_hhmm($lsm) . ':00', minutes_to_hhmm($lem) . ':00'];
         }
@@ -36,7 +36,7 @@ if (is_post()) {
     if (!$errors) {
         WorkingHours::save($uid, $parsed);
         Db::run('UPDATE users SET lunch_start = ?, lunch_end = ? WHERE id = ?', [$lunch[0], $lunch[1], $uid]);
-        flash('success', 'Working hours saved.');
+        flash('success', t('Working hours saved.'));
         redirect('hours.php');
     }
     $intervals = $parsed;
@@ -45,7 +45,7 @@ if (is_post()) {
 }
 
 View::render('hours', [
-    'title'     => 'Working hours',
+    'title'     => t('Working hours'),
     'active'    => 'hours',
     'user'      => $user,
     'intervals' => $intervals ?? WorkingHours::intervals($uid),

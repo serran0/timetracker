@@ -31,28 +31,29 @@ final class XlsxExporter
             $table['headers'],
             array_map(fn($r) => self::dataRow($r, $table['types'], $opts, false), $table['rows'])
                 + ($table['totals'] ? [count($table['rows']) => self::dataRow($table['totals'], $table['types'], $opts, true)] : []),
-            true
+            true,
+            $table['keys']
         );
 
         $sumRows = [];
         $hmStyle = $opts['duration'] === 'hm';
-        foreach (['by_client' => 'Client', 'by_action' => 'Action'] as $key => $label) {
-            $sumRows[] = [self::cell($label, self::S_HEAD), self::cell('Duration', self::S_HEAD), self::cell('Amount', self::S_HEAD)];
+        foreach (['by_client' => t('Client'), 'by_action' => t('Action')] as $key => $label) {
+            $sumRows[] = [self::cell($label, self::S_HEAD), self::cell(t('Duration'), self::S_HEAD), self::cell(t('Amount'), self::S_HEAD)];
             foreach ($summary[$key] as $row) {
                 $sumRows[] = [
-                    self::cell($row['name']),
+                    self::cell($row['label'] ?? $row['name']),
                     $hmStyle ? self::num($row['minutes'] / 1440, self::S_HM) : self::num($row['minutes'] / 60, self::S_NUM),
                     $row['amount'] > 0 ? self::num($row['amount'], self::S_NUM) : self::cell(''),
                 ];
             }
             $sumRows[] = [
-                self::cell('Total', self::S_BOLD),
+                self::cell(t('Total'), self::S_BOLD),
                 $hmStyle ? self::num($summary['minutes'] / 1440, self::S_BOLD_HM) : self::num($summary['minutes'] / 60, self::S_BOLD_NUM),
                 $summary['amount'] > 0 ? self::num($summary['amount'], self::S_BOLD_NUM) : self::cell(''),
             ];
             $sumRows[] = [];
         }
-        $sheet2 = self::sheet([], $sumRows, false);
+        $sheet2 = self::sheet([], $sumRows, false, []);
 
         $tmp = tempnam(sys_get_temp_dir(), 'ttx');
         $zip = new \ZipArchive();
@@ -72,7 +73,7 @@ final class XlsxExporter
             . '</Relationships>');
         $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            . '<sheets><sheet name="Time report" sheetId="1" r:id="rId1"/><sheet name="Summary" sheetId="2" r:id="rId2"/></sheets></workbook>');
+            . '<sheets><sheet name="' . self::xml(t('Time report')) . '" sheetId="1" r:id="rId1"/><sheet name="' . self::xml(t('Summary')) . '" sheetId="2" r:id="rId2"/></sheets></workbook>');
         $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
@@ -101,8 +102,8 @@ final class XlsxExporter
             $type = $types[$i];
             if ($v === null || $v === '') {
                 $cells[] = self::cell('', $bold ? self::S_BOLD : self::S_DEFAULT);
-            } elseif ($v === 'Total') {
-                $cells[] = self::cell('Total', self::S_BOLD);
+            } elseif ($v === ReportBuilder::TOTAL) {
+                $cells[] = self::cell(t('Total'), self::S_BOLD);
             } elseif ($type === 'date') {
                 $serial = (int) (strtotime($v . ' UTC') / 86400) + 25569;
                 $cells[] = self::num($serial, self::S_DATE);
@@ -121,6 +122,11 @@ final class XlsxExporter
         return $cells;
     }
 
+    private static function xml(string $text): string
+    {
+        return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    }
+
     private static function cell(string $text, int $style = self::S_DEFAULT): string
     {
         // Strip control characters that are illegal in XML 1.0.
@@ -137,7 +143,7 @@ final class XlsxExporter
      * @param string[] $headers
      * @param array<int, string[]> $rows
      */
-    private static function sheet(array $headers, array $rows, bool $freeze): string
+    private static function sheet(array $headers, array $rows, bool $freeze, array $keys): string
     {
         $all = [];
         if ($headers) {
@@ -155,9 +161,9 @@ final class XlsxExporter
         $xml .= '<cols>';
         for ($c = 0; $c < $widthCols; $c++) {
             $w = 14;
-            if ($headers && isset($headers[$c]) && in_array($headers[$c], ['Description'], true)) {
+            if (($keys[$c] ?? '') === 'description') {
                 $w = 60;
-            } elseif ($headers && isset($headers[$c]) && in_array($headers[$c], ['Client', 'Action', 'Client reference'], true)) {
+            } elseif (in_array($keys[$c] ?? '', ['client', 'action', 'reference'], true)) {
                 $w = 24;
             } elseif (!$headers && $c === 0) {
                 $w = 28;

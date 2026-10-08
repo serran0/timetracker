@@ -19,6 +19,8 @@ spl_autoload_register(static function (string $c): void {
 use TimeTracker\Calendar;
 use TimeTracker\Export\ReportBuilder;
 use TimeTracker\Export\TextExporter;
+use TimeTracker\I18n;
+use TimeTracker\Repository\Actions;
 use TimeTracker\Repository\Entries;
 use TimeTracker\Repository\WorkingHours;
 
@@ -162,6 +164,59 @@ $out = $txt(['date', 'hours', 'client'], false);
 check('text: totals off hides totals and summaries', str_contains($out, 'TOTAL') || str_contains($out, 'SUMMARY') || str_contains($out, 'Day total'), false);
 $out = $txt(['start'], true);
 check('text: only start time', str_contains($out, 'from 08:00'), true);
+
+// i18n
+I18n::setLocale('en');
+check('en: text unchanged', t('Overtime'), 'Overtime');
+check('en: placeholder', t('Week {n}', ['n' => 41]), 'Week 41');
+check('en: action label', action_label('Overtime'), 'Overtime');
+check('en: decimal mark', fmt_dec(450), '7.50');
+check('en: month name', date_l10n(new DateTime('2026-10-05'), 'l j F Y'), 'Monday 5 October 2026');
+
+I18n::setLocale('sv');
+check('sv: translated', t('Calendar'), 'Kalender');
+check('sv: placeholder kept', t('Week {n}', ['n' => 41]), 'Vecka 41');
+check('sv: unknown text falls back to English', t('No such string here'), 'No such string here');
+check('sv: standard action translated', action_label('Overtime'), 'Övertid');
+check('sv: renamed action untouched', action_label('Overtime (weekend)'), 'Overtime (weekend)');
+check('sv: custom action that equals a UI word is not translated', action_label('Calendar'), 'Calendar');
+check('sv: all standard actions have a translation', array_filter(array_map(static fn($a) => action_label($a[0]) === $a[0] ? $a[0] : null, Actions::STANDARD)), []);
+check('sv: date', date_l10n(new DateTime('2026-10-05'), 'l j F Y'), 'måndag 5 oktober 2026');
+check('sv: short date', date_l10n(new DateTime('2026-03-02'), 'D j M'), 'mån 2 mar');
+check('sv: heading capitalised', ucf(date_l10n(new DateTime('2026-10-05'), 'F Y')), 'Oktober 2026');
+check('sv: decimal comma', fmt_dec(450), '7,50');
+check('sv: explicit decimal mark wins', fmt_dec(450, 2, '.'), '7.50');
+check('sv: money', fmt_money(22800.5, 'SEK'), '22 800,50 SEK');
+check('sv: th keeps html vars and escapes text', th('To start reporting time, {link}.', ['link' => '<a>x</a>']), 'För att börja tidrapportera, <a>x</a>.');
+$row = Entries::decorate(['entry_date' => '2026-10-05', 'start_time' => '08:00:00', 'end_time' => '09:00:00', 'break_minutes' => 0, 'hourly_rate' => null,
+    'rate_multiplier' => '1.00', 'is_billable' => 1, 'description' => null, 'action_name' => 'Normal working time']);
+check('sv: decorate adds display label, keeps stored name', [$row['action_label'], $row['action_name']], ['Normal arbetstid', 'Normal working time']);
+// editing: the translated label submitted unchanged keeps the stored name; any other text is a rename
+check('nameToStore: unchanged label keeps stored name', Actions::nameToStore(['name' => 'Overtime'], 'Övertid'), 'Overtime');
+check('nameToStore: rename wins', Actions::nameToStore(['name' => 'Overtime'], 'Helgjour'), 'Helgjour');
+check('nameToStore: custom name unchanged', Actions::nameToStore(['name' => 'Helgjour'], 'Helgjour'), 'Helgjour');
+check('nameToStore: new action', Actions::nameToStore(null, ' Övertid '), 'Övertid');
+$tableRow = ReportBuilder::table([$row + ['client_name' => 'A', 'client_reference' => null, 'client_id' => 1, 'client_color' => '#000', 'action_id' => 1, 'action_color' => '#000', 'effective_rate' => null, 'amount' => null]],
+    ['cols' => ['weekday', 'action', 'billable'], 'duration' => 'decimal', 'decimal' => ',', 'totals' => false]);
+check('sv: export row translated', $tableRow['rows'][0], ['mån', 'Normal arbetstid', 'Ja']);
+check('sv: export headers translated', $tableRow['headers'], ['Veckodag', 'Aktivitet', 'Debiterbar']);
+check('sv: export duration follows the option, not the locale', ReportBuilder::formatDuration(450, ['duration' => 'decimal', 'decimal' => '.']), '7.50');
+check('sv: working-hours day names', TimeTracker\Repository\WorkingHours::label(3), 'Onsdag');
+check('sv: view labels', array_map('t', array_values(Calendar::VIEWS)), ['Månad', 'Vecka', 'Dag', 'Lista']);
+I18n::setLocale('en');
+
+// detection for visitors that are not signed in
+unset($_COOKIE['tt_lang']);
+$_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'sv-SE,sv;q=0.9,en;q=0.8';
+check('detect: browser Swedish', I18n::detect(), 'sv');
+$_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'de-DE,de;q=0.9,fr;q=0.8';
+check('detect: unsupported falls back to English', I18n::detect(), 'en');
+$_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en-US,en;q=0.9';
+$_COOKIE['tt_lang'] = 'sv';
+check('detect: cookie wins over browser', I18n::detect(), 'sv');
+$_COOKIE['tt_lang'] = '<script>';
+check('detect: invalid cookie ignored', I18n::detect(), 'en');
+check('isValid', [I18n::isValid('sv'), I18n::isValid('xx'), I18n::isValid('')], [true, false, false]);
 
 echo $failures ? "\n$failures of $total checks FAILED\n" : "All $total checks passed\n";
 exit($failures ? 1 : 0);

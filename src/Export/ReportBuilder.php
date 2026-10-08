@@ -30,6 +30,9 @@ final class ReportBuilder
         'description' => ['Description', 'text'],
     ];
 
+    /** Marker for the first cell of the totals row; exporters print the translated word. */
+    public const TOTAL = "\0TOTAL";
+
     public const DEFAULT_COLUMNS = ['date', 'start', 'end', 'hours', 'client', 'action', 'description'];
 
     public const FORMATS = [
@@ -65,7 +68,7 @@ final class ReportBuilder
     public static function table(array $entries, array $opts): array
     {
         $keys = $opts['cols'];
-        $headers = array_map(static fn($k) => self::COLUMNS[$k][0], $keys);
+        $headers = array_map(static fn($k) => t(self::COLUMNS[$k][0]), $keys);
         $types = array_map(static fn($k) => self::COLUMNS[$k][1], $keys);
 
         $rows = [];
@@ -73,15 +76,15 @@ final class ReportBuilder
             $d = new DateTimeImmutable($e['entry_date']);
             $all = [
                 'date'        => $e['entry_date'],
-                'weekday'     => $d->format('D'),
+                'weekday'     => date_l10n($d, 'D'),
                 'week'        => (int) $d->format('W'),
                 'start'       => $e['start'],
                 'end'         => $e['end'],
                 'hours'       => $e['minutes'],
                 'client'      => $e['client_name'],
                 'reference'   => (string) ($e['client_reference'] ?? ''),
-                'action'      => $e['action_name'],
-                'billable'    => $e['billable'] ? 'Yes' : 'No',
+                'action'      => $e['action_label'],
+                'billable'    => $e['billable'] ? t('Yes') : t('No'),
                 'rate'        => $e['effective_rate'],
                 'amount'      => $e['amount'],
                 'description' => (string) ($e['description'] ?? ''),
@@ -102,7 +105,7 @@ final class ReportBuilder
             }
             $first = array_key_first($totals);
             if ($totals[$first] === null) {
-                $totals[$first] = 'Total';
+                $totals[$first] = self::TOTAL;
             }
         }
         return ['headers' => $headers, 'types' => $types, 'keys' => $keys, 'rows' => $rows, 'totals' => $totals];
@@ -119,7 +122,7 @@ final class ReportBuilder
         if ($opts['duration'] === 'hm') {
             return fmt_dur($minutes);
         }
-        return str_replace('.', $opts['decimal'], fmt_dec($minutes));
+        return fmt_dec($minutes, 2, $opts['decimal']);
     }
 
     public static function formatMoney(?float $v, array $opts): string

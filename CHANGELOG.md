@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3 – 2026-10-08
+
+- **Swedish translation and a per-user language setting.** Each user picks English or Swedish under *Account & settings*; administrators can choose it for new users. Everything is translated: menus, pages, dialogs, right-click menus, messages and errors, the installer, month/day names, number formatting (decimal comma), and all exports (CSV, Excel and text: headers, weekday names, yes/no, totals, summaries).
+- **Standard action names are translated, customised ones are not.** Normal working time, Overtime, Emergency / call-out, Travel and Internal / non-billable are shown in the user's language only while they are unmodified. Renamed actions are shown exactly as stored, and nothing in the database is rewritten, so switching language is always reversible. Opening a translated standard action and saving it without changing the name does not freeze the translation.
+- The login and setup pages follow a cookie or the browser's language, with a language switch on the login page; the setup form has a language field for the administrator. The login page remembers your language after you sign out.
+- Database: new `users.locale` column (schema 4, added automatically; existing users stay on English).
+- Adding another language: copy `src/lang/sv.php` to `src/lang/<code>.php`, translate it, add the code to `I18n::LOCALES` and the month/day names to `I18n`. `php tests/i18n.php` verifies that no key is missing and that placeholders match.
+
 ## 0.2.2 – 2026-10-08
 
 - **Plain-text export respects the ticked columns.** Previously only Description and Amount were honoured; times, duration, client, action and the headings were always printed. Now each line contains only the ticked columns (start/end, duration, client, client reference, action, billable flag, rate, amount, description). Day headings are built from the ticked date / weekday / week columns (none ticked = a flat list without headings). "Add a totals row" switches day totals, summaries and grand totals on or off, and they only show figures for ticked columns (hours, amount, client, action).

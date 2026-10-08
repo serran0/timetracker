@@ -22,9 +22,9 @@ final class CsvExporter
             $cells = [];
             foreach ($row as $i => $v) {
                 $cells[] = match ($table['types'][$i]) {
-                    'dur'   => $v === null || $v === 'Total' ? (string) $v : ReportBuilder::formatDuration((int) $v, $opts),
-                    'money' => $v === null || $v === 'Total' ? (string) $v : ReportBuilder::formatMoney((float) $v, $opts),
-                    default => self::safe((string) $v),
+                    'dur'   => $v === ReportBuilder::TOTAL ? '' : ($v === null ? '' : ReportBuilder::formatDuration((int) $v, $opts)),
+                    'money' => $v === ReportBuilder::TOTAL ? '' : ($v === null ? '' : ReportBuilder::formatMoney((float) $v, $opts)),
+                    default => $v === ReportBuilder::TOTAL ? t('Total') : self::safe((string) $v),
                 };
             }
             return $cells;

@@ -9,7 +9,7 @@ use PDO;
  * Upgrades an existing database to the schema number the code expects (TT_SCHEMA).
  * Each step is idempotent, and a database lock stops two requests from migrating at once.
  *
- * Schema numbers: 1 = Timetracker 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client).
+ * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language).
  */
 final class Migrator
 {
@@ -50,6 +50,14 @@ final class Migrator
         $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
         $q->execute([$table, $column]);
         return (bool) $q->fetchColumn();
+    }
+
+    /** 0.2.3: per-user language. Existing users keep English until they choose otherwise. */
+    private static function toSchema4(PDO $pdo): void
+    {
+        if (!self::columnExists($pdo, 'users', 'locale')) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN locale VARCHAR(5) NOT NULL DEFAULT 'en' AFTER currency");
+        }
     }
 
     private static function indexExists(PDO $pdo, string $table, string $index): bool

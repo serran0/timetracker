@@ -43,7 +43,7 @@ $actionNames = Actions::names($uid);        // distinct names (filter)
 $baseParams = ['view' => $view] + Calendar::filterParams($filters);
 
 View::render('calendar', [
-    'title'      => 'Calendar',
+    'title'      => t('Calendar'),
     'active'     => 'calendar',
     'user'       => $user,
     'scripts'    => ['calendar.js'],
@@ -53,7 +53,7 @@ View::render('calendar', [
     'entries'    => $entries,
     'byDate'     => Calendar::byDate($entries),
     'summary'    => Entries::summarize($summaryEntries),
-    'summaryLabel' => $view === 'month' ? $range['month']->format('F Y') : $range['title'],
+    'summaryLabel' => $view === 'month' ? ucf(date_l10n($range['month'], 'F Y')) : $range['title'],
     'hours'      => WorkingHours::intervals($uid),
     'clients'    => $clients,
     'actions'    => $actions,

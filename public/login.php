@@ -25,7 +25,7 @@ if (is_post()) {
 }
 
 View::render('login', [
-    'title'     => 'Sign in',
+    'title'     => t('Sign in'),
     'bodyClass' => 'auth',
     'error'     => $error,
     'username'  => $username,

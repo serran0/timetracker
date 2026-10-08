@@ -432,3 +432,8 @@ body.auth .container > .alert { width: 100%; max-width: 400px; }
 
 /* Time inputs use a datalist for suggestions; hide Chrome's dropdown arrow, which would clip narrow fields. */
 input[type=text][list]::-webkit-calendar-picker-indicator { display: none !important; opacity: 0; }
+
+.lang-switch { text-align: center; margin-top: 14px; font-size: .88rem; }
+.lang-switch a { color: var(--muted); padding: 2px 8px; }
+.lang-switch a.active { color: var(--primary); font-weight: 600; }
+.lang-switch a + a { border-left: 1px solid var(--border-strong); }

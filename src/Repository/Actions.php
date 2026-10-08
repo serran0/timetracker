@@ -46,6 +46,20 @@ final class Actions
         return Db::all('SELECT name, MIN(color) AS color FROM actions WHERE user_id = ? GROUP BY name ORDER BY name', [$uid]);
     }
 
+    /**
+     * Decides which name to store when an action is edited. The form shows the translated label of a standard
+     * action; saving it unchanged must not freeze the translation into the database, so a name equal to the
+     * displayed label keeps the stored name. Any other text is a deliberate rename.
+     */
+    public static function nameToStore(?array $existing, string $submitted): string
+    {
+        $submitted = trim($submitted);
+        if ($existing && $submitted === \TimeTracker\I18n::actionLabel((string) $existing['name'])) {
+            return (string) $existing['name'];
+        }
+        return $submitted;
+    }
+
     public static function find(int $uid, int $id): ?array
     {
         return Db::one('SELECT * FROM actions WHERE id = ? AND user_id = ?', [$id, $uid]);
@@ -56,16 +70,16 @@ final class Actions
         $errors = [];
         $name = trim((string) ($in['name'] ?? ''));
         if ($name === '' || mb_strlen($name) > 120) {
-            $errors[] = 'Name is required (max 120 characters).';
+            $errors[] = t('Name is required (max 120 characters).');
         } elseif (Db::value('SELECT 1 FROM actions WHERE client_id = ? AND name = ? AND id <> ?', [$clientId, $name, $id ?? 0])) {
-            $errors[] = 'This client already has an action with that name.';
+            $errors[] = t('This client already has an action with that name.');
         }
         $mult = str_replace(',', '.', trim((string) ($in['rate_multiplier'] ?? '1')));
         if ($mult === '') {
             $mult = '1';
         }
         if (!is_numeric($mult) || (float) $mult < 0 || (float) $mult > 100) {
-            $errors[] = 'Rate multiplier must be a number between 0 and 100.';
+            $errors[] = t('Rate multiplier must be a number between 0 and 100.');
             $mult = 1;
         }
         $data = [

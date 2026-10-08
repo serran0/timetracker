@@ -39,28 +39,28 @@ final class Installer
         $checks = [];
         $v = PHP_VERSION;
         $checks[] = PHP_VERSION_ID >= 80500
-            ? self::check('PHP version', 'ok', $v)
+            ? self::check(t('PHP version'), 'ok', $v)
             : (PHP_VERSION_ID >= 80200
-                ? self::check('PHP version', 'warn', "$v – works, but PHP 8.5 is the targeted version.")
-                : self::check('PHP version', 'fail', "$v – PHP 8.2 or newer is required (8.5 recommended)."));
+                ? self::check(t('PHP version'), 'warn', t('{v} – works, but PHP 8.5 is the targeted version.', ['v' => $v]))
+                : self::check(t('PHP version'), 'fail', t('{v} – PHP 8.2 or newer is required (8.5 recommended).', ['v' => $v])));
 
         foreach (['pdo_mysql' => 'PDO MySQL driver', 'mbstring' => 'mbstring', 'ctype' => 'ctype', 'json' => 'JSON', 'session' => 'Sessions'] as $ext => $label) {
             $checks[] = extension_loaded($ext)
-                ? self::check("Extension: $label", 'ok')
-                : self::check("Extension: $label", 'fail', "The PHP extension \"$ext\" is not loaded.");
+                ? self::check(t('Extension: {name}', ['name' => $label]), 'ok')
+                : self::check(t('Extension: {name}', ['name' => $label]), 'fail', t('The PHP extension "{ext}" is not loaded.', ['ext' => $ext]));
         }
         $checks[] = class_exists(\ZipArchive::class)
-            ? self::check('Extension: zip', 'ok', 'Needed for Excel (.xlsx) export.')
-            : self::check('Extension: zip', 'warn', 'Not available – Excel export will be disabled (CSV and text still work).');
+            ? self::check(t('Extension: {name}', ['name' => 'zip']), 'ok', t('Needed for Excel (.xlsx) export.'))
+            : self::check(t('Extension: {name}', ['name' => 'zip']), 'warn', t('Not available – Excel export will be disabled (CSV and text still work).'));
 
         $configDir = TT_ROOT . '/config';
         $checks[] = (is_dir($configDir) && is_writable($configDir))
-            ? self::check('Config directory writable', 'ok', 'config/')
-            : self::check('Config directory writable', 'fail', 'The web server user must be able to write to the config/ directory so setup can save config.php.');
+            ? self::check(t('Config directory writable'), 'ok', 'config/')
+            : self::check(t('Config directory writable'), 'fail', t('The web server user must be able to write to the config/ directory so setup can save config.php.'));
 
         $checks[] = is_readable(TT_ROOT . '/database/schema.sql')
-            ? self::check('Database schema file', 'ok', 'database/schema.sql')
-            : self::check('Database schema file', 'fail', 'database/schema.sql is missing or unreadable.');
+            ? self::check(t('Database schema file'), 'ok', 'database/schema.sql')
+            : self::check(t('Database schema file'), 'fail', t('database/schema.sql is missing or unreadable.'));
         return $checks;
     }
 
@@ -75,20 +75,20 @@ final class Installer
         $exists = false;
 
         if (!preg_match('/^[A-Za-z0-9_$]{1,64}$/', (string) $db['name'])) {
-            $checks[] = self::check('Database name', 'fail', 'Use only letters, digits, underscore or $ (max 64 characters).');
+            $checks[] = self::check(t('Database name'), 'fail', t('Use only letters, digits, underscore or $ (max 64 characters).'));
             return ['checks' => $checks, 'pdo' => null, 'db_exists' => false];
         }
         if ($db['host'] === '' || $db['user'] === '') {
-            $checks[] = self::check('Database credentials', 'fail', 'Host and user are required.');
+            $checks[] = self::check(t('Database credentials'), 'fail', t('Host and user are required.'));
             return ['checks' => $checks, 'pdo' => null, 'db_exists' => false];
         }
 
         try {
             $server = Db::connect($db, false);
             $version = (string) $server->query('SELECT VERSION()')->fetchColumn();
-            $checks[] = self::check('Connect to database server', 'ok', "{$db['host']}:{$db['port']} (server $version)");
+            $checks[] = self::check(t('Connect to database server'), 'ok', t('{host}:{port} (server {version})', ['host' => $db['host'], 'port' => $db['port'], 'version' => $version]));
         } catch (Throwable $e) {
-            $checks[] = self::check('Connect to database server', 'fail', self::cleanError($e));
+            $checks[] = self::check(t('Connect to database server'), 'fail', self::cleanError($e));
             return ['checks' => $checks, 'pdo' => null, 'db_exists' => false];
         }
 
@@ -99,9 +99,9 @@ final class Installer
         if ($exists) {
             try {
                 $pdo = Db::connect($db, true);
-                $checks[] = self::check('Database "' . $db['name'] . '"', 'ok', 'Exists and is accessible.');
+                $checks[] = self::check(t('Database "{name}"', ['name' => $db['name']]), 'ok', t('Exists and is accessible.'));
             } catch (Throwable $e) {
-                $checks[] = self::check('Database "' . $db['name'] . '"', 'fail', self::cleanError($e));
+                $checks[] = self::check(t('Database "{name}"', ['name' => $db['name']]), 'fail', self::cleanError($e));
                 return ['checks' => $checks, 'pdo' => null, 'db_exists' => true];
             }
 
@@ -114,24 +114,24 @@ final class Installer
                 }
             }
             $checks[] = $present
-                ? self::check('Database is free of Timetracker tables', 'fail', 'Already contains: ' . implode(', ', $present) . '. Choose a different (or empty) database so nothing is overwritten.')
-                : self::check('Database is free of Timetracker tables', 'ok');
+                ? self::check(t('Database is free of Timetracker tables'), 'fail', t('Already contains: {tables}. Choose a different (or empty) database so nothing is overwritten.', ['tables' => implode(', ', $present)]))
+                : self::check(t('Database is free of Timetracker tables'), 'ok');
 
             foreach (self::probePrivileges($pdo) as $priv => $err) {
                 $checks[] = $err === null
-                    ? self::check("Privilege: $priv", 'ok')
-                    : self::check("Privilege: $priv", 'fail', $err);
+                    ? self::check(t('Privilege: {name}', ['name' => $priv]), 'ok')
+                    : self::check(t('Privilege: {name}', ['name' => $priv]), 'fail', $err);
             }
         } else {
             $can = self::canCreateDatabase($server, $db['name']);
             if ($can === true) {
-                $checks[] = self::check('Database "' . $db['name'] . '"', 'ok', 'Does not exist yet – it will be created (CREATE privilege found).');
+                $checks[] = self::check(t('Database "{name}"', ['name' => $db['name']]), 'ok', t('Does not exist yet – it will be created (CREATE privilege found).'));
             } elseif ($can === false) {
-                $checks[] = self::check('Database "' . $db['name'] . '"', 'fail', 'Does not exist and this user has no CREATE privilege. Create the database first (utf8mb4) or use a privileged user.');
+                $checks[] = self::check(t('Database "{name}"', ['name' => $db['name']]), 'fail', t('Does not exist and this user has no CREATE privilege. Create the database first (utf8mb4) or use a privileged user.'));
             } else {
-                $checks[] = self::check('Database "' . $db['name'] . '"', 'warn', 'Does not exist yet. Could not read privileges; setup will try to create it.');
+                $checks[] = self::check(t('Database "{name}"', ['name' => $db['name']]), 'warn', t('Does not exist yet. Could not read privileges; setup will try to create it.'));
             }
-            $checks[] = self::check('Table privileges', 'warn', 'Will be tested right after the database is created.');
+            $checks[] = self::check(t('Table privileges'), 'warn', t('Will be tested right after the database is created.'));
         }
 
         return ['checks' => $checks, 'pdo' => $pdo, 'db_exists' => $exists];
@@ -158,7 +158,7 @@ final class Installer
         $created = false;
         foreach ($steps as $priv => $sql) {
             if ($priv !== 'CREATE' && !$created) {
-                $result[$priv] = 'Skipped because CREATE failed.';
+                $result[$priv] = t('Skipped because CREATE failed.');
                 continue;
             }
             try {
@@ -173,7 +173,7 @@ final class Installer
             } catch (Throwable $e) {
                 $result[$priv] = self::cleanError($e);
                 if ($priv === 'DROP') {
-                    $result[$priv] .= " – the harmless test table `$t` was left behind and can be removed manually.";
+                    $result[$priv] .= ' – ' . t('the harmless test table `{table}` was left behind and can be removed manually.', ['table' => $t]);
                 }
             }
         }
@@ -257,13 +257,13 @@ final class Installer
             $probe = self::probePrivileges($pdo);
             $failed = array_keys(array_filter($probe, static fn($e) => $e !== null));
             if ($failed) {
-                throw new \RuntimeException('The database user lacks privileges: ' . implode(', ', $failed) . '.');
+                throw new \RuntimeException(t('The database user lacks privileges: {list}.', ['list' => implode(', ', $failed)]));
             }
 
             $q = $pdo->prepare('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME IN (' . Db::placeholders(self::TABLES) . ')');
             $q->execute([$db['name'], ...self::TABLES]);
             if ($existing = $q->fetchAll(PDO::FETCH_COLUMN)) {
-                throw new \RuntimeException('The database already contains Timetracker tables (' . implode(', ', $existing) . '). Nothing was changed; choose an empty database.');
+                throw new \RuntimeException(t('The database already contains Timetracker tables ({tables}). Nothing was changed; choose an empty database.', ['tables' => implode(', ', $existing)]));
             }
 
             $touchedTables = true;
@@ -272,18 +272,18 @@ final class Installer
             }
             $pdo->prepare('INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)')->execute(['schema_version', (string) TT_SCHEMA]);
 
-            Users::create($admin['username'], $admin['password'], $admin['display_name'], true, $timezone, $admin['currency'], $pdo);
+            Users::create($admin['username'], $admin['password'], $admin['display_name'], true, $timezone, $admin['currency'], $admin['locale'] ?? 'en', $pdo);
 
             $php = Config::render($db, $timezone);
             $target = Config::path();
             $tmp = $target . '.tmp';
             if (file_put_contents($tmp, $php, LOCK_EX) === false) {
-                throw new \RuntimeException('Could not write config/config.php. Check that the config/ directory is writable.');
+                throw new \RuntimeException(t('Could not write config/config.php. Check that the config/ directory is writable.'));
             }
             @chmod($tmp, 0640);
             if (!rename($tmp, $target)) {
                 @unlink($tmp);
-                throw new \RuntimeException('Could not save config/config.php.');
+                throw new \RuntimeException(t('Could not save config/config.php.'));
             }
         } catch (Throwable $e) {
             // Roll back anything this run created so setup can simply be retried.

@@ -15,6 +15,7 @@
     const durationEl = document.getElementById('entry-duration');
     const view = ($('.cal-body') || {}).dataset ? $('.cal-body').dataset.view : '';
 
+    const tr = (key, vars) => window.TT.t(key, vars);
     const pad = (n) => String(n).padStart(2, '0');
     const toHHMM = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
     const fmtDur = (min) => `${Math.floor(min / 60)}:${pad(min % 60)}`;
@@ -62,7 +63,7 @@
     const daysBox = document.getElementById('entry-days');
     const addDayBtn = document.getElementById('entry-add-day');
     const noActions = document.getElementById('entry-no-actions');
-    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const DOW = window.TT.i18n.dow; // localized, index = JS getDay()
 
     function showErrors(list) {
         errorsBox.hidden = !list || !list.length;
@@ -98,7 +99,7 @@
         const keepArchived = list.filter((a) => a.archived && String(a.id) === String(preferredActionId));
         if (keepArchived.length) {
             const g = document.createElement('optgroup');
-            g.label = 'Archived';
+            g.label = tr('Archived');
             keepArchived.forEach((a) => add(a, g));
             select.appendChild(g);
         }
@@ -107,7 +108,7 @@
         if (none) {
             const o = document.createElement('option');
             o.value = '';
-            o.textContent = '— no actions —';
+            o.textContent = tr('— no actions —');
             select.appendChild(o);
             document.getElementById('entry-no-actions-link').href = 'actions.php?client=' + encodeURIComponent(clientId);
             return;
@@ -168,8 +169,8 @@
             }
         });
         const editing = !!form.id.value;
-        titleEl.textContent = editing ? 'Edit time report' : (multi ? 'New time reports' : 'New time report');
-        durationEl.textContent = n ? `${n} report${n === 1 ? '' : 's'} · ${fmtDur(net)} h net (${(net / 60).toFixed(2)} h)` : '';
+        titleEl.textContent = editing ? tr('Edit time report') : (multi ? tr('New time reports') : tr('New time report'));
+        durationEl.textContent = n ? `${tr(n === 1 ? '{n} report' : '{n} reports', { n })} · ${tr('{h} h net', { h: fmtDur(net) })} (${window.TT.dec(net / 60)} h)` : '';
     }
 
     /** Adds a day row. `v`: {date, start, end, break?, include?, note?}. A numeric break is kept as typed. */
@@ -246,7 +247,7 @@
      */
     function openDialog(data) {
         if (dialog.dataset.ready !== '1') {
-            window.TT.toast('Add a client with at least one action first.');
+            window.TT.toast(tr('Add a client with at least one action first.'));
             return;
         }
         showErrors([]);
@@ -277,7 +278,9 @@
     }
 
     function wholeDayLabel(day) {
-        return `Report whole working day ${toHHMM(day.start)}–${toHHMM(day.end)}` + (day.brk ? ` (−${day.brk} min break)` : '');
+        return day.brk
+            ? tr('Report whole working day {from}–{to} (−{min} min break)', { from: toHHMM(day.start), to: toHHMM(day.end), min: day.brk })
+            : tr('Report whole working day {from}–{to}', { from: toHHMM(day.start), to: toHHMM(day.end) });
     }
 
     /** One row per working day of a week; days that already have reports start unticked. */
@@ -287,7 +290,7 @@
             if (!day) return null;
             return {
                 date: d.date, start: toHHMM(day.start), end: toHHMM(day.end), break: day.brk,
-                include: !d.n, note: d.n ? `already has ${d.n} report${d.n === 1 ? '' : 's'}` : '',
+                include: !d.n, note: d.n ? tr(d.n === 1 ? 'already has {n} report' : 'already has {n} reports', { n: d.n }) : '',
             };
         }).filter(Boolean);
     }
@@ -305,12 +308,12 @@
         });
         if (res.status === 401) {
             window.location.href = 'login.php';
-            return { ok: false, errors: ['Session expired.'] };
+            return { ok: false, errors: [tr('Session expired.')] };
         }
         try {
             return await res.json();
         } catch (e) {
-            return { ok: false, errors: ['Unexpected server response.'] };
+            return { ok: false, errors: [tr('Unexpected server response.')] };
         }
     }
 
@@ -323,15 +326,15 @@
         Array.from(rowsBox.children).forEach((row, i) => {
             const v = rowValues(row);
             if (!v.include) return;
-            const label = multi ? (v.date || `Day ${i + 1}`) + ': ' : '';
-            if (!parseDate(v.date)) errors.push(label + 'choose a date.');
-            else if (v.s === null || v.e === null) errors.push(label + 'enter times as HH:MM (e.g. 08:30).');
-            else if (v.e <= v.s) errors.push(label + 'end time must be after the start time.');
-            else if (v.brk >= v.e - v.s) errors.push(label + 'the break must be shorter than the time span.');
+            const label = multi ? (v.date || tr('Day {n}', { n: i + 1 })) + ': ' : '';
+            if (!parseDate(v.date)) errors.push(label + tr('Choose a date.'));
+            else if (v.s === null || v.e === null) errors.push(label + tr('Enter times as HH:MM (e.g. 08:30).'));
+            else if (v.e <= v.s) errors.push(label + tr('End time must be after the start time.'));
+            else if (v.brk >= v.e - v.s) errors.push(label + tr('The break must be shorter than the time span.'));
             else entries.push({ date: v.date, start: toHHMM(v.s), end: toHHMM(v.e), break: v.brk });
         });
-        if (!errors.length && !entries.length) errors.push('Tick at least one day.');
-        if (!form.action_id.value) errors.push('This client has no actions yet – add some on the Actions page.');
+        if (!errors.length && !entries.length) errors.push(tr('Tick at least one day.'));
+        if (!form.action_id.value) errors.push(tr('This client has no actions yet – add some on the Actions page.'));
         if (errors.length) return showErrors(errors);
 
         saveBtn.disabled = true;
@@ -349,18 +352,18 @@
             store.set('tt_action_' + form.client_id.value, form.action_id.value);
             window.location.reload();
         } else {
-            showErrors(result.errors || ['Could not save.']);
+            showErrors(result.errors || [tr('Could not save.')]);
         }
     });
 
     async function deleteEntry(id) {
         const result = await post({ op: 'delete', id });
         if (result.ok) window.location.reload();
-        else window.TT.toast((result.errors || ['Could not delete.'])[0]);
+        else window.TT.toast((result.errors || [tr('Could not delete.')])[0]);
     }
 
     deleteBtn.addEventListener('click', () => {
-        if (form.id.value && window.confirm('Delete this time report?')) deleteEntry(parseInt(form.id.value, 10));
+        if (form.id.value && window.confirm(tr('Delete this time report?'))) deleteEntry(parseInt(form.id.value, 10));
     });
     $$('[data-dialog-close]', dialog).forEach((b) => b.addEventListener('click', closeDialog));
     dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
@@ -413,10 +416,10 @@
     function entryMenu(x, y, el) {
         const p = payloadOf(el);
         showMenu(x, y, `${p.start}–${p.end} · ${p.date}`, [
-            { label: 'Edit time report', run: () => openDialog(p) },
-            { label: 'Duplicate', run: () => openDialog({ ...p, id: null }) },
+            { label: tr('Edit time report'), run: () => openDialog(p) },
+            { label: tr('Duplicate'), run: () => openDialog({ ...p, id: null }) },
             '-',
-            { label: 'Delete', danger: true, run: () => { if (window.confirm('Delete this time report?')) deleteEntry(p.id); } },
+            { label: tr('Delete'), danger: true, run: () => { if (window.confirm(tr('Delete this time report?'))) deleteEntry(p.id); } },
         ]);
     }
 
@@ -451,12 +454,12 @@
         const day = wholeDay(wh);
         const items = [];
         if (day) items.push({ label: wholeDayLabel(day), run: () => openWholeDay(date, day) });
-        items.push({ label: `New time report ${toHHMM(hour * 60)}–${toHHMM((hour + 1) * 60)}`, run: () => openNew(date, hour * 60, (hour + 1) * 60) });
+        items.push({ label: tr('New time report {from}–{to}', { from: toHHMM(hour * 60), to: toHHMM((hour + 1) * 60) }), run: () => openNew(date, hour * 60, (hour + 1) * 60) });
         if (wh.length > 1) {
-            wh.forEach(([s, e]) => items.push({ label: `New report ${toHHMM(s)}–${toHHMM(e)}`, run: () => openNew(date, s, e) }));
+            wh.forEach(([s, e]) => items.push({ label: tr('New report {from}–{to}', { from: toHHMM(s), to: toHHMM(e) }), run: () => openNew(date, s, e) }));
         }
         if (view !== 'day') {
-            items.push('-', { label: 'Open day', run: () => { window.location.href = dayUrl(date); } });
+            items.push('-', { label: tr('Open day'), run: () => { window.location.href = dayUrl(date); } });
         }
         showMenu(x, y, track.dataset.label, items);
     }
@@ -545,13 +548,13 @@
         const whole = wholeDay(wh);
         const items = [];
         if (whole) items.push({ label: wholeDayLabel(whole), run: () => openWholeDay(date, whole) });
-        items.push({ label: 'New time report…', run: () => openNew(date, 9 * 60, 10 * 60) });
+        items.push({ label: tr('New time report…'), run: () => openNew(date, 9 * 60, 10 * 60) });
         if (wh.length > 1) {
-            wh.forEach(([s, e]) => items.push({ label: `New report ${toHHMM(s)}–${toHHMM(e)}`, run: () => openNew(date, s, e) }));
+            wh.forEach(([s, e]) => items.push({ label: tr('New report {from}–{to}', { from: toHHMM(s), to: toHHMM(e) }), run: () => openNew(date, s, e) }));
         }
         items.push('-',
-            { label: 'Open day', run: () => { window.location.href = day.dataset.dayUrl; } },
-            { label: 'Open week', run: () => { window.location.href = day.dataset.weekUrl; } });
+            { label: tr('Open day'), run: () => { window.location.href = day.dataset.dayUrl; } },
+            { label: tr('Open week'), run: () => { window.location.href = day.dataset.weekUrl; } });
         showMenu(x, y, day.dataset.label, items);
     }
 
@@ -562,12 +565,12 @@
         const items = [];
         if (rows.length) {
             items.push({
-                label: 'Report whole working week (minus daily lunch break)',
+                label: tr('Report whole working week (minus daily lunch break)'),
                 run: () => openDialog({ rows, focusSave: rows.every((r) => r.include) }),
             });
         }
-        items.push({ label: 'Open week', run: () => { window.location.href = cell.getAttribute('href'); } });
-        showMenu(x, y, `Week ${cell.dataset.weekNo}`, items);
+        items.push({ label: tr('Open week'), run: () => { window.location.href = cell.getAttribute('href'); } });
+        showMenu(x, y, tr('Week {n}', { n: cell.dataset.weekNo }), items);
     }
 
     // Right click anywhere in the calendar

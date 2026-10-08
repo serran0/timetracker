@@ -35,7 +35,7 @@ $entries = Entries::search($uid, $from->format('Y-m-d'), $to->format('Y-m-d'), $
 
 if (isset($_GET['download'])) {
     if ($opts['format'] === 'xlsx' && !XlsxExporter::available()) {
-        flash('error', 'Excel export needs the PHP zip extension on this server. Use CSV or plain text instead.');
+        flash('error', t('Excel export needs the PHP zip extension on this server. Use CSV or plain text instead.'));
         redirect('export.php');
     }
 
@@ -43,11 +43,11 @@ if (isset($_GET['download'])) {
         static fn($r) => $r['name'],
         array_filter($rows, static fn($r) => in_array((int) $r['id'], $ids, true))
     ));
-    $actionNamesText = implode(', ', $filters['actions']);
+    $actionNamesText = implode(', ', array_map('action_label', $filters['actions']));
     $filterDesc = array_filter([
-        $filters['clients'] ? 'clients: ' . $names($clients, $filters['clients']) : '',
-        $filters['actions'] ? 'actions: ' . $actionNamesText : '',
-        $filters['billable'] === '1' ? 'billable only' : ($filters['billable'] === '0' ? 'non-billable only' : ''),
+        $filters['clients'] ? t('clients: {list}', ['list' => $names($clients, $filters['clients'])]) : '',
+        $filters['actions'] ? t('actions: {list}', ['list' => $actionNamesText]) : '',
+        $filters['billable'] === '1' ? t('billable only') : ($filters['billable'] === '0' ? t('non-billable only') : ''),
     ]);
     $meta = [
         'from'       => $from->format('Y-m-d'),
@@ -67,7 +67,7 @@ $previewOpts = $opts + [];
 $table = ReportBuilder::table(array_slice($entries, 0, 8), ['totals' => false] + $previewOpts);
 
 View::render('export', [
-    'title'     => 'Export',
+    'title'     => t('Export'),
     'active'    => 'export',
     'user'      => $user,
     'from'      => $from,

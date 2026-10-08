@@ -2,10 +2,11 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month.
 
-**Version 0.2.2** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.2.3** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
+- **Languages:** English and Swedish, chosen per user under *Account & settings*. The whole interface, dates, numbers and exports follow it. The standard action names are translated while unmodified; actions you have renamed are never touched.
 - **Clients** with a colour, optional hourly rate and reference (PO number etc.).
 - **Time actions** (templates) **per client**: normal working time, overtime, emergency… each with a colour, a rate multiplier (e.g. overtime ×1.5) and a billable flag. New clients start from a standard set or a copy of another client's actions.
 - **Working hours** per weekday (several intervals per day). They are highlighted in the week and day views. A **lunch window** (e.g. 12:00–13:00) is pre-filled as an **unpaid break** on new reports and deducted from the hours; the break is stored per report and can be changed. Right-click a day and choose **Report whole working day** for a one-step 08–17 report with lunch deducted.
@@ -41,6 +42,7 @@ Setup writes `config/config.php` (mode `0640`, git-ignored). Once it exists the 
 ```bash
 php -S 127.0.0.1:8080 -t public
 php tests/run.php        # logic tests, no database needed
+php tests/i18n.php       # checks every translation key exists in src/lang/*.php
 ```
 
 ### nginx
@@ -55,7 +57,8 @@ src/         classes (Auth, Db, Calendar, Installer, Repository/*, Export/*)
 views/       PHP templates
 database/    schema.sql
 config/      generated config.php (not committed)
-tests/       run.php
+src/lang/    translations (sv.php)
+tests/       run.php, i18n.php
 ```
 
 ## Notes

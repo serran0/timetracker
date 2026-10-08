@@ -34,11 +34,11 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
 <div class="tl-scroll" data-tl-scroll data-scroll-to="<?= e(number_format($scrollTo, 4, '.', '')) ?>">
 <div class="tl <?= $view === 'day' ? 'tl-day' : '' ?>" data-tl>
     <div class="tl-row tl-headrow">
-        <div class="tl-label">Wk <?= e($range['from']->format('W')) ?></div>
+        <div class="tl-label"><?= te('Wk {n}', ['n' => $range['from']->format('W')]) ?></div>
         <div class="tl-hours">
             <?php for ($h = 0; $h < 24; $h++): ?><span><?= sprintf('%02d', $h) ?></span><?php endfor; ?>
         </div>
-        <div class="tl-sum">Total</div>
+        <div class="tl-sum"><?= te('Total') ?></div>
     </div>
     <?php foreach ($days as $d): ?>
         <?php
@@ -54,16 +54,16 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
         if (!$wh) { $classes[] = 'off'; }
         ?>
         <div class="<?= e(implode(' ', $classes)) ?>">
-            <a class="tl-label" href="<?= e($link(['view' => 'day', 'date' => $ds])) ?>" title="Open day">
-                <span class="dow"><?= e($d->format('D')) ?></span>
-                <span class="dom"><?= e($d->format('j M')) ?></span>
-                <?php if ($view === 'day'): ?><small class="muted">Wk <?= e($d->format('W')) ?></small><?php endif; ?>
+            <a class="tl-label" href="<?= e($link(['view' => 'day', 'date' => $ds])) ?>" title="<?= te('Open day') ?>">
+                <span class="dow"><?= e(date_l10n($d, 'D')) ?></span>
+                <span class="dom"><?= e(date_l10n($d, 'j M')) ?></span>
+                <?php if ($view === 'day'): ?><small class="muted"><?= te('Wk {n}', ['n' => $d->format('W')]) ?></small><?php endif; ?>
             </a>
-            <div class="tl-track" data-date="<?= e($ds) ?>" data-wh="<?= e($whAttr($wh)) ?>" data-label="<?= e($d->format('D j M')) ?>" style="height:<?= $height ?>px">
+            <div class="tl-track" data-date="<?= e($ds) ?>" data-wh="<?= e($whAttr($wh)) ?>" data-label="<?= e(date_l10n($d, 'D j M')) ?>" style="height:<?= $height ?>px">
                 <?php foreach ($wh as [$ws, $we]): ?>
-                    <div class="tl-wh" style="left:<?= $pct($ws) ?>%;width:<?= $pct($we - $ws) ?>%" title="Working hours <?= e(minutes_to_hhmm($ws) . '–' . minutes_to_hhmm($we)) ?>"></div>
+                    <div class="tl-wh" style="left:<?= $pct($ws) ?>%;width:<?= $pct($we - $ws) ?>%" title="<?= te('Working hours {range}', ['range' => minutes_to_hhmm($ws) . '–' . minutes_to_hhmm($we)]) ?>"></div>
                 <?php endforeach; ?>
-                <?php if ($ds === $todayStr): ?><div class="tl-now" style="left:<?= $pct($nowMin) ?>%" title="Now"></div><?php endif; ?>
+                <?php if ($ds === $todayStr): ?><div class="tl-now" style="left:<?= $pct($nowMin) ?>%" title="<?= te('Now') ?>"></div><?php endif; ?>
                 <?php foreach ($list as $e): ?>
                     <?php
                     // Hatched stripe marking where the unpaid break sits inside the block.
@@ -75,8 +75,8 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
                             $stripe = [round(($os - $e['start_min']) / $e['gross_minutes'] * 100, 3), round(($oe - $os) / $e['gross_minutes'] * 100, 3)];
                         }
                     }
-                    $tip = $e['start'] . '–' . $e['end'] . ($e['break_minutes'] ? ' (−' . fmt_dur($e['break_minutes']) . ' break)' : '')
-                        . ' · ' . $e['client_name'] . ' · ' . $e['action_name'] . ($e['description'] ? "\n" . $e['description'] : '');
+                    $tip = $e['start'] . '–' . $e['end'] . ($e['break_minutes'] ? ' (' . t('−{time} break', ['time' => fmt_dur($e['break_minutes'])]) . ')' : '')
+                        . ' · ' . $e['client_name'] . ' · ' . $e['action_label'] . ($e['description'] ? "\n" . $e['description'] : '');
                     ?>
                     <button type="button" class="te" data-entry="<?= e(Calendar::entryPayload($e)) ?>"
                             style="left:<?= $pct($e['start_min']) ?>%;width:<?= $pct($e['gross_minutes']) ?>%;top:<?= $lanePad + $e['lane'] * $laneH ?>px;height:<?= $laneH - 3 ?>px;<?= e(Calendar::entryStyle($e, $colorBy)) ?>"
@@ -84,7 +84,7 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
                         <?php if ($stripe): ?><span class="te-break" style="left:<?= $stripe[0] ?>%;width:<?= $stripe[1] ?>%"></span><?php endif; ?>
                         <span class="te-time"><?= e($e['start'] . '–' . $e['end']) ?></span>
                         <span class="te-name"><?= e($e['client_name']) ?></span>
-                        <span class="te-act"><?= e($e['action_name']) ?></span>
+                        <span class="te-act"><?= e($e['action_label']) ?></span>
                     </button>
                 <?php endforeach; ?>
             </div>
@@ -93,11 +93,11 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
     <?php endforeach; ?>
 </div>
 </div>
-<p class="hint">Drag across hours to create a time report, or right-click an hour. On touch screens, tap an hour. Shaded areas are your working hours.</p>
+<p class="hint"><?= te('Drag across hours to create a time report, or right-click an hour. On touch screens, tap an hour. Shaded areas are your working hours.') ?></p>
 
 <?php if ($view === 'day'): ?>
     <section class="card day-list">
-        <h2>Time reports</h2>
+        <h2><?= te('Time reports') ?></h2>
         <?= TimeTracker\View::capture('calendar/list', get_defined_vars() + ['embedded' => true]) ?>
     </section>
 <?php endif; ?>

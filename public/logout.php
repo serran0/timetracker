@@ -6,7 +6,8 @@ require __DIR__ . '/../src/bootstrap.php';
 use TimeTracker\Auth;
 
 require_csrf();
+set_lang_cookie(\TimeTracker\I18n::locale()); // the login page keeps the language of the user who just left
 Auth::logout();
 session_start(); // fresh session just to carry the confirmation message
-flash('success', 'You have been signed out.');
+flash('success', t('You have been signed out.'));
 redirect('login.php');

@@ -7,7 +7,13 @@ use TimeTracker\Db;
 
 final class WorkingHours
 {
-    public const DAYS = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
+    /** ISO weekday numbers; use label() for the translated name. */
+    public const DAYS = [1, 2, 3, 4, 5, 6, 7];
+
+    public static function label(int $day): string
+    {
+        return ucf(\TimeTracker\I18n::dayName($day));
+    }
 
     /**
      * Intervals per ISO weekday, in minutes since midnight.
@@ -31,7 +37,8 @@ final class WorkingHours
     {
         $result = array_fill(1, 7, []);
         $errors = [];
-        foreach (self::DAYS as $d => $label) {
+        foreach (self::DAYS as $d) {
+            $label = self::label($d);
             $rows = $posted[$d] ?? [];
             if (!is_array($rows)) {
                 continue;
@@ -46,11 +53,11 @@ final class WorkingHours
                 $sm = parse_time_minutes($s);
                 $em = parse_time_minutes($e);
                 if ($sm === null || $em === null) {
-                    $errors[] = "$label: \"$s\" – \"$e\" is not a valid time range (use HH:MM).";
+                    $errors[] = t('{day}: "{start}" – "{end}" is not a valid time range (use HH:MM).', ['day' => $label, 'start' => $s, 'end' => $e]);
                     continue;
                 }
                 if ($em <= $sm) {
-                    $errors[] = "$label: end time must be after start time.";
+                    $errors[] = t('{day}: end time must be after start time.', ['day' => $label]);
                     continue;
                 }
                 $list[] = [$sm, $em];
@@ -58,7 +65,7 @@ final class WorkingHours
             usort($list, static fn($a, $b) => $a[0] <=> $b[0]);
             foreach ($list as $i => $iv) {
                 if ($i > 0 && $iv[0] < $list[$i - 1][1]) {
-                    $errors[] = "$label: working hour intervals overlap.";
+                    $errors[] = t('{day}: working hour intervals overlap.', ['day' => $label]);
                     break;
                 }
             }

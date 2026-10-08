@@ -5,7 +5,20 @@
     const $ = (sel, root = document) => root.querySelector(sel);
     const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+    // Translations come from the server (see I18n::forJs); the English text is the key.
+    let i18n = { locale: 'en', decimal: '.', dow: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], strings: {} };
+    try { i18n = JSON.parse((document.getElementById('tt-i18n') || {}).textContent || '{}'); } catch (e) { /* keep defaults */ }
+
     window.TT = {
+        i18n,
+        /** Translate a key and fill {placeholders}. */
+        t(key, vars) {
+            let s = (i18n.strings && i18n.strings[key]) || key;
+            Object.keys(vars || {}).forEach((k) => { s = s.split('{' + k + '}').join(String(vars[k])); });
+            return s;
+        },
+        /** 7.5 -> "7.50" / "7,50" */
+        dec(n) { return n.toFixed(2).replace('.', i18n.decimal || '.'); },
         csrf: () => (document.querySelector('meta[name="csrf-token"]') || {}).content || '',
         toast(message, ms = 3500) {
             const el = document.createElement('div');
@@ -102,7 +115,7 @@
                     source.forEach(([s, en]) => target.appendChild(rowHtml(d, s, en)));
                     target.appendChild(rowHtml(d));
                 });
-                window.TT.toast('Copied Monday to Tuesday–Friday. Remember to save.');
+                window.TT.toast(window.TT.t('Copied Monday to Tuesday–Friday. Remember to save.'));
             }
         });
     }

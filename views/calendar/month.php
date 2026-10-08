@@ -18,9 +18,9 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
 ?>
 <div class="month" data-month>
     <div class="month-row month-headrow">
-        <div class="wk-col">Wk</div>
-        <?php foreach (['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as $dn): ?><div class="dow"><?= $dn ?></div><?php endforeach; ?>
-        <div class="wk-total">Week</div>
+        <div class="wk-col"><?= te('Wk') ?></div>
+        <?php for ($i = 1; $i <= 7; $i++): ?><div class="dow"><?= e(TimeTracker\I18n::dayName($i, true)) ?></div><?php endfor; ?>
+        <div class="wk-total"><?= te('Week') ?></div>
     </div>
     <?php foreach ($weeks as $days): ?>
         <?php
@@ -28,13 +28,13 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
         // Data for "Report whole working week": one row per day with working hours.
         $weekData = array_map(static fn($wd) => [
             'date'  => $wd->format('Y-m-d'),
-            'label' => $wd->format('D j M'),
+            'label' => date_l10n($wd, 'D j M'),
             'wh'    => implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $hours[(int) $wd->format('N')])),
             'n'     => $dayCounts[$wd->format('Y-m-d')] ?? 0,
         ], $days);
         ?>
         <div class="month-row">
-            <a class="wk-col" href="<?= e($link(['view' => 'week', 'date' => $days[0]->format('Y-m-d')])) ?>" title="Open week <?= e($days[0]->format('W')) ?> – right-click for more"
+            <a class="wk-col" href="<?= e($link(['view' => 'week', 'date' => $days[0]->format('Y-m-d')])) ?>" title="<?= te('Open week {n} – right-click for more', ['n' => $days[0]->format('W')]) ?>"
                data-week="<?= e(json_encode($weekData, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)) ?>" data-week-no="<?= e($days[0]->format('W')) ?>"><?= e($days[0]->format('W')) ?></a>
             <?php foreach ($days as $d): ?>
                 <?php
@@ -48,22 +48,22 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
                 if (!$hours[(int) $d->format('N')]) { $classes[] = 'off'; }
                 $dayUrl = $link(['view' => 'day', 'date' => $ds]);
                 ?>
-                <div class="<?= e(implode(' ', $classes)) ?>" data-date="<?= e($ds) ?>" data-wh="<?= e(implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $hours[(int) $d->format('N')]))) ?>" data-day-url="<?= e($dayUrl) ?>" data-week-url="<?= e($link(['view' => 'week', 'date' => $ds])) ?>" data-label="<?= e($d->format('D j M')) ?>">
+                <div class="<?= e(implode(' ', $classes)) ?>" data-date="<?= e($ds) ?>" data-wh="<?= e(implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $hours[(int) $d->format('N')]))) ?>" data-day-url="<?= e($dayUrl) ?>" data-week-url="<?= e($link(['view' => 'week', 'date' => $ds])) ?>" data-label="<?= e(date_l10n($d, 'D j M')) ?>">
                     <div class="mv-top">
-                        <a class="mv-num" href="<?= e($dayUrl) ?>"><?= $d->format('j') === '1' ? e($d->format('j M')) : e($d->format('j')) ?></a>
+                        <a class="mv-num" href="<?= e($dayUrl) ?>"><?= $d->format('j') === '1' ? e(date_l10n($d, 'j M')) : e($d->format('j')) ?></a>
                         <?php if ($dayMin): ?><span class="mv-total" title="<?= e(fmt_dec($dayMin)) ?> h"><?= e(fmt_dur($dayMin)) ?></span><?php endif; ?>
                     </div>
                     <div class="mv-entries">
                         <?php foreach (array_slice($list, 0, $maxChips) as $e): ?>
                             <button type="button" class="chip" style="<?= e(TimeTracker\Calendar::entryStyle($e, $colorBy)) ?>"
                                     data-entry="<?= e(TimeTracker\Calendar::entryPayload($e)) ?>"
-                                    title="<?= e($e['start'] . '–' . $e['end'] . ' · ' . $e['client_name'] . ' · ' . $e['action_name'] . ($e['description'] ? "\n" . $e['description'] : '')) ?>">
+                                    title="<?= e($e['start'] . '–' . $e['end'] . ' · ' . $e['client_name'] . ' · ' . $e['action_label'] . ($e['description'] ? "\n" . $e['description'] : '')) ?>">
                                 <span class="chip-time"><?= e($e['start']) ?></span>
                                 <span class="chip-text"><?= e($e['client_name']) ?></span>
                             </button>
                         <?php endforeach; ?>
                         <?php if (count($list) > $maxChips): ?>
-                            <a class="more" href="<?= e($dayUrl) ?>">+<?= count($list) - $maxChips ?> more</a>
+                            <a class="more" href="<?= e($dayUrl) ?>"><?= te('+{n} more', ['n' => count($list) - $maxChips]) ?></a>
                         <?php endif; ?>
                         <?php if (count($list) > 0): ?>
                             <span class="dots" aria-hidden="true">
@@ -77,4 +77,4 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
         </div>
     <?php endforeach; ?>
 </div>
-<p class="hint">Right-click a day to create a time report, or right-click a week number to report a whole working week. On touch screens, press and hold.</p>
+<p class="hint"><?= te('Right-click a day to create a time report, or right-click a week number to report a whole working week. On touch screens, press and hold.') ?></p>

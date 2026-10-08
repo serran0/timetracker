@@ -7,9 +7,9 @@ declare(strict_types=1);
  */
 
 define('TT_ROOT', dirname(__DIR__));
-const TT_VERSION = '0.2.2';
+const TT_VERSION = '0.2.3';
 /** Database schema number; bump together with a new step in src/Migrator.php. */
-const TT_SCHEMA = 3;
+const TT_SCHEMA = 4;
 
 require_once __DIR__ . '/helpers.php';
 
@@ -42,7 +42,7 @@ set_exception_handler(static function (Throwable $e): void {
     if (Config::get('app.debug', false)) {
         echo '<pre style="padding:1rem;white-space:pre-wrap">' . e((string) $e) . '</pre>';
     } else {
-        echo 'Something went wrong. Check the server error log for details.';
+        echo t('Something went wrong. Check the server error log for details.');
     }
     exit;
 });
@@ -70,6 +70,13 @@ session_set_cookie_params([
 ]);
 session_start();
 
+// Language: signed-in users get their own setting (applied in Auth::user()); visitors get the cookie or browser language.
+\TimeTracker\I18n::setLocale(\TimeTracker\I18n::detect());
+if (empty($_SESSION['uid']) && isset($_GET['lang']) && is_string($_GET['lang']) && \TimeTracker\I18n::isValid($_GET['lang'])) {
+    \TimeTracker\I18n::setLocale($_GET['lang']);
+    set_lang_cookie($_GET['lang']);
+}
+
 // Not installed yet? Everything except the setup page goes to the installer.
 if (!Config::isInstalled() && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'setup.php') {
     redirect('setup.php');
@@ -82,6 +89,6 @@ if (Config::isInstalled() && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'setup.
     } catch (Throwable $e) {
         error_log('Timetracker migration failed: ' . $e->getMessage());
         http_response_code(500);
-        exit('Timetracker could not upgrade the database: ' . e($e->getMessage()) . ' (the database user needs ALTER privileges).');
+        exit(e(t('Timetracker could not upgrade the database: {error} (the database user needs ALTER privileges).', ['error' => $e->getMessage()])));
     }
 }

@@ -11,7 +11,7 @@ use TimeTracker\View;
 header('Cache-Control: no-store');
 
 if (Config::isInstalled()) {
-    View::render('setup_done', ['title' => 'Setup', 'bodyClass' => 'auth']);
+    View::render('setup_done', ['title' => t('Setup'), 'bodyClass' => 'auth']);
     exit;
 }
 
@@ -27,7 +27,14 @@ $values = [
     'password2' => '',
     'currency' => 'EUR',
     'timezone' => date_default_timezone_get(),
+    'locale'   => TimeTracker\I18n::locale(),
 ];
+// The language picked in the form applies to this very response (checks and messages included).
+if (is_post() && isset($_POST['locale']) && is_string($_POST['locale']) && TimeTracker\I18n::isValid($_POST['locale'])) {
+    TimeTracker\I18n::setLocale($_POST['locale']);
+    set_lang_cookie($_POST['locale']);
+}
+$values['locale'] = TimeTracker\I18n::locale();
 $checks = Installer::environmentChecks();
 $dbChecks = [];
 $errors = [];
@@ -62,13 +69,16 @@ if (is_post()) {
             $errors[] = $e;
         }
         if ($values['password'] !== $values['password2']) {
-            $errors[] = 'The two passwords do not match.';
+            $errors[] = t('The two passwords do not match.');
         }
         if (!in_array($values['timezone'], DateTimeZone::listIdentifiers(), true)) {
-            $errors[] = 'Choose a valid timezone.';
+            $errors[] = t('Choose a valid timezone.');
+        }
+        if (!TimeTracker\I18n::isValid($values['locale'])) {
+            $values['locale'] = TimeTracker\I18n::DEFAULT;
         }
         if (!preg_match('/^[A-Za-z]{1,8}$/', $values['currency'])) {
-            $errors[] = 'Currency should be a short code such as EUR, SEK or USD.';
+            $errors[] = t('Currency should be a short code such as EUR, SEK or USD.');
         }
 
         if (!$errors && !Installer::hasFailure($checks) && !Installer::hasFailure($dbChecks)) {
@@ -78,20 +88,21 @@ if (is_post()) {
                     'password'     => $values['password'],
                     'display_name' => $values['display_name'],
                     'currency'     => strtoupper($values['currency']),
+                    'locale'       => $values['locale'],
                 ], $values['timezone']);
-                flash('success', 'Timetracker is installed. Sign in with the administrator account you just created.');
+                flash('success', t('Timetracker is installed. Sign in with the administrator account you just created.'));
                 redirect('login.php');
             } catch (Throwable $e) {
-                $errors[] = 'Installation failed: ' . $e->getMessage();
+                $errors[] = t('Installation failed: {error}', ['error' => $e->getMessage()]);
             }
         } elseif (!$errors) {
-            $errors[] = 'Installation was not started because some checks failed. Fix the items marked below and try again.';
+            $errors[] = t('Installation was not started because some checks failed. Fix the items marked below and try again.');
         }
     }
 }
 
 View::render('setup', [
-    'title'     => 'Setup',
+    'title'     => t('Setup'),
     'bodyClass' => 'auth',
     'values'    => $values,
     'checks'    => $checks,

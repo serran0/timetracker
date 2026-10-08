@@ -19,7 +19,7 @@ if (is_post()) {
     $id = (int) input('id') ?: null;
     $existing = $id ? Clients::find($uid, $id) : null;
     if ($id && !$existing) {
-        flash('error', 'Client not found.');
+        flash('error', t('Client not found.'));
         redirect('clients.php');
     }
 
@@ -42,7 +42,7 @@ if (is_post()) {
                         Actions::seedStandard($uid, $savedId);
                     }
                 }
-                flash('success', $id ? 'Client updated.' : 'Client created. Adjust its actions and rate multipliers on the Actions page.');
+                flash('success', $id ? t('Client updated.') : t('Client created. Adjust its actions and rate multipliers on the Actions page.'));
                 redirect($id ? 'clients.php' : 'actions.php?client=' . $savedId);
             }
             $form = $data + ['id' => $id];
@@ -50,13 +50,13 @@ if (is_post()) {
         case 'archive':
         case 'unarchive':
             Clients::setArchived($uid, $id, $op === 'archive');
-            flash('success', $op === 'archive' ? 'Client archived. Existing time reports are kept.' : 'Client restored.');
+            flash('success', $op === 'archive' ? t('Client archived. Existing time reports are kept.') : t('Client restored.'));
             redirect('clients.php');
         case 'delete':
             if (Clients::delete($uid, $id)) {
-                flash('success', 'Client deleted.');
+                flash('success', t('Client deleted.'));
             } else {
-                flash('error', 'This client has time reports and cannot be deleted. Archive it instead.');
+                flash('error', t('This client has time reports and cannot be deleted. Archive it instead.'));
             }
             redirect('clients.php');
     }
@@ -69,7 +69,7 @@ if ($form === null) {
 }
 
 View::render('clients', [
-    'title'   => 'Clients',
+    'title'   => t('Clients'),
     'active'  => 'clients',
     'user'    => $user,
     'clients' => Clients::all($uid),

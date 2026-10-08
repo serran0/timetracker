@@ -27,22 +27,30 @@ final class TextExporter
         $has = static fn(string $c): bool => isset($cols[$c]);
         $cur = $meta['currency'];
         $dur = static fn(int|float $m): string => ReportBuilder::formatDuration($m, $opts);
-        $dualDur = static fn(int|float $m): string => fmt_dur($m) . ' (' . fmt_dec($m) . ' h)';
+        $mark = $opts['decimal'];
+        $dualDur = static fn(int|float $m): string => fmt_dur($m) . ' (' . fmt_dec($m, 2, $mark) . ' h)';
+        $money = static fn(float $v): string => fmt_money($v, $cur, $mark);
         $rule = static fn(string $ch): string => str_repeat($ch, self::WIDTH);
         $L = [];
 
-        $L[] = 'TIME REPORT';
+        $L[] = mb_strtoupper(t('Time report'));
         $L[] = $rule('=');
-        $L[] = 'Consultant : ' . $meta['consultant'];
-        $L[] = 'Period     : ' . $meta['from'] . ' to ' . $meta['to'];
+        $info = [
+            [t('Consultant'), $meta['consultant']],
+            [t('Period'), t('{from} to {to}', ['from' => $meta['from'], 'to' => $meta['to']])],
+        ];
         if ($meta['filters'] !== '') {
-            $L[] = 'Filters    : ' . $meta['filters'];
+            $info[] = [t('Filters'), $meta['filters']];
         }
-        $L[] = 'Generated  : ' . date('Y-m-d H:i');
+        $info[] = [t('Generated'), date('Y-m-d H:i')];
+        $labelW = max(array_map(static fn($i) => mb_strlen($i[0]), $info));
+        foreach ($info as [$label, $value]) {
+            $L[] = $label . str_repeat(' ', $labelW - mb_strlen($label)) . ' : ' . $value;
+        }
         $L[] = '';
 
         if (!$entries) {
-            $L[] = 'No time reports found for this selection.';
+            $L[] = t('No time reports found for this selection.');
             return implode("\r\n", $L) . "\r\n";
         }
 
@@ -50,14 +58,14 @@ final class TextExporter
         $showTotals = !empty($opts['totals']);
 
         // One entry line from the ticked columns.
-        $line = static function (array $r) use ($has, $dur, $cur): array {
+        $line = static function (array $r) use ($has, $dur, $money, $cur, $mark): array {
             $parts = [];
             if ($has('start') && $has('end')) {
                 $parts[] = $r['start'] . '-' . $r['end'];
             } elseif ($has('start')) {
-                $parts[] = 'from ' . $r['start'];
+                $parts[] = t('from {time}', ['time' => $r['start']]);
             } elseif ($has('end')) {
-                $parts[] = 'until ' . $r['end'];
+                $parts[] = t('until {time}', ['time' => $r['end']]);
             }
             if ($has('hours')) {
                 $parts[] = str_pad($dur($r['minutes']), 6, ' ', STR_PAD_LEFT);
@@ -71,19 +79,19 @@ final class TextExporter
                 $who = $who !== '' ? $who . ' (' . $r['client_reference'] . ')' : (string) $r['client_reference'];
             }
             if ($has('action')) {
-                $who = $who !== '' ? $who . ' / ' . $r['action_name'] : $r['action_name'];
+                $who = $who !== '' ? $who . ' / ' . $r['action_label'] : $r['action_label'];
             }
             if ($who !== '') {
                 $parts[] = $who;
             }
             if ($has('billable')) {
-                $parts[] = $r['billable'] ? '[billable]' : '[non-billable]';
+                $parts[] = $r['billable'] ? '[' . t('billable') . ']' : '[' . t('non-billable') . ']';
             }
             if ($has('rate') && $r['effective_rate'] !== null) {
-                $parts[] = '@ ' . fmt_money($r['effective_rate'], $cur) . '/h';
+                $parts[] = '@ ' . $money($r['effective_rate']) . '/h';
             }
             if ($has('amount') && $r['amount'] !== null) {
-                $parts[] = '[' . fmt_money($r['amount'], $cur) . ']';
+                $parts[] = '[' . $money($r['amount']) . ']';
             }
             return $parts;
         };
@@ -94,8 +102,8 @@ final class TextExporter
             if ($showHeadings) {
                 $heading = array_filter([
                     $has('date') ? $d->format('Y-m-d') : '',
-                    $has('weekday') ? $d->format('l') : '',
-                    $has('week') ? '(week ' . $d->format('W') . ')' : '',
+                    $has('weekday') ? date_l10n($d, 'l') : '',
+                    $has('week') ? '(' . t('week {n}', ['n' => $d->format('W')]) . ')' : '',
                 ]);
                 $L[] = implode(' ', $heading);
                 $L[] = $rule('-');
@@ -117,7 +125,7 @@ final class TextExporter
                 }
             }
             if ($showHeadings && $showTotals && $has('hours')) {
-                $L[] = $indent . 'Day total: ' . $dualDur($dayMin);
+                $L[] = $indent . t('Day total: {hours}', ['hours' => $dualDur($dayMin)]);
             }
             if ($showHeadings) {
                 $L[] = '';
@@ -135,10 +143,10 @@ final class TextExporter
             // Per-client / per-action summaries, only when that column is ticked and there is a figure to show.
             $groups = [];
             if ($has('client')) {
-                $groups['SUMMARY BY CLIENT'] = $sum['by_client'];
+                $groups[mb_strtoupper(t('Summary by client'))] = $sum['by_client'];
             }
             if ($has('action')) {
-                $groups['SUMMARY BY ACTION'] = $sum['by_action'];
+                $groups[mb_strtoupper(t('Summary by action'))] = $sum['by_action'];
             }
             if ($showHours || $showAmount) {
                 foreach ($groups as $title => $items) {
@@ -150,9 +158,9 @@ final class TextExporter
                             $cells[] = str_pad($dualDur($it['minutes']), 18);
                         }
                         if ($showAmount && $it['amount'] > 0) {
-                            $cells[] = fmt_money($it['amount'], $cur);
+                            $cells[] = $money($it['amount']);
                         }
-                        $L[] = sprintf('  %-30s %s', mb_strimwidth($it['name'], 0, 30, '…'), rtrim(implode('  ', $cells)));
+                        $L[] = sprintf('  %-30s %s', mb_strimwidth($it['label'] ?? $it['name'], 0, 30, '…'), rtrim(implode('  ', $cells)));
                     }
                     $L[] = '';
                 }
@@ -160,15 +168,18 @@ final class TextExporter
 
             $totals = [];
             if ($showHours) {
-                $totals[] = 'TOTAL HOURS    : ' . $dualDur($sum['minutes']);
-                $totals[] = 'BILLABLE HOURS : ' . $dualDur($sum['billable_minutes']);
+                $totals[] = [mb_strtoupper(t('Total hours')), $dualDur($sum['minutes'])];
+                $totals[] = [mb_strtoupper(t('Billable hours')), $dualDur($sum['billable_minutes'])];
             }
             if ($showAmount) {
-                $totals[] = 'TOTAL AMOUNT   : ' . fmt_money($sum['amount'], $cur);
+                $totals[] = [mb_strtoupper(t('Total amount')), $money($sum['amount'])];
             }
             if ($totals) {
                 $L[] = $rule('=');
-                array_push($L, ...$totals);
+                $w = max(array_map(static fn($x) => mb_strlen($x[0]), $totals));
+                foreach ($totals as [$label, $value]) {
+                    $L[] = $label . str_repeat(' ', $w - mb_strlen($label)) . ' : ' . $value;
+                }
             }
         }
 

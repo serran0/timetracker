@@ -70,6 +70,7 @@ final class Entries
         $r['start'] = minutes_to_hhmm($s);
         $r['end'] = minutes_to_hhmm($e);
         $r['minutes'] = $minutes;
+        $r['action_label'] = \TimeTracker\I18n::actionLabel((string) ($r['action_name'] ?? ''));
         $r['gross_minutes'] = $gross;
         $r['break_minutes'] = $break;
         $r['billable'] = $billable;
@@ -90,13 +91,13 @@ final class Entries
             $sum['amount'] += (float) $r['amount'];
 
             $c = &$sum['by_client'][$r['client_id']];
-            $c ??= ['name' => $r['client_name'], 'color' => $r['client_color'], 'minutes' => 0, 'amount' => 0.0];
+            $c ??= ['name' => $r['client_name'], 'label' => $r['client_name'], 'color' => $r['client_color'], 'minutes' => 0, 'amount' => 0.0];
             $c['minutes'] += $r['minutes'];
             $c['amount'] += (float) $r['amount'];
             unset($c);
 
             $a = &$sum['by_action'][$r['action_name']]; // grouped by name across clients
-            $a ??= ['name' => $r['action_name'], 'color' => $r['action_color'], 'minutes' => 0, 'amount' => 0.0];
+            $a ??= ['name' => $r['action_name'], 'label' => $r['action_label'], 'color' => $r['action_color'], 'minutes' => 0, 'amount' => 0.0];
             $a['minutes'] += $r['minutes'];
             $a['amount'] += (float) $r['amount'];
             unset($a);
@@ -127,19 +128,19 @@ final class Entries
 
         $date = valid_date((string) ($in['date'] ?? ''));
         if (!$date) {
-            $errors[] = 'Date is not valid.';
+            $errors[] = t('Date is not valid.');
         }
 
         $start = parse_time_minutes((string) ($in['start'] ?? ''));
         $end = parse_time_minutes((string) ($in['end'] ?? ''));
         if ($start === null || $start >= 1440) {
-            $errors[] = 'Start time is not valid (use HH:MM).';
+            $errors[] = t('Start time is not valid (use HH:MM).');
         }
         if ($end === null) {
-            $errors[] = 'End time is not valid (use HH:MM, 24:00 means midnight).';
+            $errors[] = t('End time is not valid (use HH:MM, 24:00 means midnight).');
         }
         if ($start !== null && $end !== null && $end <= $start) {
-            $errors[] = 'End time must be after the start time.';
+            $errors[] = t('End time must be after the start time.');
         }
 
         // Break: explicit value wins; if not sent, keep the stored one (edit) or derive it from the lunch window (new).
@@ -151,33 +152,33 @@ final class Entries
             $break = 0;
         } else {
             $break = 0;
-            $errors[] = 'Break must be a whole number of minutes.';
+            $errors[] = t('Break must be a whole number of minutes.');
         }
         if ($start !== null && $end !== null && $end > $start && $break >= $end - $start) {
-            $errors[] = 'The break must be shorter than the time span.';
+            $errors[] = t('The break must be shorter than the time span.');
         }
 
         $clientId = (int) ($in['client_id'] ?? 0);
         $client = $clientId ? Clients::find($uid, $clientId) : null;
         if (!$client) {
-            $errors[] = 'Choose a client.';
+            $errors[] = t('Choose a client.');
         } elseif ($client['is_archived'] && (!$existing || (int) $existing['client_id'] !== $clientId)) {
-            $errors[] = 'That client is archived.';
+            $errors[] = t('That client is archived.');
         }
 
         $actionId = (int) ($in['action_id'] ?? 0);
         $action = $actionId ? Actions::find($uid, $actionId) : null;
         if (!$action) {
-            $errors[] = 'Choose an action.';
+            $errors[] = t('Choose an action.');
         } elseif ($client && (int) $action['client_id'] !== $clientId) {
-            $errors[] = 'That action does not belong to the selected client.';
+            $errors[] = t('That action does not belong to the selected client.');
         } elseif ($action['is_archived'] && (!$existing || (int) $existing['action_id'] !== $actionId)) {
-            $errors[] = 'That action is archived.';
+            $errors[] = t('That action is archived.');
         }
 
         $desc = trim((string) ($in['description'] ?? ''));
         if (mb_strlen($desc) > 5000) {
-            $errors[] = 'Description is too long (max 5000 characters).';
+            $errors[] = t('Description is too long (max 5000 characters).');
         }
 
         $data = [

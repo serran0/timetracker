@@ -38,6 +38,7 @@ final class Auth
             return null;
         }
         $_SESSION['last_activity'] = time();
+        \TimeTracker\I18n::setLocale((string) ($user['locale'] ?? 'en'));
         // Each user works in their own timezone ("today", "now" markers).
         if (in_array($user['timezone'], \DateTimeZone::listIdentifiers(), true)) {
             date_default_timezone_set($user['timezone']);
@@ -71,7 +72,7 @@ final class Auth
         $user = self::require();
         if (!$user['is_admin']) {
             http_response_code(403);
-            exit('Administrator access required.');
+            exit(t('Administrator access required.'));
         }
         return $user;
     }
@@ -91,7 +92,7 @@ final class Auth
         $username = substr($username, 0, 64);
 
         if (self::isLocked($username, $ip)) {
-            return ['ok' => false, 'error' => 'Too many failed attempts. Please wait ' . self::LOCK_MINUTES . ' minutes and try again.'];
+            return ['ok' => false, 'error' => t('Too many failed attempts. Please wait {min} minutes and try again.', ['min' => self::LOCK_MINUTES])];
         }
 
         $user = Db::one('SELECT * FROM users WHERE username = ?', [$username]);
@@ -101,10 +102,11 @@ final class Auth
 
         if (!$valid) {
             Db::run('INSERT INTO login_attempts (username, ip) VALUES (?, ?)', [$username, $ip]);
-            return ['ok' => false, 'error' => 'Invalid username or password.'];
+            return ['ok' => false, 'error' => t('Invalid username or password.')];
         }
 
         session_regenerate_id(true);
+        set_lang_cookie(\TimeTracker\I18n::isValid((string) ($user['locale'] ?? '')) ? $user['locale'] : 'en');
         $_SESSION['uid'] = (int) $user['id'];
         $_SESSION['last_activity'] = time();
         unset($_SESSION['_csrf']);

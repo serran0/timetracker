@@ -29,7 +29,7 @@ if (is_post() && $client) {
     $id = (int) input('id') ?: null;
     $existing = $id ? Actions::find($uid, $id) : null;
     if ($id && (!$existing || (int) $existing['client_id'] !== (int) $client['id'])) {
-        flash('error', 'Action not found.');
+        flash('error', t('Action not found.'));
         redirect($here);
     }
     if (in_array($op, ['archive', 'unarchive', 'delete'], true) && !$id) {
@@ -38,10 +38,11 @@ if (is_post() && $client) {
 
     switch ($op) {
         case 'save':
+            $_POST['name'] = Actions::nameToStore($existing, (string) ($_POST['name'] ?? ''));
             [$data, $errors] = Actions::validate($uid, (int) $client['id'], $_POST, $id);
             if (!$errors) {
                 Actions::save($uid, (int) $client['id'], $data, $id);
-                flash('success', $id ? 'Action updated.' : 'Action created.');
+                flash('success', $id ? t('Action updated.') : t('Action created.'));
                 redirect($here);
             }
             $form = $data + ['id' => $id];
@@ -49,13 +50,13 @@ if (is_post() && $client) {
         case 'archive':
         case 'unarchive':
             Actions::setArchived($uid, $id, $op === 'archive');
-            flash('success', $op === 'archive' ? 'Action archived. Existing time reports are kept.' : 'Action restored.');
+            flash('success', $op === 'archive' ? t('Action archived. Existing time reports are kept.') : t('Action restored.'));
             redirect($here);
         case 'delete':
             if (Actions::delete($uid, $id)) {
-                flash('success', 'Action deleted.');
+                flash('success', t('Action deleted.'));
             } else {
-                flash('error', 'This action is used by time reports and cannot be deleted. Archive it instead.');
+                flash('error', t('This action is used by time reports and cannot be deleted. Archive it instead.'));
             }
             redirect($here);
         case 'standard':
@@ -65,15 +66,15 @@ if (is_post() && $client) {
                     Actions::save($uid, (int) $client['id'], ['name' => $name, 'color' => $color, 'rate_multiplier' => $mult, 'is_billable' => $billable]);
                 }
             }
-            flash('success', 'Standard actions added (existing ones were left alone).');
+            flash('success', t('Standard actions added (existing ones were left alone).'));
             redirect($here);
         case 'copy':
             $source = Clients::find($uid, (int) input('from'));
             if (!$source || (int) $source['id'] === (int) $client['id']) {
-                flash('error', 'Choose another client to copy from.');
+                flash('error', t('Choose another client to copy from.'));
             } else {
                 $n = Actions::copyFrom($uid, (int) $source['id'], (int) $client['id']);
-                flash('success', $n ? "Copied $n action(s) from {$source['name']}." : 'Nothing to copy: this client already has all of those actions.');
+                flash('success', $n ? t('Copied {n} action(s) from {client}.', ['n' => $n, 'client' => $source['name']]) : t('Nothing to copy: this client already has all of those actions.'));
             }
             redirect($here);
     }
@@ -86,10 +87,14 @@ if ($form === null) {
         $row = null;
     }
     $form = $row ?? ['id' => null, 'name' => '', 'color' => '#10b981', 'rate_multiplier' => '1.00', 'is_billable' => 1];
+    // A standard action is shown under its translated name; saving that text unchanged keeps the stored name.
+    if ($row) {
+        $form['name'] = action_label($row['name']);
+    }
 }
 
 View::render('actions', [
-    'title'   => 'Actions',
+    'title'   => t('Actions'),
     'active'  => 'actions',
     'user'    => $user,
     'clients' => $clients,

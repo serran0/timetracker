@@ -60,7 +60,7 @@ final class Calendar
                     'to'       => $last->modify('sunday this week'),
                     'date'     => $date,
                     'month'    => $first,
-                    'title'    => $first->format('F Y'),
+                    'title'    => ucf(date_l10n($first, 'F Y')),
                     'subtitle' => '',
                     'prev'     => ['date' => $first->modify('-1 month')->format('Y-m-d')],
                     'next'     => ['date' => $first->modify('+1 month')->format('Y-m-d')],
@@ -72,8 +72,8 @@ final class Calendar
                     'from'     => $mon,
                     'to'       => $sun,
                     'date'     => $date,
-                    'title'    => 'Week ' . $mon->format('W'),
-                    'subtitle' => $mon->format('j M') . ' – ' . $sun->format('j M Y'),
+                    'title'    => t('Week {n}', ['n' => $mon->format('W')]),
+                    'subtitle' => date_l10n($mon, 'j M') . ' – ' . date_l10n($sun, 'j M Y'),
                     'prev'     => ['date' => $mon->modify('-7 days')->format('Y-m-d')],
                     'next'     => ['date' => $mon->modify('+7 days')->format('Y-m-d')],
                 ];
@@ -82,8 +82,8 @@ final class Calendar
                     'from'     => $date,
                     'to'       => $date,
                     'date'     => $date,
-                    'title'    => $date->format('l j F Y'),
-                    'subtitle' => 'Week ' . $date->format('W'),
+                    'title'    => ucf(date_l10n($date, 'l j F Y')),
+                    'subtitle' => t('Week {n}', ['n' => $date->format('W')]),
                     'prev'     => ['date' => $date->modify('-1 day')->format('Y-m-d')],
                     'next'     => ['date' => $date->modify('+1 day')->format('Y-m-d')],
                 ];
@@ -100,12 +100,12 @@ final class Calendar
                 if ($wholeMonth) {
                     $prev = [$from->modify('-1 month'), $from->modify('-1 month')->modify('last day of this month')];
                     $next = [$from->modify('+1 month'), $from->modify('+1 month')->modify('last day of this month')];
-                    $title = $from->format('F Y');
+                    $title = ucf(date_l10n($from, 'F Y'));
                 } else {
                     $span = $from->diff($to)->days + 1;
                     $prev = [$from->modify("-$span days"), $to->modify("-$span days")];
                     $next = [$from->modify("+$span days"), $to->modify("+$span days")];
-                    $title = $from->format('j M Y') . ' – ' . $to->format('j M Y');
+                    $title = date_l10n($from, 'j M Y') . ' – ' . date_l10n($to, 'j M Y');
                 }
                 return [
                     'from'     => $from,

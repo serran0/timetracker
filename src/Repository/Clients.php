@@ -41,16 +41,16 @@ final class Clients
         $errors = [];
         $name = trim((string) ($in['name'] ?? ''));
         if ($name === '' || mb_strlen($name) > 160) {
-            $errors[] = 'Name is required (max 160 characters).';
+            $errors[] = t('Name is required (max 160 characters).');
         } elseif (Db::value('SELECT 1 FROM clients WHERE user_id = ? AND name = ? AND id <> ?', [$uid, $name, $id ?? 0])) {
-            $errors[] = 'You already have a client with that name.';
+            $errors[] = t('You already have a client with that name.');
         }
         $rate = trim((string) ($in['hourly_rate'] ?? ''));
         $rate = str_replace(',', '.', $rate);
         if ($rate === '') {
             $rate = null;
         } elseif (!is_numeric($rate) || (float) $rate < 0 || (float) $rate > 99999999) {
-            $errors[] = 'Hourly rate must be a positive number.';
+            $errors[] = t('Hourly rate must be a positive number.');
             $rate = null;
         } else {
             $rate = round((float) $rate, 2);
