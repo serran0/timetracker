@@ -27,7 +27,8 @@ final class Entries
             array_push($params, ...$filter['clients']);
         }
         if (!empty($filter['actions'])) {
-            $sql .= ' AND e.action_id IN (' . Db::placeholders($filter['actions']) . ')';
+            // Actions are per client, so the filter matches by name ("all Overtime").
+            $sql .= ' AND a.name IN (' . Db::placeholders($filter['actions']) . ')';
             array_push($params, ...$filter['actions']);
         }
         if (($filter['billable'] ?? '') === '1') {
@@ -38,6 +39,16 @@ final class Entries
         $sql .= ' ORDER BY e.entry_date, e.start_time, e.id';
 
         return array_map([self::class, 'decorate'], Db::all($sql, $params));
+    }
+
+    /** Number of reports per date in a range, regardless of filters (date => count). */
+    public static function dayCounts(int $uid, string $from, string $to): array
+    {
+        $out = [];
+        foreach (Db::all('SELECT entry_date, COUNT(*) AS n FROM time_entries WHERE user_id = ? AND entry_date BETWEEN ? AND ? GROUP BY entry_date', [$uid, $from, $to]) as $r) {
+            $out[$r['entry_date']] = (int) $r['n'];
+        }
+        return $out;
     }
 
     public static function find(int $uid, int $id): ?array
@@ -84,7 +95,7 @@ final class Entries
             $c['amount'] += (float) $r['amount'];
             unset($c);
 
-            $a = &$sum['by_action'][$r['action_id']];
+            $a = &$sum['by_action'][$r['action_name']]; // grouped by name across clients
             $a ??= ['name' => $r['action_name'], 'color' => $r['action_color'], 'minutes' => 0, 'amount' => 0.0];
             $a['minutes'] += $r['minutes'];
             $a['amount'] += (float) $r['amount'];
@@ -158,6 +169,8 @@ final class Entries
         $action = $actionId ? Actions::find($uid, $actionId) : null;
         if (!$action) {
             $errors[] = 'Choose an action.';
+        } elseif ($client && (int) $action['client_id'] !== $clientId) {
+            $errors[] = 'That action does not belong to the selected client.';
         } elseif ($action['is_archived'] && (!$existing || (int) $existing['action_id'] !== $actionId)) {
             $errors[] = 'That action is archived.';
         }

@@ -3,7 +3,7 @@
 /** @var array $range */
 /** @var array $filters */
 /** @var array $clients */
-/** @var array $actions */
+/** @var array $actionNames */
 /** @var array $presets */
 $hasFilter = $filters['clients'] || $filters['actions'] || $filters['billable'] !== '';
 $exportUrl = url('export.php', [
@@ -52,11 +52,11 @@ $exportUrl = url('export.php', [
     <details class="multi fb-field">
         <summary>Actions<?php if ($filters['actions']): ?> <span class="count"><?= count($filters['actions']) ?></span><?php endif; ?></summary>
         <div class="multi-menu">
-            <?php foreach ($actions as $a): ?>
-                <label class="check-label"><input type="checkbox" name="action[]" value="<?= (int) $a['id'] ?>" <?= in_array((int) $a['id'], $filters['actions'], true) ? 'checked' : '' ?>>
-                    <span class="dot" style="background:<?= e($a['color']) ?>"></span><?= e($a['name']) ?><?= $a['is_archived'] ? ' <small class="muted">(archived)</small>' : '' ?></label>
+            <?php foreach ($actionNames as $a): ?>
+                <label class="check-label"><input type="checkbox" name="action[]" value="<?= e($a['name']) ?>" <?= in_array($a['name'], $filters['actions'], true) ? 'checked' : '' ?>>
+                    <span class="dot" style="background:<?= e($a['color']) ?>"></span><?= e($a['name']) ?></label>
             <?php endforeach; ?>
-            <?php if (!$actions): ?><span class="muted">No actions</span><?php endif; ?>
+            <?php if (!$actionNames): ?><span class="muted">No actions</span><?php endif; ?>
         </div>
     </details>
 

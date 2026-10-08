@@ -126,6 +126,13 @@ legend { font-weight: 600; font-size: .88rem; padding: 0; margin-bottom: 6px; }
 .icon-btn { background: none; border: 0; font-size: 1.4rem; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; }
 .icon-btn:hover { background: var(--surface-2); color: var(--text); }
 
+.client-picker { display: flex; align-items: flex-end; gap: 10px; padding: 12px 16px; }
+.client-picker label { margin: 0; min-width: 260px; }
+.client-picker .dot { margin: 0 0 14px; }
+.card-sub { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
+.card-sub h3 { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+.inline-form { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.inline-form select { width: auto; padding: 5px 9px; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; flex: none; }
 .badge { display: inline-block; font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); vertical-align: middle; }
 .tag { display: inline-block; font-size: .78rem; font-weight: 500; padding: 1px 9px; border-radius: 999px; margin-left: 6px; color: var(--text);
@@ -285,6 +292,25 @@ dialog.dialog form { padding: 20px 22px 18px; }
 .dialog-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .dialog-head h2 { margin: 0; font-size: 1.2rem; }
 .dialog-actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+dialog.dialog-wide { width: min(760px, calc(100% - 24px)); }
+.days { border: 1px solid var(--border); border-radius: 10px; margin: 2px 0 14px; background: var(--surface-2); }
+.days-head, .dlg-row { display: grid; grid-template-columns: 28px minmax(150px, 1.6fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(80px, 1fr) 62px 28px; gap: 8px; align-items: center; padding: 6px 10px; }
+.days-head { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; padding-bottom: 2px; }
+.days:not(.multi) .col-inc, .days:not(.multi) [data-remove] { visibility: hidden; }
+.days.editing [data-remove], .days.editing .col-inc { display: none; }
+.days.editing .days-head, .days.editing .dlg-row { grid-template-columns: minmax(150px, 1.6fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(80px, 1fr) 62px; }
+.days.editing .days-head .col-inc { display: none; }
+.dlg-row { border-top: 1px solid var(--border); position: relative; }
+.dlg-row input[type=text], .dlg-row input[type=date], .dlg-row input[type=number] { padding: 6px 8px; font-size: .9rem; background: var(--surface); }
+.dlg-row .col-date { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dlg-row .dow { color: var(--muted); font-size: .8rem; width: 2.4em; flex: none; }
+.dlg-row .col-net { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.dlg-row .col-net.bad { color: var(--danger); }
+.dlg-row.off > :not(.col-inc):not([data-remove]):not(.row-note) { opacity: .45; }
+.row-note { grid-column: 2 / -1; font-size: .78rem; color: var(--warn); margin-top: -2px; }
+.row-note:empty { display: none; }
+.days-foot { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.days-total { margin-left: auto; font-size: .85rem; }
 .break-row { display: flex; align-items: flex-end; gap: 12px; }
 .break-row label { flex: 1; margin-bottom: 10px; }
 .break-row .btn { margin-bottom: 10px; }
@@ -383,6 +409,19 @@ body.auth .container > .alert { width: 100%; max-width: 400px; }
     .kpis { grid-template-columns: repeat(2, 1fr); }
     .card { padding: 14px; }
 }
+@media (max-width: 640px) {
+    .days-head { display: none; }
+    .dlg-row, .days.editing .dlg-row { grid-template-columns: 24px 1fr 1fr 1fr 52px; grid-template-areas: "inc date date date rm" "gap start end brk net"; row-gap: 6px; }
+    .dlg-row input[type=text], .dlg-row input[type=number] { padding: 6px 4px; text-align: center; min-width: 0; }
+    .dlg-row .col-inc { grid-area: inc; }
+    .dlg-row .col-date { grid-area: date; }
+    .dlg-row [data-remove] { grid-area: rm; }
+    .dlg-row [data-f="start"] { grid-area: start; }
+    .dlg-row [data-f="end"] { grid-area: end; }
+    .dlg-row [data-f="break"] { grid-area: brk; }
+    .dlg-row .col-net { grid-area: net; }
+    .row-note { grid-column: 1 / -1; }
+}
 @media (max-width: 420px) {
     .segmented a { padding: 6px 10px; }
 }
@@ -390,3 +429,6 @@ body.auth .container > .alert { width: 100%; max-width: 400px; }
     .topbar, .filterbar, .cal-tools, .footer, .hint { display: none !important; }
     body { background: #fff; }
 }
+
+/* Time inputs use a datalist for suggestions; hide Chrome's dropdown arrow, which would clip narrow fields. */
+input[type=text][list]::-webkit-calendar-picker-indicator { display: none !important; opacity: 0; }

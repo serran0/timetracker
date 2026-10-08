@@ -29,7 +29,7 @@ if ($to < $from) {
 $filters = Calendar::filters($_GET);
 $opts = ReportBuilder::options($_GET);
 $clients = Clients::selectable($uid);
-$actions = Actions::selectable($uid);
+$actions = Actions::names($uid); // action filter is by name across clients
 
 $entries = Entries::search($uid, $from->format('Y-m-d'), $to->format('Y-m-d'), $filters);
 
@@ -43,9 +43,10 @@ if (isset($_GET['download'])) {
         static fn($r) => $r['name'],
         array_filter($rows, static fn($r) => in_array((int) $r['id'], $ids, true))
     ));
+    $actionNamesText = implode(', ', $filters['actions']);
     $filterDesc = array_filter([
         $filters['clients'] ? 'clients: ' . $names($clients, $filters['clients']) : '',
-        $filters['actions'] ? 'actions: ' . $names($actions, $filters['actions']) : '',
+        $filters['actions'] ? 'actions: ' . $actionNamesText : '',
         $filters['billable'] === '1' ? 'billable only' : ($filters['billable'] === '0' ? 'non-billable only' : ''),
     ]);
     $meta = [

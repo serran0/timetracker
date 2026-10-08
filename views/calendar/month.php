@@ -23,9 +23,19 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
         <div class="wk-total">Week</div>
     </div>
     <?php foreach ($weeks as $days): ?>
-        <?php $weekMin = 0; ?>
+        <?php
+        $weekMin = 0;
+        // Data for "Report whole working week": one row per day with working hours.
+        $weekData = array_map(static fn($wd) => [
+            'date'  => $wd->format('Y-m-d'),
+            'label' => $wd->format('D j M'),
+            'wh'    => implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $hours[(int) $wd->format('N')])),
+            'n'     => $dayCounts[$wd->format('Y-m-d')] ?? 0,
+        ], $days);
+        ?>
         <div class="month-row">
-            <a class="wk-col" href="<?= e($link(['view' => 'week', 'date' => $days[0]->format('Y-m-d')])) ?>" title="Open week <?= e($days[0]->format('W')) ?>"><?= e($days[0]->format('W')) ?></a>
+            <a class="wk-col" href="<?= e($link(['view' => 'week', 'date' => $days[0]->format('Y-m-d')])) ?>" title="Open week <?= e($days[0]->format('W')) ?> – right-click for more"
+               data-week="<?= e(json_encode($weekData, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)) ?>" data-week-no="<?= e($days[0]->format('W')) ?>"><?= e($days[0]->format('W')) ?></a>
             <?php foreach ($days as $d): ?>
                 <?php
                 $ds = $d->format('Y-m-d');
@@ -67,4 +77,4 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
         </div>
     <?php endforeach; ?>
 </div>
-<p class="hint">Right-click a day to create a time report. On touch screens, press and hold a day.</p>
+<p class="hint">Right-click a day to create a time report, or right-click a week number to report a whole working week. On touch screens, press and hold.</p>

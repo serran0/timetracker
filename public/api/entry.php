@@ -49,6 +49,52 @@ if ($op === 'delete') {
     json_out(['ok' => true]);
 }
 
+if ($op === 'save_many') {
+    // One client/action/description, several days: validate everything first, then insert all-or-nothing.
+    $rows = $body['entries'] ?? null;
+    if (!is_array($rows) || !$rows || count($rows) > 62) {
+        json_out(['ok' => false, 'errors' => ['Add between 1 and 62 days.']], 400);
+    }
+    $all = [];
+    $errors = [];
+    foreach (array_values($rows) as $i => $row) {
+        if (!is_array($row)) {
+            $errors[] = 'Row ' . ($i + 1) . ' is not valid.';
+            continue;
+        }
+        $in = [
+            'date'        => $row['date'] ?? '',
+            'start'       => $row['start'] ?? '',
+            'end'         => $row['end'] ?? '',
+            'client_id'   => $body['client_id'] ?? 0,
+            'action_id'   => $body['action_id'] ?? 0,
+            'description' => $body['description'] ?? '',
+        ];
+        if (array_key_exists('break', $row)) {
+            $in['break'] = $row['break'];
+        }
+        [$data, $rowErrors] = Entries::validate($uid, $in, null, $user);
+        foreach ($rowErrors as $err) {
+            $label = (string) ($row['date'] ?? '') !== '' ? (string) $row['date'] : 'Row ' . ($i + 1);
+            $errors[] = count($rows) > 1 ? $label . ': ' . $err : $err;
+        }
+        $all[] = $data;
+    }
+    if ($errors) {
+        json_out(['ok' => false, 'errors' => array_values(array_unique($errors))], 422);
+    }
+    $pdo = TimeTracker\Db::pdo();
+    $pdo->beginTransaction();
+    try {
+        $ids = array_map(static fn(array $d): int => Entries::create($uid, $d), $all);
+        $pdo->commit();
+    } catch (Throwable $t) {
+        $pdo->rollBack();
+        throw $t;
+    }
+    json_out(['ok' => true, 'ids' => $ids]);
+}
+
 if ($op !== 'save') {
     json_out(['ok' => false, 'errors' => ['Unknown operation.']], 400);
 }

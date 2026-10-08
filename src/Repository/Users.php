@@ -8,15 +8,6 @@ use TimeTracker\Db;
 
 final class Users
 {
-    public const DEFAULT_ACTIONS = [
-        // name, color, rate multiplier, billable
-        ['Normal working time', '#10b981', 1.00, 1],
-        ['Overtime',            '#f59e0b', 1.50, 1],
-        ['Emergency / call-out', '#ef4444', 2.00, 1],
-        ['Travel',              '#0ea5e9', 1.00, 1],
-        ['Internal / non-billable', '#94a3b8', 1.00, 0],
-    ];
-
     public static function all(): array
     {
         return Db::all('SELECT id, username, display_name, is_admin, is_active, timezone, created_at, last_login_at FROM users ORDER BY username');
@@ -43,7 +34,7 @@ final class Users
         return null;
     }
 
-    /** Creates the user and gives them default action templates and working hours. */
+    /** Creates the user with default working hours and lunch window (actions are created per client). */
     public static function create(string $username, string $password, string $displayName, bool $admin, string $timezone, string $currency = 'EUR', ?\PDO $pdo = null): int
     {
         $pdo ??= Db::pdo();
@@ -56,10 +47,6 @@ final class Users
 
     public static function seedDefaults(int $userId, \PDO $pdo): void
     {
-        $a = $pdo->prepare('INSERT INTO actions (user_id, name, color, rate_multiplier, is_billable, sort_order) VALUES (?,?,?,?,?,?)');
-        foreach (self::DEFAULT_ACTIONS as $i => [$name, $color, $mult, $billable]) {
-            $a->execute([$userId, $name, $color, $mult, $billable, $i]);
-        }
         $pdo->prepare('UPDATE users SET lunch_start = ?, lunch_end = ? WHERE id = ?')->execute(['12:00:00', '13:00:00', $userId]);
         $w = $pdo->prepare('INSERT INTO working_hours (user_id, weekday, start_time, end_time) VALUES (?,?,?,?)');
         for ($d = 1; $d <= 5; $d++) {

@@ -56,7 +56,7 @@ $toStr = $to->format('Y-m-d');
                 <fieldset>
                     <legend>Actions <small class="muted">(none ticked = all)</small></legend>
                     <?php foreach ($actions as $a): ?>
-                        <label class="check-label"><input type="checkbox" name="action[]" value="<?= (int) $a['id'] ?>" <?= in_array((int) $a['id'], $filters['actions'], true) ? 'checked' : '' ?>>
+                        <label class="check-label"><input type="checkbox" name="action[]" value="<?= e($a['name']) ?>" <?= in_array($a['name'], $filters['actions'], true) ? 'checked' : '' ?>>
                             <span class="dot" style="background:<?= e($a['color']) ?>"></span><?= e($a['name']) ?></label>
                     <?php endforeach; ?>
                 </fieldset>

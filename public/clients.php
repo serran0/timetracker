@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../src/bootstrap.php';
 
 use TimeTracker\Auth;
+use TimeTracker\Repository\Actions;
 use TimeTracker\Repository\Clients;
 use TimeTracker\View;
 
@@ -30,9 +31,19 @@ if (is_post()) {
         case 'save':
             [$data, $errors] = Clients::validate($uid, $_POST, $id);
             if (!$errors) {
-                Clients::save($uid, $data, $id);
-                flash('success', $id ? 'Client updated.' : 'Client created.');
-                redirect('clients.php');
+                $savedId = Clients::save($uid, $data, $id);
+                if (!$id) {
+                    // Every client has its own actions: start from the standard set, a copy of another client, or nothing.
+                    $seed = input('seed', 'standard');
+                    $source = str_starts_with($seed, 'copy:') ? Clients::find($uid, (int) substr($seed, 5)) : null;
+                    if ($source) {
+                        Actions::copyFrom($uid, (int) $source['id'], $savedId);
+                    } elseif ($seed !== 'none') {
+                        Actions::seedStandard($uid, $savedId);
+                    }
+                }
+                flash('success', $id ? 'Client updated.' : 'Client created. Adjust its actions and rate multipliers on the Actions page.');
+                redirect($id ? 'clients.php' : 'actions.php?client=' . $savedId);
             }
             $form = $data + ['id' => $id];
             break;

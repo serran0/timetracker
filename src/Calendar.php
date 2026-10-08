@@ -22,7 +22,10 @@ final class Calendar
         )));
         return [
             'clients'  => $ids($q['client'] ?? []),
-            'actions'  => $ids($q['action'] ?? []),
+            'actions'  => array_values(array_unique(array_filter(
+                array_map(static fn($v) => is_string($v) ? trim($v) : '', is_array($q['action'] ?? null) ? $q['action'] : []),
+                static fn(string $v): bool => $v !== '' && mb_strlen($v) <= 120
+            ))),
             'billable' => in_array($q['billable'] ?? '', ['0', '1'], true) ? $q['billable'] : '',
             'color'    => ($q['color'] ?? '') === 'action' ? 'action' : 'client',
         ];

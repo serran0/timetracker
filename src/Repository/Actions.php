@@ -6,22 +6,44 @@ namespace TimeTracker\Repository;
 use TimeTracker\Db;
 
 /**
- * "Actions" are the time action templates: normal working time, overtime, emergency, ...
+ * "Actions" are the time action templates (normal working time, overtime, emergency, ...).
+ * Every action belongs to one client, so each client can have its own set and rate multipliers.
  */
 final class Actions
 {
-    public static function all(int $uid): array
+    /** name, colour, rate multiplier, billable */
+    public const STANDARD = [
+        ['Normal working time',     '#10b981', 1.00, 1],
+        ['Overtime',                '#f59e0b', 1.50, 1],
+        ['Emergency / call-out',    '#ef4444', 2.00, 1],
+        ['Travel',                  '#0ea5e9', 1.00, 1],
+        ['Internal / non-billable', '#94a3b8', 1.00, 0],
+    ];
+
+    /** All actions of one client, with usage counts. */
+    public static function forClient(int $uid, int $clientId): array
     {
         return Db::all(
             'SELECT a.*, (SELECT COUNT(*) FROM time_entries e WHERE e.action_id = a.id) AS entry_count
-             FROM actions a WHERE a.user_id = ? ORDER BY a.is_archived, a.sort_order, a.name',
+             FROM actions a WHERE a.user_id = ? AND a.client_id = ? ORDER BY a.is_archived, a.sort_order, a.name',
+            [$uid, $clientId]
+        );
+    }
+
+    /** Every action of the user (with its client id) – used by the report dialog. */
+    public static function selectable(int $uid): array
+    {
+        return Db::all(
+            'SELECT id, client_id, name, color, rate_multiplier, is_billable, is_archived
+             FROM actions WHERE user_id = ? ORDER BY is_archived, sort_order, name',
             [$uid]
         );
     }
 
-    public static function selectable(int $uid): array
+    /** Distinct action names across all clients, for filters ("show all Overtime"). */
+    public static function names(int $uid): array
     {
-        return Db::all('SELECT id, name, color, rate_multiplier, is_billable, is_archived FROM actions WHERE user_id = ? ORDER BY is_archived, sort_order, name', [$uid]);
+        return Db::all('SELECT name, MIN(color) AS color FROM actions WHERE user_id = ? GROUP BY name ORDER BY name', [$uid]);
     }
 
     public static function find(int $uid, int $id): ?array
@@ -29,14 +51,14 @@ final class Actions
         return Db::one('SELECT * FROM actions WHERE id = ? AND user_id = ?', [$id, $uid]);
     }
 
-    public static function validate(int $uid, array $in, ?int $id = null): array
+    public static function validate(int $uid, int $clientId, array $in, ?int $id = null): array
     {
         $errors = [];
         $name = trim((string) ($in['name'] ?? ''));
         if ($name === '' || mb_strlen($name) > 120) {
             $errors[] = 'Name is required (max 120 characters).';
-        } elseif (Db::value('SELECT 1 FROM actions WHERE user_id = ? AND name = ? AND id <> ?', [$uid, $name, $id ?? 0])) {
-            $errors[] = 'You already have an action with that name.';
+        } elseif (Db::value('SELECT 1 FROM actions WHERE client_id = ? AND name = ? AND id <> ?', [$clientId, $name, $id ?? 0])) {
+            $errors[] = 'This client already has an action with that name.';
         }
         $mult = str_replace(',', '.', trim((string) ($in['rate_multiplier'] ?? '1')));
         if ($mult === '') {
@@ -55,16 +77,39 @@ final class Actions
         return [$data, $errors];
     }
 
-    public static function save(int $uid, array $d, ?int $id = null): int
+    public static function save(int $uid, int $clientId, array $d, ?int $id = null): int
     {
         if ($id) {
-            Db::run('UPDATE actions SET name=?, color=?, rate_multiplier=?, is_billable=? WHERE id=? AND user_id=?',
-                [$d['name'], $d['color'], $d['rate_multiplier'], $d['is_billable'], $id, $uid]);
+            Db::run('UPDATE actions SET name=?, color=?, rate_multiplier=?, is_billable=? WHERE id=? AND user_id=? AND client_id=?',
+                [$d['name'], $d['color'], $d['rate_multiplier'], $d['is_billable'], $id, $uid, $clientId]);
             return $id;
         }
-        $order = (int) Db::value('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM actions WHERE user_id = ?', [$uid]);
-        return Db::insert('INSERT INTO actions (user_id, name, color, rate_multiplier, is_billable, sort_order) VALUES (?,?,?,?,?,?)',
-            [$uid, $d['name'], $d['color'], $d['rate_multiplier'], $d['is_billable'], $order]);
+        $order = (int) Db::value('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM actions WHERE client_id = ?', [$clientId]);
+        return Db::insert('INSERT INTO actions (user_id, client_id, name, color, rate_multiplier, is_billable, sort_order) VALUES (?,?,?,?,?,?,?)',
+            [$uid, $clientId, $d['name'], $d['color'], $d['rate_multiplier'], $d['is_billable'], $order]);
+    }
+
+    /** Gives a client the standard set (normal, overtime, emergency, travel, non-billable). */
+    public static function seedStandard(int $uid, int $clientId): void
+    {
+        foreach (self::STANDARD as $i => [$name, $color, $mult, $billable]) {
+            Db::run('INSERT INTO actions (user_id, client_id, name, color, rate_multiplier, is_billable, sort_order) VALUES (?,?,?,?,?,?,?)',
+                [$uid, $clientId, $name, $color, $mult, $billable, $i]);
+        }
+    }
+
+    /** Copies the active actions of one client to another (skipping names that already exist). Returns how many were added. */
+    public static function copyFrom(int $uid, int $fromClientId, int $toClientId): int
+    {
+        $n = Db::run(
+            'INSERT INTO actions (user_id, client_id, name, color, rate_multiplier, is_billable, sort_order)
+             SELECT a.user_id, ?, a.name, a.color, a.rate_multiplier, a.is_billable, a.sort_order
+             FROM actions a
+             WHERE a.user_id = ? AND a.client_id = ? AND a.is_archived = 0
+               AND NOT EXISTS (SELECT 1 FROM actions x WHERE x.client_id = ? AND x.name = a.name)',
+            [$toClientId, $uid, $fromClientId, $toClientId]
+        )->rowCount();
+        return $n;
     }
 
     public static function setArchived(int $uid, int $id, bool $archived): void

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 – 2026-10-08
+
+- **Time actions are per client.** Each client has its own set of actions (name, colour, rate multiplier, billable), managed per client on the Actions page. New clients start from the standard set, a copy of another client's actions, or empty; "Add standard actions" and "Copy actions from…" are available later. The report dialog only offers the selected client's actions and remembers the last action used per client. The calendar and export action filters match by name across clients ("all Overtime"), and summaries group actions by name.
+- **Upgrade:** existing actions are copied to every client and each report is re-pointed to its client's copy, so all existing reports keep their client, action name, times and break (schema 3, automatic on first request).
+- **New time report dialog redone for several days.** It now has shared client, action and description plus a list of day rows (date, start, end, break, net), a **+ Day** button (next day, same times), per-row remove, and a running total. Each row derives its break from the lunch window until you edit it. Editing an existing report stays a single row. Saving several days is all-or-nothing.
+- **Report whole working week:** in the month view, right-click (or long-press) a week number and choose *Report whole working week (minus daily lunch break)*. The dialog opens with one row per working day (08:00–17:00, 60 min break). Days that already have reports start unticked with a note.
+- Fixed: Chrome's datalist arrow clipped the time fields on narrow screens.
+
 ## 0.2.0 – 2026-10-08
 
 Unpaid breaks (e.g. lunch).

@@ -2,18 +2,19 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month.
 
-**Version 0.2.0** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.2.1** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
 - **Clients** with a colour, optional hourly rate and reference (PO number etc.).
-- **Time actions** (templates): normal working time, overtime, emergency… each with a colour, a rate multiplier (e.g. overtime ×1.5) and a billable flag.
+- **Time actions** (templates) **per client**: normal working time, overtime, emergency… each with a colour, a rate multiplier (e.g. overtime ×1.5) and a billable flag. New clients start from a standard set or a copy of another client's actions.
 - **Working hours** per weekday (several intervals per day). They are highlighted in the week and day views. A **lunch window** (e.g. 12:00–13:00) is pre-filled as an **unpaid break** on new reports and deducted from the hours; the break is stored per report and can be changed. Right-click a day and choose **Report whole working day** for a one-step 08–17 report with lunch deducted.
 - **Calendar views:** month, week, day and a detailed list, with ISO week numbers, responsive layouts and colours (by client or by action).
   - Week and day views show the whole 24-hour day, one row per day.
-  - **Create a time report** by dragging across hours, or by right-clicking an hour (week/day) or a day (month). On touch screens tap an hour, or press and hold a day.
+  - **Create time reports** by dragging across hours, or by right-clicking an hour (week/day) or a day (month). On touch screens tap an hour, or press and hold a day.
   - Click a report to edit it; right-click it to edit, duplicate or delete.
   - **Filters** for clients, actions, billable/non-billable and date period. A **summary** (total, billable, amount, per client, per action) is shown under every view.
+- **The New time report dialog creates one or several days at once**: pick client and action, then add days with **+ Day** (each with its own start, end and break). In the month view, right-click a **week number** and choose *Report whole working week* to get a pre-filled row for every working day.
 - **Time reports** have start/end time, client, action and a free-text description. Times accept `9`, `930`, `09:30`, `9.30`; `24:00` means midnight.
 - **Export** to CSV, Excel (.xlsx) or plain text, with chosen columns, decimal hours or h:mm, delimiter and decimal mark.
 - **Security:** username/password, hashed passwords (`password_hash`), CSRF tokens, login throttling, strict Content-Security-Policy, prepared statements everywhere. Each user has a fully separate environment (clients, actions, hours, reports).

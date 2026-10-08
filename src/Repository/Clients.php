@@ -12,7 +12,8 @@ final class Clients
     /** @return array<int,array> */
     public static function all(int $uid, bool $includeArchived = true): array
     {
-        $sql = 'SELECT c.*, (SELECT COUNT(*) FROM time_entries e WHERE e.client_id = c.id) AS entry_count
+        $sql = 'SELECT c.*, (SELECT COUNT(*) FROM time_entries e WHERE e.client_id = c.id) AS entry_count,
+                (SELECT COUNT(*) FROM actions a WHERE a.client_id = c.id AND a.is_archived = 0) AS action_count
                 FROM clients c WHERE c.user_id = ?' . ($includeArchived ? '' : ' AND c.is_archived = 0') . ' ORDER BY c.is_archived, c.name';
         return Db::all($sql, [$uid]);
     }

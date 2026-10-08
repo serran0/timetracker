@@ -49,14 +49,20 @@
         return { start, end, brk: Math.max(0, end - start - net) };
     }
 
-    let breakDirty = false;
-
     const store = {
         get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
         set(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* ignore */ } },
     };
 
     /* ---------------------------------------------------------------- dialog */
+
+    const allActions = JSON.parse((document.getElementById('entry-actions') || { textContent: '[]' }).textContent);
+    const rowsBox = document.getElementById('entry-rows');
+    const rowTpl = document.getElementById('entry-row-tpl');
+    const daysBox = document.getElementById('entry-days');
+    const addDayBtn = document.getElementById('entry-add-day');
+    const noActions = document.getElementById('entry-no-actions');
+    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     function showErrors(list) {
         errorsBox.hidden = !list || !list.length;
@@ -66,54 +72,196 @@
             p.textContent = msg;
             errorsBox.appendChild(p);
         });
+        if (list && list.length) errorsBox.scrollIntoView({ block: 'nearest' });
     }
 
-    function updateDuration() {
-        const s = parseTime(form.start.value);
-        const e = parseTime(form.end.value);
-        const brk = parseInt(form.elements['break'].value, 10) || 0;
-        if (s !== null && e !== null && e > s && brk < e - s) {
-            const net = e - s - brk;
-            durationEl.textContent = `Net duration ${fmtDur(net)} (${(net / 60).toFixed(2)} h)` + (brk ? ` · ${fmtDur(e - s)} minus ${brk} min break` : '');
-        } else {
-            durationEl.textContent = '';
+    const parseDate = (str) => {
+        const m = String(str).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    };
+    const fmtDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    /* --- client -> actions (actions are per client) --- */
+
+    function refreshActions(preferredActionId) {
+        const clientId = form.client_id.value;
+        const list = allActions.filter((a) => String(a.client_id) === String(clientId));
+        const select = form.action_id;
+        select.innerHTML = '';
+        const add = (a, parent) => {
+            const o = document.createElement('option');
+            o.value = a.id;
+            o.textContent = a.name;
+            parent.appendChild(o);
+        };
+        list.filter((a) => !a.archived).forEach((a) => add(a, select));
+        const keepArchived = list.filter((a) => a.archived && String(a.id) === String(preferredActionId));
+        if (keepArchived.length) {
+            const g = document.createElement('optgroup');
+            g.label = 'Archived';
+            keepArchived.forEach((a) => add(a, g));
+            select.appendChild(g);
         }
+        const none = !select.options.length;
+        noActions.hidden = !none;
+        if (none) {
+            const o = document.createElement('option');
+            o.value = '';
+            o.textContent = '— no actions —';
+            select.appendChild(o);
+            document.getElementById('entry-no-actions-link').href = 'actions.php?client=' + encodeURIComponent(clientId);
+            return;
+        }
+        const wanted = preferredActionId || store.get('tt_action_' + clientId);
+        const match = Array.from(select.options).find((o) => o.value === String(wanted));
+        select.value = (match || select.options[0]).value;
     }
 
-    function selectDefault(select, storeKey, preferred) {
-        const options = Array.from(select.options);
-        const wanted = preferred || store.get(storeKey);
+    function selectClient(preferred) {
+        const options = Array.from(form.client_id.options);
+        const wanted = preferred || store.get('tt_client');
         const match = options.find((o) => o.value === String(wanted) && !o.parentElement.label);
         const firstActive = options.find((o) => !o.parentElement.label);
-        select.value = (match || firstActive || options[0] || {}).value || '';
+        form.client_id.value = (match || firstActive || options[0] || {}).value || '';
     }
 
-    /** Opens the dialog. `data` may contain id (edit) or not (create). */
+    form.client_id.addEventListener('change', () => refreshActions(null));
+
+    /* --- day rows --- */
+
+    const rowField = (row, name) => row.querySelector(`[data-f="${name}"]`);
+
+    function rowValues(row) {
+        const s = parseTime(rowField(row, 'start').value);
+        const e = parseTime(rowField(row, 'end').value);
+        const brk = parseInt(rowField(row, 'break').value, 10) || 0;
+        return { s, e, brk, date: rowField(row, 'date').value, include: rowField(row, 'include').checked };
+    }
+
+    function refreshRow(row) {
+        const { s, e, brk, date } = rowValues(row);
+        const net = rowField(row, 'net');
+        if (s !== null && e !== null && e > s && brk < e - s) {
+            net.textContent = fmtDur(e - s - brk);
+            net.classList.remove('bad');
+        } else {
+            net.textContent = '–';
+            net.classList.add('bad');
+        }
+        const d = parseDate(date);
+        rowField(row, 'dow').textContent = d ? DOW[d.getDay()] : '';
+        row.classList.toggle('off', !rowField(row, 'include').checked);
+    }
+
+    function updateTotals() {
+        const rows = Array.from(rowsBox.children);
+        const multi = rows.length > 1;
+        daysBox.classList.toggle('multi', multi);
+        let net = 0;
+        let n = 0;
+        rows.forEach((row) => {
+            refreshRow(row);
+            const v = rowValues(row);
+            if (v.include && v.s !== null && v.e !== null && v.e > v.s && v.brk < v.e - v.s) {
+                net += v.e - v.s - v.brk;
+                n += 1;
+            }
+        });
+        const editing = !!form.id.value;
+        titleEl.textContent = editing ? 'Edit time report' : (multi ? 'New time reports' : 'New time report');
+        durationEl.textContent = n ? `${n} report${n === 1 ? '' : 's'} · ${fmtDur(net)} h net (${(net / 60).toFixed(2)} h)` : '';
+    }
+
+    /** Adds a day row. `v`: {date, start, end, break?, include?, note?}. A numeric break is kept as typed. */
+    function addRow(v) {
+        const row = rowTpl.content.firstElementChild.cloneNode(true);
+        rowField(row, 'date').value = v.date || '';
+        rowField(row, 'start').value = v.start || '';
+        rowField(row, 'end').value = v.end || '';
+        rowField(row, 'include').checked = v.include !== false;
+        rowField(row, 'note').textContent = v.note || '';
+        if (typeof v.break === 'number') {
+            rowField(row, 'break').value = v.break;
+            row.dataset.dirty = '1';
+        } else {
+            rowField(row, 'break').value = lunchBreak(parseTime(v.start || ''), parseTime(v.end || ''));
+        }
+        rowsBox.appendChild(row);
+        updateTotals();
+        return row;
+    }
+
+    /** Re-derive a row's break from the lunch window unless the user typed one. */
+    function autoBreak(row) {
+        if (row.dataset.dirty === '1') return;
+        const { s, e } = rowValues(row);
+        rowField(row, 'break').value = lunchBreak(s, e);
+    }
+
+    rowsBox.addEventListener('input', (ev) => {
+        const row = ev.target.closest('.dlg-row');
+        if (!row) return;
+        const f = ev.target.dataset.f;
+        if (f === 'break') row.dataset.dirty = '1';
+        if (f === 'start' || f === 'end') autoBreak(row);
+        updateTotals();
+    });
+    rowsBox.addEventListener('change', (ev) => { if (ev.target.closest('.dlg-row')) updateTotals(); });
+    rowsBox.addEventListener('focusout', (ev) => {
+        const f = ev.target.dataset && ev.target.dataset.f;
+        if (f !== 'start' && f !== 'end') return;
+        const m = parseTime(ev.target.value);
+        if (m !== null && (f === 'end' || m < 1440)) ev.target.value = toHHMM(m);
+        const row = ev.target.closest('.dlg-row');
+        autoBreak(row);
+        updateTotals();
+    });
+    rowsBox.addEventListener('click', (ev) => {
+        if (!ev.target.closest('[data-remove]')) return;
+        if (rowsBox.children.length > 1) ev.target.closest('.dlg-row').remove();
+        updateTotals();
+    });
+
+    addDayBtn.addEventListener('click', () => {
+        const last = rowsBox.lastElementChild;
+        const lastDate = last ? parseDate(rowField(last, 'date').value) : null;
+        const next = lastDate ? new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate() + 1) : new Date();
+        const row = addRow({
+            date: fmtDate(next),
+            start: last ? rowField(last, 'start').value : '08:00',
+            end: last ? rowField(last, 'end').value : '17:00',
+            break: last && last.dataset.dirty === '1' ? (parseInt(rowField(last, 'break').value, 10) || 0) : undefined,
+        });
+        rowField(row, 'date').focus();
+    });
+
+    document.getElementById('entry-use-lunch').addEventListener('click', () => {
+        Array.from(rowsBox.children).forEach((row) => { delete row.dataset.dirty; autoBreak(row); });
+        updateTotals();
+    });
+
+    /**
+     * Opens the dialog.
+     * data: {id?} for editing a report, plus either a single day (date/start/end/break) or `rows: [...]`.
+     */
     function openDialog(data) {
         if (dialog.dataset.ready !== '1') {
-            window.TT.toast('Add at least one client and one action first.');
+            window.TT.toast('Add a client with at least one action first.');
             return;
         }
         showErrors([]);
         const editing = !!data.id;
-        titleEl.textContent = editing ? 'Edit time report' : 'New time report';
         deleteBtn.hidden = !editing;
         form.id.value = editing ? data.id : '';
-        form.date.value = data.date;
-        form.start.value = data.start;
-        form.end.value = data.end;
         form.description.value = data.description || '';
-        // Break: stored value when known, otherwise derived from the lunch window until the user edits it.
-        if (typeof data.break === 'number') {
-            form.elements['break'].value = data.break;
-            breakDirty = true;
-        } else {
-            form.elements['break'].value = lunchBreak(parseTime(data.start), parseTime(data.end));
-            breakDirty = false;
-        }
-        selectDefault(form.client_id, 'tt_client', data.client_id);
-        selectDefault(form.action_id, 'tt_action', data.action_id);
-        updateDuration();
+        addDayBtn.hidden = editing;
+        daysBox.classList.toggle('editing', editing);
+        rowsBox.innerHTML = '';
+        const rows = data.rows && data.rows.length ? data.rows : [{ date: data.date, start: data.start, end: data.end, break: data.break }];
+        rows.forEach(addRow);
+        selectClient(data.client_id);
+        refreshActions(data.action_id);
+        updateTotals();
         if (typeof dialog.showModal === 'function') dialog.showModal();
         else dialog.setAttribute('open', '');
         (data.focusSave ? saveBtn : editing ? form.description : form.client_id).focus();
@@ -130,6 +278,18 @@
 
     function wholeDayLabel(day) {
         return `Report whole working day ${toHHMM(day.start)}–${toHHMM(day.end)}` + (day.brk ? ` (−${day.brk} min break)` : '');
+    }
+
+    /** One row per working day of a week; days that already have reports start unticked. */
+    function weekRows(days) {
+        return days.map((d) => {
+            const day = wholeDay(parseWhStr(d.wh));
+            if (!day) return null;
+            return {
+                date: d.date, start: toHHMM(day.start), end: toHHMM(day.end), break: day.brk,
+                include: !d.n, note: d.n ? `already has ${d.n} report${d.n === 1 ? '' : 's'}` : '',
+            };
+        }).filter(Boolean);
     }
 
     function closeDialog() {
@@ -156,27 +316,37 @@
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const s = parseTime(form.start.value);
-        const en = parseTime(form.end.value);
-        if (s === null || en === null) return showErrors(['Enter times as HH:MM (e.g. 08:30).']);
-        if (en <= s) return showErrors(['End time must be after the start time.']);
-        if ((parseInt(form.elements['break'].value, 10) || 0) >= en - s) return showErrors(['The break must be shorter than the time span.']);
+        const editing = !!form.id.value;
+        const multi = rowsBox.children.length > 1;
+        const errors = [];
+        const entries = [];
+        Array.from(rowsBox.children).forEach((row, i) => {
+            const v = rowValues(row);
+            if (!v.include) return;
+            const label = multi ? (v.date || `Day ${i + 1}`) + ': ' : '';
+            if (!parseDate(v.date)) errors.push(label + 'choose a date.');
+            else if (v.s === null || v.e === null) errors.push(label + 'enter times as HH:MM (e.g. 08:30).');
+            else if (v.e <= v.s) errors.push(label + 'end time must be after the start time.');
+            else if (v.brk >= v.e - v.s) errors.push(label + 'the break must be shorter than the time span.');
+            else entries.push({ date: v.date, start: toHHMM(v.s), end: toHHMM(v.e), break: v.brk });
+        });
+        if (!errors.length && !entries.length) errors.push('Tick at least one day.');
+        if (!form.action_id.value) errors.push('This client has no actions yet – add some on the Actions page.');
+        if (errors.length) return showErrors(errors);
+
         saveBtn.disabled = true;
-        const result = await post({
-            op: 'save',
-            id: form.id.value ? parseInt(form.id.value, 10) : null,
-            date: form.date.value,
-            start: toHHMM(s),
-            end: toHHMM(en),
-            break: parseInt(form.elements['break'].value, 10) || 0,
+        const common = {
             client_id: parseInt(form.client_id.value, 10) || 0,
             action_id: parseInt(form.action_id.value, 10) || 0,
             description: form.description.value,
-        });
+        };
+        const result = editing
+            ? await post({ op: 'save', id: parseInt(form.id.value, 10), ...entries[0], ...common })
+            : await post({ op: 'save_many', entries, ...common });
         saveBtn.disabled = false;
         if (result.ok) {
             store.set('tt_client', form.client_id.value);
-            store.set('tt_action', form.action_id.value);
+            store.set('tt_action_' + form.client_id.value, form.action_id.value);
             window.location.reload();
         } else {
             showErrors(result.errors || ['Could not save.']);
@@ -194,24 +364,6 @@
     });
     $$('[data-dialog-close]', dialog).forEach((b) => b.addEventListener('click', closeDialog));
     dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
-    form.elements['break'].addEventListener('input', () => { breakDirty = true; updateDuration(); });
-    document.getElementById('entry-use-lunch').addEventListener('click', () => {
-        form.elements['break'].value = lunchBreak(parseTime(form.start.value), parseTime(form.end.value));
-        breakDirty = false;
-        updateDuration();
-    });
-    ['start', 'end'].forEach((name) => {
-        form[name].addEventListener('input', () => {
-            if (!breakDirty) form.elements['break'].value = lunchBreak(parseTime(form.start.value), parseTime(form.end.value));
-            updateDuration();
-        });
-        form[name].addEventListener('blur', () => {
-            const m = parseTime(form[name].value);
-            if (m !== null && (name === 'end' || m < 1440)) form[name].value = toHHMM(m);
-            if (!breakDirty) form.elements['break'].value = lunchBreak(parseTime(form.start.value), parseTime(form.end.value));
-            updateDuration();
-        });
-    });
 
     /* ----------------------------------------------------------- context menu */
 
@@ -285,7 +437,8 @@
 
     /* ------------------------------------------------- week / day timeline */
 
-    const parseWh = (el) => (el.dataset.wh || '').split(',').filter(Boolean).map((s) => s.split('-').map(Number));
+    const parseWhStr = (str) => (str || '').split(',').filter(Boolean).map((s) => s.split('-').map(Number));
+    const parseWh = (el) => parseWhStr(el.dataset.wh);
     const hourAt = (track, clientX) => {
         const r = track.getBoundingClientRect();
         const f = Math.min(0.99999, Math.max(0, (clientX - r.left) / r.width));
@@ -402,8 +555,28 @@
         showMenu(x, y, day.dataset.label, items);
     }
 
+    /** Right-click / long-press on a week number in the month view. */
+    function weekMenu(x, y, cell) {
+        const days = JSON.parse(cell.dataset.week || '[]');
+        const rows = weekRows(days);
+        const items = [];
+        if (rows.length) {
+            items.push({
+                label: 'Report whole working week (minus daily lunch break)',
+                run: () => openDialog({ rows, focusSave: rows.every((r) => r.include) }),
+            });
+        }
+        items.push({ label: 'Open week', run: () => { window.location.href = cell.getAttribute('href'); } });
+        showMenu(x, y, `Week ${cell.dataset.weekNo}`, items);
+    }
+
     // Right click anywhere in the calendar
     document.addEventListener('contextmenu', (e) => {
+        const wk = e.target.closest('.wk-col[data-week]');
+        if (wk) {
+            e.preventDefault();
+            return weekMenu(e.clientX, e.clientY, wk);
+        }
         const entry = e.target.closest('[data-entry]');
         if (entry && !entry.closest('dialog')) {
             e.preventDefault();
@@ -424,7 +597,17 @@
 
     // Touch: tap a day to open it, press and hold for the menu
     let press = null;
+    let suppressClickUntil = 0;
+    document.addEventListener('click', (e) => {
+        if (Date.now() < suppressClickUntil && e.target.closest('.wk-col')) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
     document.addEventListener('pointerdown', (e) => {
+        const wk = e.target.closest('.wk-col[data-week]');
+        if (wk && e.pointerType === 'touch') {
+            press = { wk, x: e.clientX, y: e.clientY, fired: false };
+            press.timer = setTimeout(() => { press.fired = true; suppressClickUntil = Date.now() + 700; weekMenu(press.x, press.y, wk); }, 550);
+            return;
+        }
         const day = e.target.closest('.mv-day');
         if (!day || e.pointerType !== 'touch' || e.target.closest('a, button')) return;
         press = { day, x: e.clientX, y: e.clientY, fired: false };
@@ -438,7 +621,7 @@
         clearTimeout(press.timer);
         const p = press;
         press = null;
-        if (!p.fired && Date.now() - menuOpenedAt > 700) window.location.href = p.day.dataset.dayUrl;
+        if (!p.fired && p.day && Date.now() - menuOpenedAt > 700) window.location.href = p.day.dataset.dayUrl;
     });
     document.addEventListener('pointercancel', () => { if (press) { clearTimeout(press.timer); press = null; } });
 

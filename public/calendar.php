@@ -36,7 +36,8 @@ if ($view === 'month') {
 }
 
 $clients = Clients::selectable($uid);
-$actions = Actions::selectable($uid);
+$actions = Actions::selectable($uid);       // every action with its client (report dialog)
+$actionNames = Actions::names($uid);        // distinct names (filter)
 
 // Parameters that every link inside the calendar keeps (view + filters).
 $baseParams = ['view' => $view] + Calendar::filterParams($filters);
@@ -56,6 +57,8 @@ View::render('calendar', [
     'hours'      => WorkingHours::intervals($uid),
     'clients'    => $clients,
     'actions'    => $actions,
+    'actionNames' => $actionNames,
+    'dayCounts'  => $view === 'month' ? Entries::dayCounts($uid, $from, $to) : [],
     'baseParams' => $baseParams,
     'presets'    => Calendar::presets(),
     'today'      => new DateTimeImmutable('today'),

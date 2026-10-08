@@ -74,7 +74,9 @@ check('list prev month', $r['prev'], ['from' => '2026-09-01', 'to' => '2026-09-3
 // Filters
 $f = Calendar::filters(['client' => ['3', 'x', '3', '0', '7'], 'action' => 'nope', 'billable' => '1', 'color' => 'action']);
 check('filters clients', $f['clients'], [3, 7]);
-check('filters actions', $f['actions'], []);
+check('filters actions (non-array ignored)', $f['actions'], []);
+$f = Calendar::filters(['action' => ['Overtime', ' Overtime ', '', 'Emergency / call-out', str_repeat('x', 200)]]);
+check('filters actions by name', $f['actions'], ['Overtime', 'Emergency / call-out']);
 check('filters billable/color', [$f['billable'], $f['color']], ['1', 'action']);
 
 // Working hours parsing

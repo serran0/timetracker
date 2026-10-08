@@ -20,7 +20,7 @@ $editing = !empty($form['id']);
         <?php else: ?>
         <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Client</th><th class="num">Rate / h</th><th class="num">Reports</th><th></th></tr></thead>
+            <thead><tr><th>Client</th><th class="num">Rate / h</th><th class="num">Actions</th><th class="num">Reports</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($clients as $c): ?>
                 <tr class="<?= $c['is_archived'] ? 'is-archived' : '' ?>">
@@ -31,6 +31,7 @@ $editing = !empty($form['id']);
                         <?php if ($c['reference']): ?><br><small class="muted"><?= e($c['reference']) ?></small><?php endif; ?>
                     </td>
                     <td class="num"><?= $c['hourly_rate'] !== null ? e(fmt_money((float) $c['hourly_rate'], $user['currency'])) : '<span class="muted">–</span>' ?></td>
+                    <td class="num"><a href="actions.php?client=<?= (int) $c['id'] ?>"><?= (int) $c['action_count'] ?></a></td>
                     <td class="num"><?= (int) $c['entry_count'] ?></td>
                     <td class="row-actions">
                         <a class="btn btn-sm" href="clients.php?edit=<?= (int) $c['id'] ?>">Edit</a>
@@ -77,6 +78,17 @@ $editing = !empty($form['id']);
             <label>Notes
                 <textarea name="notes" rows="3"><?= e($form['notes'] ?? '') ?></textarea>
             </label>
+            <?php if (!$editing): ?>
+            <label>Time actions for this client
+                <select name="seed">
+                    <option value="standard">Standard set (normal, overtime, emergency, travel, non-billable)</option>
+                    <?php foreach ($clients as $c): if (!$c['is_archived'] && $c['action_count'] > 0): ?>
+                        <option value="copy:<?= (int) $c['id'] ?>">Copy from <?= e($c['name']) ?></option>
+                    <?php endif; endforeach; ?>
+                    <option value="none">None – I will add them myself</option>
+                </select>
+            </label>
+            <?php endif; ?>
             <div class="form-actions">
                 <button class="btn btn-primary" type="submit"><?= $editing ? 'Save changes' : 'Add client' ?></button>
                 <?php if ($editing): ?><a class="btn" href="clients.php">Cancel</a><?php endif; ?>

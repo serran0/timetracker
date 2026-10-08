@@ -15,7 +15,8 @@ use TimeTracker\View;
 $link = static fn(array $over = []): string => url('calendar.php', $over + $baseParams);
 $dateStr = $range['date']->format('Y-m-d');
 $activeClients = array_filter($clients, static fn($c) => !$c['is_archived']);
-$activeActions = array_filter($actions, static fn($a) => !$a['is_archived']);
+$activeClientIds = array_column($activeClients, 'id');
+$activeActions = array_filter($actions, static fn($a) => !$a['is_archived'] && in_array($a['client_id'], $activeClientIds, true));
 $vars = get_defined_vars();
 ?>
 <div class="cal-head">
@@ -48,8 +49,7 @@ $vars = get_defined_vars();
 
 <?php if (!$activeClients || !$activeActions): ?>
     <div class="alert alert-info">
-        <?php if (!$activeClients): ?>To start reporting time, <a href="clients.php">add your first client</a>.<?php endif; ?>
-        <?php if (!$activeActions): ?> You also need at least one <a href="actions.php">action</a>.<?php endif; ?>
+        <?php if (!$activeClients): ?>To start reporting time, <a href="clients.php">add your first client</a>.<?php else: ?>Your clients have no actions yet – add some on the <a href="actions.php">Actions</a> page.<?php endif; ?>
     </div>
 <?php endif; ?>
 
