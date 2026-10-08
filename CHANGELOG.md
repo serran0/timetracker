@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7 – 2026-10-08
+
+- Clicking the Timetracker logo/title now always opens the month view (of the current month), instead of the view you used last. The *Calendar* menu item still remembers your last view.
+
 ## 0.2.6 – 2026-10-08
 
 - Month view: the right-hand column that showed the weekly total is now headed "Hrs" (Swedish: "Tim") instead of "Week", with a tooltip explaining it.

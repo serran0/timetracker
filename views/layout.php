@@ -31,7 +31,7 @@ $initial = $user ? mb_strtoupper(mb_substr($user['display_name'] ?: $user['usern
 <?php if ($user): ?>
 <header class="topbar">
     <div class="topbar-inner">
-        <a class="brand" href="calendar.php">
+        <a class="brand" href="calendar.php?view=month">
             <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#4f46e5"/><path d="M12 6v6l4 2.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span>Timetracker</span>
         </a>
