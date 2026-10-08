@@ -4,15 +4,18 @@ use TimeTracker\Audit;
 /** @var array $filters */
 /** @var array{rows: array, total: int, page: int, pages: int, per_page: int} $result */
 /** @var string $tz */
-$base = $filters + ['per_page' => $result['per_page']];
+/** @var string $order asc|desc, the sort order of the date column */
+$base = $filters + ['per_page' => $result['per_page'], 'order' => $order];
 $pageUrl = static fn(int $p): string => url('admin_audit.php', $base + ['page' => $p]);
 $from = $result['total'] ? ($result['page'] - 1) * $result['per_page'] + 1 : 0;
 $to = min($result['total'], $result['page'] * $result['per_page']);
+$sortTitle = $order === 'asc' ? t('Sorted oldest first – click for newest first') : t('Sorted newest first – click for oldest first');
 $filtered = $filters['from'] !== '' || $filters['to'] !== '' || $filters['action'] !== '' || $filters['user'] !== '';
 ?>
 <div class="page-head"><div><h1><?= te('Audit log') ?></h1><p class="muted"><?= te('Everything users and administrators do. Time-reporting actions are logged without names, labels or report details. Times are shown in {tz}.', ['tz' => $tz]) ?></p></div></div>
 
 <form method="get" action="admin_audit.php" class="filterbar audit-filter">
+    <input type="hidden" name="order" value="<?= e($order) ?>">
     <label class="fb-field"><?= te('From') ?>
         <input type="date" name="from" value="<?= e($filters['from']) ?>">
     </label>
@@ -42,7 +45,7 @@ $filtered = $filters['from'] !== '' || $filters['to'] !== '' || $filters['action
     </label>
     <div class="fb-actions">
         <button class="btn btn-sm btn-primary" type="submit"><?= te('Apply') ?></button>
-        <?php if ($filtered): ?><a class="btn btn-sm" href="<?= e(url('admin_audit.php', ['per_page' => $result['per_page']])) ?>"><?= te('Clear') ?></a><?php endif; ?>
+        <?php if ($filtered): ?><a class="btn btn-sm" href="<?= e(url('admin_audit.php', ['per_page' => $result['per_page'], 'order' => $order])) ?>"><?= te('Clear') ?></a><?php endif; ?>
     </div>
 </form>
 
@@ -52,7 +55,7 @@ $filtered = $filters['from'] !== '' || $filters['to'] !== '' || $filters['action
     <?php else: ?>
     <div class="table-wrap">
     <table class="table audit-table">
-        <thead><tr><th><?= te('Date and time') ?></th><th><?= te('Action type') ?></th><th><?= te('User') ?></th><th><?= te('Description') ?></th></tr></thead>
+        <thead><tr><th class="sorted" aria-sort="<?= $order === 'asc' ? 'ascending' : 'descending' ?>"><a class="sort-link" href="<?= e(url('admin_audit.php', ['order' => $order === 'asc' ? 'desc' : 'asc', 'page' => 1] + $filters + ['per_page' => $result['per_page']])) ?>" title="<?= e($sortTitle) ?>"><?= te('Date and time') ?><span class="sort-arrow" aria-hidden="true"><?= $order === 'asc' ? '▲' : '▼' ?></span></a></th><th><?= te('Action type') ?></th><th><?= te('User') ?></th><th><?= te('Description') ?></th></tr></thead>
         <tbody>
         <?php foreach ($result['rows'] as $r): ?>
             <tr>

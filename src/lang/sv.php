@@ -430,6 +430,8 @@ return [
     'Pages' => 'Sidor',
     'Page {page} of {pages} · {total} users' => 'Sida {page} av {pages} · {total} användare',
     'You sign in with this name. Changing it takes effect immediately.' => 'Du loggar in med det här namnet. Ändringen gäller direkt.',
+    'Sorted oldest first – click for newest first' => 'Sorterad äldst först – klicka för nyast först',
+    'Sorted newest first – click for oldest first' => 'Sorterad nyast först – klicka för äldst först',
     'Wk' => 'V.',
     'Moved to {from}–{to}' => 'Flyttad till {from}–{to}',
     'Wk {n}' => 'V. {n}',

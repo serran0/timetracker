@@ -132,13 +132,14 @@ final class Audit
     }
 
     /**
-     * One page of the log, newest first.
+     * One page of the log, newest first unless $order is 'asc'.
      * @param array{from?: string, to?: string, action?: string, user?: string} $f
      * @return array{rows: array, total: int, page: int, pages: int, per_page: int}
      */
-    public static function page(array $f, int $page, int $perPage): array
+    public static function page(array $f, int $page, int $perPage, string $order = 'desc'): array
     {
         $perPage = in_array($perPage, self::PER_PAGE_CHOICES, true) ? $perPage : self::PER_PAGE_CHOICES[0];
+        $dir = $order === 'asc' ? 'ASC' : 'DESC';
         $where = [];
         $params = [];
         if (($f['from'] ?? '') !== '') {
@@ -164,7 +165,7 @@ final class Audit
         $page = min(max(1, $page), $pages);
         $rows = Db::all(
             'SELECT id, created_at, user_id, username, action, params FROM audit_log' . $w
-            . ' ORDER BY created_at DESC, id DESC LIMIT ' . $perPage . ' OFFSET ' . (($page - 1) * $perPage),
+            . ' ORDER BY created_at ' . $dir . ', id ' . $dir . ' LIMIT ' . $perPage . ' OFFSET ' . (($page - 1) * $perPage),
             $params
         );
         return ['rows' => $rows, 'total' => $total, 'page' => $page, 'pages' => $pages, 'per_page' => $perPage];

@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 
 define('TT_ROOT', dirname(__DIR__));
-const TT_VERSION = '0.3.5';
+const TT_VERSION = '0.3.6';
 /** Database schema number; bump together with a new step in src/Migrator.php. */
 const TT_SCHEMA = 10;
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.6 – 2026-10-08
+
+- Audit log: the *Date and time* column can be sorted. Click the header to switch between newest first (default, ▼) and oldest first (▲). The other columns are not sortable. The order is kept when paging, filtering and changing the page size, and remembered for the session.
+
 ## 0.3.5 – 2026-10-08
 
 - Audit log: the *Action type* drop-down listed three identical "Settings changed" entries (general, security and mail settings were separate event types that shared one label) and two "Username changed" entries. Every event type now has its own label: *General / Security / Mail settings changed*, *Own username changed* (an administrator renaming themselves) and *Username changed* (renaming another account). A test now fails if two event types ever share a label. Existing log entries pick up the new names automatically.

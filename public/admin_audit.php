@@ -31,7 +31,11 @@ $perPage = (int) ($_GET['per_page'] ?? ($_SESSION['audit_per_page'] ?? Audit::PE
 $perPage = in_array($perPage, Audit::PER_PAGE_CHOICES, true) ? $perPage : Audit::PER_PAGE_CHOICES[0];
 $_SESSION['audit_per_page'] = $perPage;
 
-$result = Audit::page($filters, (int) ($_GET['page'] ?? 1), $perPage);
+// Sort order of the date column (newest first by default); remembered for the session like the page size.
+$order = ($_GET['order'] ?? ($_SESSION['audit_order'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+$_SESSION['audit_order'] = $order;
+
+$result = Audit::page($filters, (int) ($_GET['page'] ?? 1), $perPage, $order);
 
 View::render('admin_audit', [
     'title'   => t('Audit log'),
@@ -39,5 +43,6 @@ View::render('admin_audit', [
     'user'    => $user,
     'filters' => $filters,
     'result'  => $result,
+    'order'   => $order,
     'tz'      => (string) TimeTracker\Config::get('app.timezone', 'UTC'),
 ]);
