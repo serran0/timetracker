@@ -19,14 +19,14 @@ $hidden = static function () use ($keep): string {
 <div class="split">
     <section class="card">
         <form method="get" action="admin_users.php" class="user-search">
-            <input type="search" name="q" value="<?= e($paging['q']) ?>" placeholder="<?= te('Search by username or name') ?>" aria-label="<?= te('Search by username or name') ?>" maxlength="64">
+            <span class="search-box"><input type="search" name="q" value="<?= e($paging['q']) ?>" placeholder="<?= te('Search by username or name') ?>" aria-label="<?= te('Search by username or name') ?>" maxlength="64"></span>
             <select name="role" aria-label="<?= te('Account type') ?>" data-autosubmit>
                 <option value=""><?= te('All accounts') ?></option>
                 <option value="user" <?= $paging['role'] === 'user' ? 'selected' : '' ?>><?= te('Regular users') ?></option>
                 <option value="admin" <?= $paging['role'] === 'admin' ? 'selected' : '' ?>><?= te('Administrators') ?></option>
             </select>
-            <button class="btn btn-sm" type="submit"><?= te('Search') ?></button>
-            <?php if ($paging['q'] !== '' || $paging['role'] !== ''): ?><a class="btn btn-sm" href="admin_users.php"><?= te('Clear') ?></a><?php endif; ?>
+            <button class="btn btn-primary" type="submit"><?= te('Search') ?></button>
+            <?php if ($paging['q'] !== '' || $paging['role'] !== ''): ?><a class="btn" href="admin_users.php"><?= te('Clear') ?></a><?php endif; ?>
         </form>
         <?php if (!$users): ?><p class="muted"><?= te('No users match your search.') ?></p><?php endif; ?>
         <div class="table-wrap">

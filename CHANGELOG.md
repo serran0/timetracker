@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 – 2026-10-08
+
+- Users page: the search toolbar is redone. The search field used to be unstyled and cramped (search inputs had no form styling at all, which also affected the layout around it). It is now a full-width field with a magnifier icon, with the account-type drop-down and the *Search* / *Clear* buttons in one row at the same height as the other form controls, wrapping neatly on phones.
+
 ## 0.3.2 – 2026-10-08
 
 - Admin overview: the summary boxes (*Regular users*, *Administrators*, …) no longer underline their text on hover; the box just gets an outline.
