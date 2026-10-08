@@ -427,6 +427,8 @@ return [
     'What did you work on? (optional)' => 'Vad arbetade du med? (valfritt)',
     'Whit Sunday' => 'Pingstdagen',
     'Will be tested right after the database is created.' => 'Testas direkt efter att databasen har skapats.',
+    '— Select client —' => '— Välj kund —',
+    'Select a client to see and manage its actions.' => 'Välj en kund för att se och hantera dess aktiviteter.',
     'Wk' => 'V.',
     'Moved to {from}–{to}' => 'Flyttad till {from}–{to}',
     'Wk {n}' => 'V. {n}',

@@ -17,10 +17,7 @@ $form = null;
 $clients = Clients::all($uid);
 $clientId = (int) ($_POST['client_id'] ?? $_GET['client'] ?? 0);
 $client = $clientId ? Clients::find($uid, $clientId) : null;
-if (!$client && $clients) {
-    $firstActive = array_values(array_filter($clients, static fn($c) => !$c['is_archived']));
-    $client = Clients::find($uid, (int) (($firstActive[0] ?? $clients[0])['id']));
-}
+// No client is pre-selected: the page starts at the "Select client" placeholder and shows no actions until one is chosen.
 $here = $client ? 'actions.php?client=' . (int) $client['id'] : 'actions.php';
 
 if (is_post() && $client) {

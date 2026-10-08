@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.23 – 2026-10-08
+
+- Actions page: the *Client* drop-down now starts at a "— Select client —" placeholder (Swedish: "— Välj kund —"). No actions (and no add-action form) are shown until a client is chosen. Links that name a client, such as the one after creating a client, still open that client directly.
+
 ## 0.2.22 – 2026-10-08
 
 - Export page: all the *Format & columns* choices are remembered per user and used the next time you open the page, on any device: file format, ticked columns, duration format, CSV delimiter, decimal mark, the totals row and the VAT option. They are saved when you press *Update preview* or *Download export*. The period and the client/action/billing filters are not remembered.

@@ -14,7 +14,7 @@ $editing = !empty($form['id']);
     </div>
 </div>
 
-<?php if (!$client): ?>
+<?php if (!$clients): ?>
     <div class="card empty"><?= th('Actions belong to a client. {link} to create its actions.', ['link' => '<a href="clients.php">' . te('Add your first client') . '</a>']) ?></div>
     <?php return; ?>
 <?php endif; ?>
@@ -22,14 +22,20 @@ $editing = !empty($form['id']);
 <form method="get" action="actions.php" class="card client-picker">
     <label><?= te('Client') ?>
         <select name="client" data-autosubmit>
+            <option value="" <?= $client ? '' : 'selected' ?>><?= te('— Select client —') ?></option>
             <?php foreach ($clients as $c): ?>
-                <option value="<?= (int) $c['id'] ?>" <?= (int) $c['id'] === (int) $client['id'] ? 'selected' : '' ?>><?= e($c['name']) ?><?= $c['is_archived'] ? ' ' . te('(archived)') : '' ?></option>
+                <option value="<?= (int) $c['id'] ?>" <?= $client && (int) $c['id'] === (int) $client['id'] ? 'selected' : '' ?>><?= e($c['name']) ?><?= $c['is_archived'] ? ' ' . te('(archived)') : '' ?></option>
             <?php endforeach; ?>
         </select>
     </label>
-    <span class="dot" style="background:<?= e($client['color']) ?>"></span>
+    <?php if ($client): ?><span class="dot" style="background:<?= e($client['color']) ?>"></span><?php endif; ?>
     <noscript><button class="btn btn-sm"><?= te('Show') ?></button></noscript>
 </form>
+
+<?php if (!$client): ?>
+    <div class="card empty"><?= te('Select a client to see and manage its actions.') ?></div>
+    <?php return; ?>
+<?php endif; ?>
 
 <div class="split">
     <section class="card">
