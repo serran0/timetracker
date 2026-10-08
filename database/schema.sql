@@ -1,4 +1,4 @@
--- Timetracker 0.2.3 schema (schema number 4; see src/Migrator.php for upgrades from older installs) (MySQL 5.7+/8.x, MariaDB 10.3+)
+-- Timetracker 0.2.5 schema (schema number 5; see src/Migrator.php for upgrades from older installs) (MySQL 5.7+/8.x, MariaDB 10.3+)
 -- Every user-owned table carries user_id: each user has an isolated environment.
 -- Statements are separated by a semicolon at the end of a line.
 
@@ -12,6 +12,7 @@ CREATE TABLE users (
     timezone      VARCHAR(64)  NOT NULL DEFAULT 'UTC',
     currency      VARCHAR(8)   NOT NULL DEFAULT 'EUR',
     locale        VARCHAR(5)   NOT NULL DEFAULT 'en',
+    show_holidays TINYINT(1)   NOT NULL DEFAULT 1 COMMENT 'overlay Swedish red days in the calendar',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at DATETIME     NULL,
     lunch_start   TIME         NULL COMMENT 'default unpaid break window',
@@ -62,6 +63,18 @@ CREATE TABLE working_hours (
     PRIMARY KEY (id),
     KEY idx_working_hours_user (user_id, weekday),
     CONSTRAINT fk_working_hours_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE free_days (
+    id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id    INT UNSIGNED NOT NULL,
+    start_date DATE NOT NULL,
+    end_date   DATE NOT NULL,
+    name       VARCHAR(120) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_free_days_user (user_id, start_date),
+    CONSTRAINT fk_free_days_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE time_entries (

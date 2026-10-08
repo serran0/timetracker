@@ -290,7 +290,9 @@
             if (!day) return null;
             return {
                 date: d.date, start: toHHMM(day.start), end: toHHMM(day.end), break: day.brk,
-                include: !d.n, note: d.n ? tr(d.n === 1 ? 'already has {n} report' : 'already has {n} reports', { n: d.n }) : '',
+                // red days and days that already have reports are listed but not ticked
+                include: !d.n && !d.h,
+                note: [d.h, d.n ? tr(d.n === 1 ? 'already has {n} report' : 'already has {n} reports', { n: d.n }) : ''].filter(Boolean).join(' · '),
             };
         }).filter(Boolean);
     }

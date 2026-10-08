@@ -6,6 +6,7 @@ require __DIR__ . '/../src/bootstrap.php';
 use TimeTracker\Auth;
 use TimeTracker\Db;
 use TimeTracker\I18n;
+use TimeTracker\Repository\FreeDays;
 use TimeTracker\Repository\Users;
 use TimeTracker\View;
 
@@ -13,6 +14,8 @@ $user = Auth::require();
 $uid = (int) $user['id'];
 $errors = [];
 $pwErrors = [];
+$dayErrors = [];
+$dayForm = ['from' => '', 'to' => '', 'name' => ''];
 
 if (is_post()) {
     require_csrf();
@@ -21,6 +24,7 @@ if (is_post()) {
         $tz = input('timezone');
         $cur = strtoupper(input('currency'));
         $loc = input('locale');
+        $holidays = !empty($_POST['show_holidays']) ? 1 : 0;
         if (!in_array($tz, DateTimeZone::listIdentifiers(), true)) {
             $errors[] = t('Choose a valid timezone.');
         }
@@ -31,13 +35,25 @@ if (is_post()) {
             $errors[] = t('Currency should be a short code such as EUR, SEK or USD.');
         }
         if (!$errors) {
-            Db::run('UPDATE users SET display_name = ?, timezone = ?, currency = ?, locale = ? WHERE id = ?', [$name !== '' ? $name : $user['username'], $tz, $cur, $loc, $uid]);
+            Db::run('UPDATE users SET display_name = ?, timezone = ?, currency = ?, locale = ?, show_holidays = ? WHERE id = ?', [$name !== '' ? $name : $user['username'], $tz, $cur, $loc, $holidays, $uid]);
             I18n::setLocale($loc); // the confirmation (and the next page) already use the new language
             set_lang_cookie($loc);
             flash('success', t('Settings saved.'));
             redirect('account.php');
         }
-        $user = array_merge($user, ['display_name' => $name, 'timezone' => $tz, 'currency' => $cur, 'locale' => I18n::isValid($loc) ? $loc : $user['locale']]);
+        $user = array_merge($user, ['display_name' => $name, 'timezone' => $tz, 'currency' => $cur, 'locale' => I18n::isValid($loc) ? $loc : $user['locale'], 'show_holidays' => $holidays]);
+    } elseif (input('op') === 'freeday_add') {
+        $dayForm = ['from' => input('from'), 'to' => input('to'), 'name' => mb_substr(input('name'), 0, 120)];
+        [$data, $dayErrors] = FreeDays::parse($dayForm);
+        if (!$dayErrors) {
+            FreeDays::add($uid, $data);
+            flash('success', t('Day off added.'));
+            redirect('account.php#free-days');
+        }
+    } elseif (input('op') === 'freeday_delete') {
+        FreeDays::delete($uid, (int) input('id'));
+        flash('success', t('Day off removed.'));
+        redirect('account.php#free-days');
     } elseif (input('op') === 'password') {
         $current = (string) ($_POST['current_password'] ?? '');
         $new = (string) ($_POST['new_password'] ?? '');
@@ -64,5 +80,8 @@ View::render('account', [
     'user'      => $user,
     'errors'    => $errors,
     'pwErrors'  => $pwErrors,
+    'dayErrors' => $dayErrors,
+    'dayForm'   => $dayForm,
+    'freeDays'  => FreeDays::all($uid),
     'timezones' => DateTimeZone::listIdentifiers(),
 ]);

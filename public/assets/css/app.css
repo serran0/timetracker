@@ -437,3 +437,28 @@ input[type=text][list]::-webkit-calendar-picker-indicator { display: none !impor
 .lang-switch a { color: var(--muted); padding: 2px 8px; }
 .lang-switch a.active { color: var(--primary); font-weight: 600; }
 .lang-switch a + a { border-left: 1px solid var(--border-strong); }
+
+/* ---- red days (public holidays) and the user's own work-free days ---- */
+:root { --hol: #fdeded; --hol-strong: #f6caca; --hol-text: #b4303f; --free: #fff4e3; --free-text: #a05a06; }
+.hol-name { display: block; font-size: .68rem; line-height: 1.2; color: var(--hol-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.mv-day.hol { background: var(--hol); }
+.mv-day.hol .mv-num { color: var(--hol-text); }
+.mv-day.hol.today .mv-num { color: #fff; }
+.mv-day.hol-custom { background: var(--free); }
+.mv-day.hol-custom .mv-num, .mv-day.hol-custom .hol-name { color: var(--free-text); }
+.tl-row.hol .tl-track { background-color: var(--hol); }
+.tl-row.hol .tl-label { box-shadow: inset 3px 0 0 var(--hol-strong); }
+.tl-row.hol .tl-label .dow { color: var(--hol-text); }
+.tl-row.hol-custom .tl-track { background-color: var(--free); }
+.tl-row.hol-custom .tl-label .dow, .tl-row.hol-custom .hol-name { color: var(--free-text); }
+.tl-row.hol-custom .tl-label { box-shadow: inset 3px 0 0 #f5d9a8; }
+.tl-row.hol.today .tl-label { box-shadow: inset 3px 0 0 var(--primary); }
+.badge-hol { background: var(--hol); color: var(--hol-text); border-color: var(--hol-strong); }
+.badge-hol.hol-custom { background: var(--free); color: var(--free-text); border-color: #f5d9a8; }
+.dot-free { background: #f5a623; }
+.setting-help { margin: -4px 0 10px 26px; font-size: .82rem; }
+.freeday-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+.freeday-form label { margin-bottom: 0; }
+.freeday-form .grow { flex: 1 1 220px; }
+.freeday-form .btn { margin-bottom: 1px; }
+@media (max-width: 760px) { .mv-day .hol-name { display: none; } }

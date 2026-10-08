@@ -8,6 +8,7 @@ use TimeTracker\Calendar;
 /** @var array $filters */
 /** @var DateTimeImmutable $today */
 /** @var callable $link */
+/** @var array $holidays */
 
 $colorBy = $filters['color'];
 $todayStr = $today->format('Y-m-d');
@@ -48,8 +49,10 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
         $height = $laneCount * $laneH + $lanePad * 2;
         $dayMin = array_sum(array_column($list, 'minutes'));
         $weekMinTotal += $dayMin;
-        $wh = $hours[(int) $d->format('N')];
+        $hol = $holidays[$ds] ?? null;
+        $wh = $hol ? [] : $hours[(int) $d->format('N')]; // a red day is not a working day: no shaded working hours
         $classes = ['tl-row'];
+        if ($hol) { $classes[] = 'hol'; $classes[] = 'hol-' . $hol['kind']; }
         if ($ds === $todayStr) { $classes[] = 'today'; }
         if (!$wh) { $classes[] = 'off'; }
         ?>
@@ -57,9 +60,10 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
             <a class="tl-label" href="<?= e($link(['view' => 'day', 'date' => $ds])) ?>" title="<?= te('Open day') ?>">
                 <span class="dow"><?= e(date_l10n($d, 'D')) ?></span>
                 <span class="dom"><?= e(date_l10n($d, 'j M')) ?></span>
+                <?php if ($hol): ?><span class="hol-name"><?= e($hol['name']) ?></span><?php endif; ?>
                 <?php if ($view === 'day'): ?><small class="muted"><?= te('Wk {n}', ['n' => $d->format('W')]) ?></small><?php endif; ?>
             </a>
-            <div class="tl-track" data-date="<?= e($ds) ?>" data-wh="<?= e($whAttr($wh)) ?>" data-label="<?= e(date_l10n($d, 'D j M')) ?>" style="height:<?= $height ?>px">
+            <div class="tl-track" data-date="<?= e($ds) ?>" data-wh="<?= e($whAttr($wh)) ?>" data-label="<?= e(date_l10n($d, 'D j M')) ?>"<?= $hol ? ' title="' . e($hol['name']) . '"' : '' ?> style="min-height:<?= $height ?>px">
                 <?php foreach ($wh as [$ws, $we]): ?>
                     <div class="tl-wh" style="left:<?= $pct($ws) ?>%;width:<?= $pct($we - $ws) ?>%" title="<?= te('Working hours {range}', ['range' => minutes_to_hhmm($ws) . '–' . minutes_to_hhmm($we)]) ?>"></div>
                 <?php endforeach; ?>

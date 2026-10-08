@@ -19,7 +19,9 @@ spl_autoload_register(static function (string $c): void {
 use TimeTracker\Calendar;
 use TimeTracker\Export\ReportBuilder;
 use TimeTracker\Export\TextExporter;
+use TimeTracker\Holidays;
 use TimeTracker\I18n;
+use TimeTracker\Repository\FreeDays;
 use TimeTracker\Repository\Actions;
 use TimeTracker\Repository\Entries;
 use TimeTracker\Repository\WorkingHours;
@@ -217,6 +219,64 @@ check('detect: cookie wins over browser', I18n::detect(), 'sv');
 $_COOKIE['tt_lang'] = '<script>';
 check('detect: invalid cookie ignored', I18n::detect(), 'en');
 check('isValid', [I18n::isValid('sv'), I18n::isValid('xx'), I18n::isValid('')], [true, false, false]);
+
+// Holidays (Swedish red days, calculated)
+foreach ([2020 => '2020-04-12', 2023 => '2023-04-09', 2024 => '2024-03-31', 2025 => '2025-04-20', 2026 => '2026-04-05', 2027 => '2027-03-28', 2028 => '2028-04-16', 2030 => '2030-04-21', 2038 => '2038-04-25'] as $y => $easter) {
+    check("easter $y", Holidays::easter($y)->format('Y-m-d'), $easter);
+}
+I18n::setLocale('en');
+$h26 = Holidays::sweden(2026);
+check('2026: 16 days', count($h26), 16);
+check('2026: all keys are dates in 2026', count(array_filter(array_keys($h26), static fn($k) => str_starts_with($k, '2026-'))), 16);
+check('2026: Good Friday', $h26['2026-04-03']['name'], 'Good Friday');
+check('2026: Easter Monday', $h26['2026-04-06']['name'], 'Easter Monday');
+check('2026: Ascension', $h26['2026-05-14']['name'], 'Ascension Day');
+check('2026: Whit Sunday', $h26['2026-05-24']['name'], 'Whit Sunday');
+check('2026: Midsummer Eve is a Friday 19-25 Jun', [$h26['2026-06-19']['name'], $h26['2026-06-19']['kind']], ['Midsummer Eve', 'eve']);
+check('2026: Midsummer Day is a Saturday 20-26 Jun', $h26['2026-06-20']['name'], 'Midsummer Day');
+check('2026: All Saints', $h26['2026-10-31']['name'], "All Saints' Day");
+check('2026: Christmas Eve', [$h26['2026-12-24']['name'], $h26['2026-12-24']['kind']], ['Christmas Eve', 'eve']);
+check('2026: New Years Eve', $h26['2026-12-31']['kind'], 'eve');
+$h27 = Holidays::sweden(2027);
+check('2027: Midsummer Eve moves to 25 Jun', $h27['2027-06-25']['name'], 'Midsummer Eve');
+check('2027: Midsummer Day 26 Jun', $h27['2027-06-26']['name'], 'Midsummer Day');
+check('2027: All Saints 6 Nov', $h27['2027-11-06']['name'], "All Saints' Day");
+check('2028: Midsummer Eve 23 Jun (Fri)', Holidays::sweden(2028)['2028-06-23']['name'], 'Midsummer Eve');
+foreach ([2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031] as $y) {
+    $hy = Holidays::sweden($y);
+    $mid = array_keys(array_filter($hy, static fn($v) => $v['name'] === 'Midsummer Eve'))[0];
+    $day = array_keys(array_filter($hy, static fn($v) => $v['name'] === 'Midsummer Day'))[0];
+    $sat = array_keys(array_filter($hy, static fn($v) => $v['name'] === "All Saints' Day"))[0];
+    check("$y: Midsummer Eve is Friday, in 19-25 Jun", [(new DateTime($mid))->format('N'), $mid >= "$y-06-19" && $mid <= "$y-06-25"], ['5', true]);
+    check("$y: Midsummer Day is Saturday the day after", [(new DateTime($day))->format('N'), $day], ['6', (new DateTime($mid))->modify('+1 day')->format('Y-m-d')]);
+    check("$y: All Saints' Day is a Saturday, 31 Oct-6 Nov", [(new DateTime($sat))->format('N'), $sat >= "$y-10-31" && $sat <= "$y-11-06"], ['6', true]);
+}
+I18n::setLocale('sv');
+$sv = Holidays::sweden(2026);
+check('sv: Julafton', $sv['2026-12-24']['name'], 'Julafton');
+check('sv: Midsommarafton', $sv['2026-06-19']['name'], 'Midsommarafton');
+check('sv: Nyårsafton', $sv['2026-12-31']['name'], 'Nyårsafton');
+check('sv: Annandag jul', $sv['2026-12-26']['name'], 'Annandag jul');
+check('sv: every name translated', array_values(array_filter(array_map(static fn($x) => $x['name'], $sv), static fn($n) => preg_match('/^[A-Z][a-z]+ [A-Za-z]+$/', $n) && in_array($n, ['New Year\'s Day', 'Good Friday', 'May Day', 'Easter Monday', 'Easter Sunday', 'Whit Sunday', 'Christmas Day', 'Boxing Day'], true))), []);
+I18n::setLocale('en');
+// range + on/off setting (user id 0 = no database access for own days)
+$off = ['id' => 0, 'show_holidays' => 0];
+$on = ['id' => 0, 'show_holidays' => 1];
+check('overlay off: no public holidays', Holidays::forRange($off, '2026-12-01', '2026-12-31'), []);
+check('overlay on: December 2026', array_keys(Holidays::forRange($on, '2026-12-01', '2026-12-31')), ['2026-12-24', '2026-12-25', '2026-12-26', '2026-12-31']);
+check('range is inclusive', array_keys(Holidays::forRange($on, '2026-12-24', '2026-12-24')), ['2026-12-24']);
+check('range across the year boundary', array_keys(Holidays::forRange($on, '2026-12-30', '2027-01-06')), ['2026-12-31', '2027-01-01', '2027-01-06']);
+check('range without holidays', Holidays::forRange($on, '2026-02-01', '2026-02-28'), []);
+// own work-free days: validation
+[$d, $e] = FreeDays::parse(['from' => '2026-07-06', 'to' => '2026-07-17', 'name' => ' Summer holiday ']);
+check('free days: valid range', [$d['start_date'], $d['end_date'], $d['name'], $e], ['2026-07-06', '2026-07-17', 'Summer holiday', []]);
+[$d, $e] = FreeDays::parse(['from' => '2026-05-15', 'to' => '', 'name' => '']);
+check('free days: single day, name optional', [$d['start_date'], $d['end_date'], $d['name'], $e], ['2026-05-15', '2026-05-15', null, []]);
+check('free days: missing start', count(FreeDays::parse(['from' => '', 'to' => ''])[1]), 1);
+check('free days: end before start', count(FreeDays::parse(['from' => '2026-05-15', 'to' => '2026-05-14'])[1]), 1);
+check('free days: invalid end', count(FreeDays::parse(['from' => '2026-05-15', 'to' => '2026-02-31'])[1]), 1);
+check('free days: too long', count(FreeDays::parse(['from' => '2026-01-01', 'to' => '2028-01-01'])[1]), 1);
+check('free days: label fallback', [FreeDays::label(null), FreeDays::label('  '), FreeDays::label('Semester')], ['Day off', 'Day off', 'Semester']);
 
 echo $failures ? "\n$failures of $total checks FAILED\n" : "All $total checks passed\n";
 exit($failures ? 1 : 0);

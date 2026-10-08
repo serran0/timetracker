@@ -5,6 +5,7 @@ require __DIR__ . '/../src/bootstrap.php';
 
 use TimeTracker\Auth;
 use TimeTracker\Calendar;
+use TimeTracker\Holidays;
 use TimeTracker\Repository\Actions;
 use TimeTracker\Repository\Clients;
 use TimeTracker\Repository\Entries;
@@ -58,6 +59,7 @@ View::render('calendar', [
     'clients'    => $clients,
     'actions'    => $actions,
     'actionNames' => $actionNames,
+    'holidays'   => Holidays::forRange($user, $from, $to), // red days + the user's own work-free days, by date
     'dayCounts'  => $view === 'month' ? Entries::dayCounts($uid, $from, $to) : [],
     'baseParams' => $baseParams,
     'presets'    => Calendar::presets(),

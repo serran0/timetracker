@@ -5,6 +5,7 @@
 /** @var array $filters */
 /** @var DateTimeImmutable $today */
 /** @var callable $link */
+/** @var array $holidays */
 
 $colorBy = $filters['color'];
 $todayStr = $today->format('Y-m-d');
@@ -31,6 +32,7 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
             'label' => date_l10n($wd, 'D j M'),
             'wh'    => implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $hours[(int) $wd->format('N')])),
             'n'     => $dayCounts[$wd->format('Y-m-d')] ?? 0,
+            'h'     => $holidays[$wd->format('Y-m-d')]['name'] ?? '', // red day: listed, but not ticked by default
         ], $days);
         ?>
         <div class="month-row">
@@ -42,17 +44,21 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
                 $list = $byDate[$ds] ?? [];
                 $dayMin = array_sum(array_column($list, 'minutes'));
                 $weekMin += $dayMin;
+                $hol = $holidays[$ds] ?? null;
+                $whDay = $hol ? [] : $hours[(int) $d->format('N')]; // a red day is not a working day
                 $classes = ['mv-day'];
+                if ($hol) { $classes[] = 'hol'; $classes[] = 'hol-' . $hol['kind']; }
                 if ($d->format('Y-m') !== $monthNo) { $classes[] = 'out'; }
                 if ($ds === $todayStr) { $classes[] = 'today'; }
-                if (!$hours[(int) $d->format('N')]) { $classes[] = 'off'; }
+                if (!$whDay) { $classes[] = 'off'; }
                 $dayUrl = $link(['view' => 'day', 'date' => $ds]);
                 ?>
-                <div class="<?= e(implode(' ', $classes)) ?>" data-date="<?= e($ds) ?>" data-wh="<?= e(implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $hours[(int) $d->format('N')]))) ?>" data-day-url="<?= e($dayUrl) ?>" data-week-url="<?= e($link(['view' => 'week', 'date' => $ds])) ?>" data-label="<?= e(date_l10n($d, 'D j M')) ?>">
+                <div class="<?= e(implode(' ', $classes)) ?>" data-date="<?= e($ds) ?>" data-wh="<?= e(implode(',', array_map(static fn($iv) => $iv[0] . '-' . $iv[1], $whDay))) ?>" data-day-url="<?= e($dayUrl) ?>" data-week-url="<?= e($link(['view' => 'week', 'date' => $ds])) ?>" data-label="<?= e(date_l10n($d, 'D j M')) ?>">
                     <div class="mv-top">
                         <a class="mv-num" href="<?= e($dayUrl) ?>"><?= $d->format('j') === '1' ? e(date_l10n($d, 'j M')) : e($d->format('j')) ?></a>
                         <?php if ($dayMin): ?><span class="mv-total" title="<?= e(fmt_dec($dayMin)) ?> h"><?= e(fmt_dur($dayMin)) ?></span><?php endif; ?>
                     </div>
+                    <?php if ($hol): ?><span class="hol-name" title="<?= e($hol['name']) ?>"><?= e($hol['name']) ?></span><?php endif; ?>
                     <div class="mv-entries">
                         <?php foreach (array_slice($list, 0, $maxChips) as $e): ?>
                             <button type="button" class="chip" style="<?= e(TimeTracker\Calendar::entryStyle($e, $colorBy)) ?>"

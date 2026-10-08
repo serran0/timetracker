@@ -28,6 +28,7 @@ $vars = get_defined_vars();
     <div class="cal-title">
         <h1><?= e($range['title']) ?></h1>
         <?php if ($range['subtitle'] !== ''): ?><span class="muted"><?= e($range['subtitle']) ?></span><?php endif; ?>
+        <?php if ($view === 'day' && isset($holidays[$dateStr])): ?><span class="badge badge-hol hol-<?= e($holidays[$dateStr]['kind']) ?>"><?= e($holidays[$dateStr]['name']) ?></span><?php endif; ?>
     </div>
     <div class="cal-tools">
         <div class="segmented" role="tablist" aria-label="<?= te('Calendar view') ?>">

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.5 – 2026-10-08
+
+- **Swedish red days in every calendar view.** Public holidays plus the customary days off (Midsommarafton, Julafton, Nyårsafton) are tinted faded red with their name: in the month view under the date, in the week and day views on the whole row and in the row label, in the list view as a badge on the day heading, and next to the title in the day view. Names follow the user's language (Julafton / Christmas Eve).
+- **Calculated, not downloaded.** The days are derived from their rules (fixed dates, Easter-based days, and the Midsummer and All Saints' weekend rules) in `src/Holidays.php`, so there is no subscription to keep up to date and it works offline for any year. Unit tests check Easter for nine years and the movable days for eight.
+- A red day has no shaded working hours and no "Report whole working day" shortcut, so work done on it stands out. Reports can still be created on it.
+- **Setting:** *Account & settings → Show Swedish public holidays in the calendar*. On for new users, off for existing users (they opt in).
+- **Work-free days:** users can add their own days off, a single day or a range such as a vacation week, with an optional name (*Account & settings → Work-free days*). They are tinted amber and are always shown, independent of the holiday setting.
+- **Whole-week report skips red days and own days off:** they are still listed, unticked and with a note (for example "Christmas Eve"), so you can tick one if you did work.
+- Database: `users.show_holidays` and a new `free_days` table (schema 5, added automatically).
+- Fixed: on tall row labels the week view track no longer leaves a gap below it.
+
 ## 0.2.3 – 2026-10-08
 
 - **Swedish translation and a per-user language setting.** Each user picks English or Swedish under *Account & settings*; administrators can choose it for new users. Everything is translated: menus, pages, dialogs, right-click menus, messages and errors, the installer, month/day names, number formatting (decimal comma), and all exports (CSV, Excel and text: headers, weekday names, yes/no, totals, summaries).

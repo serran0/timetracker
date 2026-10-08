@@ -3,6 +3,7 @@
 /** @var array $byDate */
 /** @var array $user */
 /** @var array $filters */
+/** @var array $holidays */
 $embedded ??= false;
 $colorBy = $filters['color'];
 $cur = $user['currency'];
@@ -25,7 +26,8 @@ $total = 0;
         <tbody>
         <?php if (!$embedded): ?>
             <tr class="day-row">
-                <td colspan="2"><strong><?= e(date_l10n($d, 'D j M Y')) ?></strong> <span class="muted">· <?= te('week {n}', ['n' => $d->format('W')]) ?></span></td>
+                <td colspan="2"><strong><?= e(date_l10n($d, 'D j M Y')) ?></strong> <span class="muted">· <?= te('week {n}', ['n' => $d->format('W')]) ?></span>
+                    <?php if (isset($holidays[$date])): ?><span class="badge badge-hol hol-<?= e($holidays[$date]['kind']) ?>"><?= e($holidays[$date]['name']) ?></span><?php endif; ?></td>
                 <td class="num"><strong><?= e(fmt_dur($dayMin)) ?></strong></td>
                 <td colspan="2"></td>
             </tr>

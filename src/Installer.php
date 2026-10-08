@@ -12,7 +12,7 @@ use TimeTracker\Repository\Users;
  */
 final class Installer
 {
-    public const TABLES = ['time_entries', 'working_hours', 'actions', 'clients', 'login_attempts', 'users', 'app_meta'];
+    public const TABLES = ['free_days', 'time_entries', 'working_hours', 'actions', 'clients', 'login_attempts', 'users', 'app_meta'];
     private const REQUIRED_PRIVILEGES = ['CREATE', 'ALTER', 'INDEX', 'INSERT', 'SELECT', 'UPDATE', 'DELETE', 'DROP'];
 
     /**
