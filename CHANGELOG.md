@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.18 – 2026-10-08
+
+- Colour field on the Clients and Actions forms redone: the current colour is a larger rounded box, vertically centred beside a neat 5 × 2 palette grid (it used to sit lower and touch the palette dots). The palette swatch matching the current colour is ringed, and it follows the colour picker too.
+
 ## 0.2.17 – 2026-10-08
 
 - **VAT per client.** Each client has a *VAT (%)* field (empty/0 = no VAT). Wherever an amount is calculated, the figure including VAT follows in parentheses, e.g. `3 325.00 (4 172.88)`: report list and its total, the summary, and the export preview. Totals add up the per-report VAT-inclusive amounts. The clients list shows each client's VAT. Clients without VAT show no parentheses.

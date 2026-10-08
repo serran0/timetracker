@@ -96,13 +96,21 @@ input[type=text], input[type=password], input[type=number], input[type=date], in
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, .15); }
 textarea { resize: vertical; }
-input[type=color] { width: 54px; height: 38px; padding: 3px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--surface); cursor: pointer; margin-top: 5px; vertical-align: middle; }
+input[type=color] { width: 46px; height: 46px; padding: 0; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface); cursor: pointer; flex: none; }
+input[type=color]::-webkit-color-swatch-wrapper { padding: 4px; }
+input[type=color]::-webkit-color-swatch { border: 0; border-radius: 7px; }
+input[type=color]::-moz-color-swatch { border: 0; border-radius: 7px; }
+input[type=color]:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, .15); }
 input[type=checkbox], input[type=radio] { accent-color: var(--primary); }
 fieldset { border: 0; padding: 0; margin: 0 0 14px; min-width: 0; }
 legend { font-weight: 600; font-size: .88rem; padding: 0; margin-bottom: 6px; }
 .check-label { display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: .92rem; margin-bottom: 8px; cursor: pointer; }
-.swatches { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; flex-wrap: wrap; }
-.swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border-strong); cursor: pointer; padding: 0; }
+/* colour field: the current colour on the left, the palette as a tidy 5 x 2 grid beside it, both vertically centred */
+.color-row { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.swatches { display: grid; grid-template-columns: repeat(5, 22px); gap: 8px; }
+.swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border-strong); cursor: pointer; padding: 0; transition: transform .1s; }
+.swatch:hover { transform: scale(1.12); }
+.swatch.is-active { box-shadow: 0 0 0 2px var(--primary); }
 .form-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .form-actions.stack { flex-direction: column; }
 

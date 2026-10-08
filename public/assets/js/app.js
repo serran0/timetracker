@@ -55,12 +55,20 @@
         });
     });
 
-    // Colour swatches
+    // Colour swatches: a click sets the colour input; the swatch matching the current colour is ringed
+    const markSwatches = (input) => {
+        const row = input.closest('.color-row');
+        if (!row) return;
+        $$('.swatch', row).forEach((s) => s.classList.toggle('is-active', s.dataset.color.toLowerCase() === input.value.toLowerCase()));
+    };
     document.addEventListener('click', (e) => {
         const sw = e.target.closest('.swatch');
         if (!sw) return;
         const input = sw.closest('label').querySelector('input[type=color]');
-        if (input) input.value = sw.dataset.color;
+        if (input) { input.value = sw.dataset.color; markSwatches(input); }
+    });
+    document.addEventListener('input', (e) => {
+        if (e.target.matches && e.target.matches('input[type=color]')) markSwatches(e.target);
     });
 
     // Auto-submit filters

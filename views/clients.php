@@ -67,9 +67,11 @@ $editing = !empty($form['id']);
             </label>
             <div class="grid-2">
                 <label><?= te('Colour') ?>
-                    <input type="color" name="color" value="<?= e($form['color']) ?>" data-swatch-target>
-                    <span class="swatches">
-                        <?php foreach ($palette as $p): ?><button type="button" class="swatch" style="background:<?= e($p) ?>" data-color="<?= e($p) ?>" aria-label="<?= e($p) ?>"></button><?php endforeach; ?>
+                    <span class="color-row">
+                        <input type="color" name="color" value="<?= e($form['color']) ?>" data-swatch-target>
+                        <span class="swatches">
+                            <?php foreach ($palette as $p): ?><button type="button" class="swatch<?= strtolower($p) === strtolower($form['color']) ? ' is-active' : '' ?>" style="background:<?= e($p) ?>" data-color="<?= e($p) ?>" aria-label="<?= e($p) ?>"></button><?php endforeach; ?>
+                        </span>
                     </span>
                 </label>
                 <label><?= te('Hourly rate ({currency})', ['currency' => $user['currency']]) ?>
