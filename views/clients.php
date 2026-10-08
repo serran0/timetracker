@@ -1,0 +1,86 @@
+<?php
+/** @var array $clients */
+/** @var array $form */
+/** @var string[] $errors */
+/** @var string[] $palette */
+/** @var array $user */
+$editing = !empty($form['id']);
+?>
+<div class="page-head">
+    <div>
+        <h1>Clients</h1>
+        <p class="muted">The customers you bill. Each client gets a colour that is used in the calendar views.</p>
+    </div>
+</div>
+
+<div class="split">
+    <section class="card">
+        <?php if (!$clients): ?>
+            <div class="empty">No clients yet. Add your first client to start tracking time.</div>
+        <?php else: ?>
+        <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Client</th><th class="num">Rate / h</th><th class="num">Reports</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($clients as $c): ?>
+                <tr class="<?= $c['is_archived'] ? 'is-archived' : '' ?>">
+                    <td>
+                        <span class="dot" style="background:<?= e($c['color']) ?>"></span>
+                        <strong><?= e($c['name']) ?></strong>
+                        <?php if ($c['is_archived']): ?><span class="badge">Archived</span><?php endif; ?>
+                        <?php if ($c['reference']): ?><br><small class="muted"><?= e($c['reference']) ?></small><?php endif; ?>
+                    </td>
+                    <td class="num"><?= $c['hourly_rate'] !== null ? e(fmt_money((float) $c['hourly_rate'], $user['currency'])) : '<span class="muted">–</span>' ?></td>
+                    <td class="num"><?= (int) $c['entry_count'] ?></td>
+                    <td class="row-actions">
+                        <a class="btn btn-sm" href="clients.php?edit=<?= (int) $c['id'] ?>">Edit</a>
+                        <form method="post" class="inline">
+                            <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int) $c['id'] ?>">
+                            <button class="btn btn-sm" name="op" value="<?= $c['is_archived'] ? 'unarchive' : 'archive' ?>"><?= $c['is_archived'] ? 'Restore' : 'Archive' ?></button>
+                            <?php if (!$c['entry_count']): ?>
+                                <button class="btn btn-sm btn-danger" name="op" value="delete" data-confirm="Delete client &quot;<?= e($c['name']) ?>&quot;?">Delete</button>
+                            <?php endif; ?>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
+    </section>
+
+    <section class="card">
+        <h2><?= $editing ? 'Edit client' : 'New client' ?></h2>
+        <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
+        <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="op" value="save">
+            <input type="hidden" name="id" value="<?= (int) ($form['id'] ?? 0) ?>">
+            <label>Name
+                <input type="text" name="name" value="<?= e($form['name']) ?>" required maxlength="160">
+            </label>
+            <label>Reference <span class="muted">(PO number, customer id… optional)</span>
+                <input type="text" name="reference" value="<?= e($form['reference'] ?? '') ?>" maxlength="160">
+            </label>
+            <div class="grid-2">
+                <label>Colour
+                    <input type="color" name="color" value="<?= e($form['color']) ?>" data-swatch-target>
+                    <span class="swatches">
+                        <?php foreach ($palette as $p): ?><button type="button" class="swatch" style="background:<?= e($p) ?>" data-color="<?= e($p) ?>" aria-label="<?= e($p) ?>"></button><?php endforeach; ?>
+                    </span>
+                </label>
+                <label>Hourly rate (<?= e($user['currency']) ?>)
+                    <input type="text" inputmode="decimal" name="hourly_rate" value="<?= $form['hourly_rate'] !== null ? e((string) $form['hourly_rate']) : '' ?>" placeholder="e.g. 95">
+                </label>
+            </div>
+            <label>Notes
+                <textarea name="notes" rows="3"><?= e($form['notes'] ?? '') ?></textarea>
+            </label>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit"><?= $editing ? 'Save changes' : 'Add client' ?></button>
+                <?php if ($editing): ?><a class="btn" href="clients.php">Cancel</a><?php endif; ?>
+            </div>
+        </form>
+    </section>
+</div>

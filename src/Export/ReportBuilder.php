@@ -1,0 +1,129 @@
+<?php
+declare(strict_types=1);
+
+namespace TimeTracker\Export;
+
+use DateTimeImmutable;
+use TimeTracker\Repository\Entries;
+
+/**
+ * Turns time entries into a format-neutral table and parses export options.
+ * Cell values are raw: dates 'Y-m-d', durations in minutes, money as float|null, everything else string|int.
+ * The exporters decide how to present them.
+ */
+final class ReportBuilder
+{
+    /** key => [label, type] */
+    public const COLUMNS = [
+        'date'        => ['Date', 'date'],
+        'weekday'     => ['Weekday', 'text'],
+        'week'        => ['Week', 'int'],
+        'start'       => ['Start', 'time'],
+        'end'         => ['End', 'time'],
+        'hours'       => ['Duration', 'dur'],
+        'client'      => ['Client', 'text'],
+        'reference'   => ['Client reference', 'text'],
+        'action'      => ['Action', 'text'],
+        'billable'    => ['Billable', 'text'],
+        'rate'        => ['Rate', 'money'],
+        'amount'      => ['Amount', 'money'],
+        'description' => ['Description', 'text'],
+    ];
+
+    public const DEFAULT_COLUMNS = ['date', 'start', 'end', 'hours', 'client', 'action', 'description'];
+
+    public const FORMATS = [
+        'csv'  => 'CSV (.csv)',
+        'xlsx' => 'Excel (.xlsx)',
+        'txt'  => 'Plain text (.txt)',
+    ];
+
+    /** Parses and sanitises export options from a query array. */
+    public static function options(array $q): array
+    {
+        $cols = array_values(array_filter(
+            is_array($q['cols'] ?? null) ? $q['cols'] : self::DEFAULT_COLUMNS,
+            static fn($c) => is_string($c) && isset(self::COLUMNS[$c])
+        ));
+        // Keep the canonical column order regardless of the order posted.
+        $cols = array_values(array_intersect(array_keys(self::COLUMNS), $cols ?: self::DEFAULT_COLUMNS));
+
+        $format = (string) ($q['format'] ?? 'csv');
+        return [
+            'format'    => isset(self::FORMATS[$format]) ? $format : 'csv',
+            'cols'      => $cols,
+            'duration'  => ($q['duration'] ?? '') === 'hm' ? 'hm' : 'decimal',
+            'delimiter' => in_array($q['delimiter'] ?? '', [',', ';', 'tab'], true) ? $q['delimiter'] : ',',
+            'decimal'   => ($q['decimal'] ?? '') === ',' ? ',' : '.',
+            'totals'    => !array_key_exists('submitted', $q) || !empty($q['totals']),
+        ];
+    }
+
+    /**
+     * @return array{headers: string[], types: string[], keys: string[], rows: array<int, array>, totals: ?array}
+     */
+    public static function table(array $entries, array $opts): array
+    {
+        $keys = $opts['cols'];
+        $headers = array_map(static fn($k) => self::COLUMNS[$k][0], $keys);
+        $types = array_map(static fn($k) => self::COLUMNS[$k][1], $keys);
+
+        $rows = [];
+        foreach ($entries as $e) {
+            $d = new DateTimeImmutable($e['entry_date']);
+            $all = [
+                'date'        => $e['entry_date'],
+                'weekday'     => $d->format('D'),
+                'week'        => (int) $d->format('W'),
+                'start'       => $e['start'],
+                'end'         => $e['end'],
+                'hours'       => $e['minutes'],
+                'client'      => $e['client_name'],
+                'reference'   => (string) ($e['client_reference'] ?? ''),
+                'action'      => $e['action_name'],
+                'billable'    => $e['billable'] ? 'Yes' : 'No',
+                'rate'        => $e['effective_rate'],
+                'amount'      => $e['amount'],
+                'description' => (string) ($e['description'] ?? ''),
+            ];
+            $rows[] = array_map(static fn($k) => $all[$k], $keys);
+        }
+
+        $totals = null;
+        if (!empty($opts['totals']) && $rows) {
+            $sum = Entries::summarize($entries);
+            $totals = [];
+            foreach ($keys as $i => $k) {
+                $totals[$i] = match ($k) {
+                    'hours'  => $sum['minutes'],
+                    'amount' => $sum['amount'] > 0 ? round($sum['amount'], 2) : null,
+                    default  => null,
+                };
+            }
+            $first = array_key_first($totals);
+            if ($totals[$first] === null) {
+                $totals[$first] = 'Total';
+            }
+        }
+        return ['headers' => $headers, 'types' => $types, 'keys' => $keys, 'rows' => $rows, 'totals' => $totals];
+    }
+
+    public static function filename(array $meta, string $ext): string
+    {
+        return 'timereport_' . $meta['from'] . '_' . $meta['to'] . '.' . $ext;
+    }
+
+    /** Duration in minutes as "7:30" or "7.50" / "7,50". */
+    public static function formatDuration(int|float $minutes, array $opts): string
+    {
+        if ($opts['duration'] === 'hm') {
+            return fmt_dur($minutes);
+        }
+        return str_replace('.', $opts['decimal'], fmt_dec($minutes));
+    }
+
+    public static function formatMoney(?float $v, array $opts): string
+    {
+        return $v === null ? '' : str_replace('.', $opts['decimal'], number_format($v, 2, '.', ''));
+    }
+}
