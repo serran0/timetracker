@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.9 – 2026-10-08
+
+- Calendar filter bar: every control (date picker, dropdowns, selects and buttons) now has the same height (34px). The date picker used to be taller than the rest.
+
 ## 0.2.8 – 2026-10-08
 
 - Calendar filter bar: the controls are now centred vertically in the bar. Before, the dropdown buttons carried a top margin that made the bar taller than its controls and left empty space above them.
