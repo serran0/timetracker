@@ -2,7 +2,7 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month.
 
-**Version 0.2.7** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.2.8** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 

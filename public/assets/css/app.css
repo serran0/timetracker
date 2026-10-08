@@ -172,13 +172,13 @@ legend { font-weight: 600; font-size: .88rem; padding: 0; margin-bottom: 6px; }
 .segmented a:hover { text-decoration: none; color: var(--text); }
 .segmented a.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(25, 30, 60, .12); }
 
-.filterbar { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; }
-.filterbar label.fb-field { margin: 0; font-size: .75rem; color: var(--muted); }
+.filterbar { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; }
+.filterbar label.fb-field { margin: 0; font-size: .75rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.filterbar label.fb-field > * { margin-top: 0; }
 .filterbar input, .filterbar select { padding: 6px 9px; font-size: .88rem; width: auto; }
-.filterbar label.fb-field > select:only-child { margin-top: 0; }
 .fb-actions { display: flex; gap: 6px; margin-left: auto; }
 details.multi { position: relative; }
-details.multi > summary { list-style: none; cursor: pointer; padding: 6px 28px 6px 10px; border: 1px solid var(--border-strong); border-radius: 9px; font-size: .88rem; font-weight: 500; color: var(--text); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7390' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center; margin-top: 17px; }
+details.multi > summary { list-style: none; cursor: pointer; padding: 6px 28px 6px 10px; border: 1px solid var(--border-strong); border-radius: 9px; font-size: .88rem; font-weight: 500; color: var(--text); background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7390' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center; }
 details.multi > summary::-webkit-details-marker { display: none; }
 details.multi[open] > summary { border-color: var(--primary); }
 .count { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--primary); color: #fff; font-size: .72rem; text-align: center; margin-left: 4px; }
@@ -385,7 +385,7 @@ body.auth .container > .alert { width: 100%; max-width: 400px; }
     h1 { font-size: 1.3rem; }
     .fb-actions { margin-left: 0; width: 100%; }
     .filterbar { padding: 10px; }
-    .filterbar label.fb-field { flex: 1 1 130px; }
+    .filterbar label.fb-field { flex: 1 1 130px; flex-direction: column; align-items: stretch; gap: 3px; }
     .filterbar input, .filterbar select { width: 100%; }
     details.multi { flex: 1 1 130px; }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.8 – 2026-10-08
+
+- Calendar filter bar: the controls are now centred vertically in the bar. Before, the dropdown buttons carried a top margin that made the bar taller than its controls and left empty space above them.
+
 ## 0.2.7 – 2026-10-08
 
 - Clicking the Timetracker logo/title now always opens the month view (of the current month), instead of the view you used last. The *Calendar* menu item still remembers your last view.
