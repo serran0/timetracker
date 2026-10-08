@@ -542,6 +542,92 @@
         if (day && !e.target.closest('a, button')) openNew(day.dataset.date, 9 * 60, 10 * 60);
     });
 
+    /* ------------------------------------------- move a report within its day */
+
+    // Drag a report block sideways to shift it by whole hours (its length and break stay as they are).
+    // Mouse and pen only: on touch screens a sideways swipe scrolls the timeline, so tap the report to edit its times.
+    let mv = null;
+    let suppressEntryClick = false;
+    document.addEventListener('pointerdown', (e) => {
+        const el = e.target.closest('.tl-track .te');
+        if (!el || e.pointerType === 'touch' || e.button !== 0 || mv) return;
+        const track = el.closest('.tl-track');
+        const p = payloadOf(el);
+        const start = parseTime(p.start);
+        const end = parseTime(p.end);
+        if (start === null || end === null) return;
+        mv = { el, track, p, start, end, x: e.clientX, delta: 0, active: false, left: el.style.left, label: $('.te-time', el), labelText: ($('.te-time', el) || {}).textContent, pointerId: e.pointerId };
+    });
+
+    function paintMove() {
+        const s = mv.start + mv.delta * 60;
+        const e = mv.end + mv.delta * 60;
+        mv.el.style.left = (s / 1440 * 100) + '%';
+        if (mv.label) mv.label.textContent = `${toHHMM(s)}–${toHHMM(e)}`;
+    }
+
+    function endMove(restore) {
+        const m = mv;
+        mv = null;
+        document.body.classList.remove('is-moving');
+        m.el.classList.remove('moving');
+        try { m.el.releasePointerCapture(m.pointerId); } catch (err) { /* ignore */ }
+        if (restore) {
+            m.el.style.left = m.left;
+            if (m.label) m.label.textContent = m.labelText;
+        }
+        return m;
+    }
+
+    document.addEventListener('pointermove', (e) => {
+        if (!mv) return;
+        if (!mv.active) {
+            if (Math.abs(e.clientX - mv.x) < 5) return; // below the threshold it is still a click
+            mv.active = true;
+            hideMenu();
+            mv.el.classList.add('moving');
+            document.body.classList.add('is-moving');
+            try { mv.el.setPointerCapture(mv.pointerId); } catch (err) { /* ignore */ }
+        }
+        const perHour = mv.track.getBoundingClientRect().width / 24;
+        let delta = Math.round((e.clientX - mv.x) / perHour);
+        delta = Math.max(Math.ceil(-mv.start / 60), Math.min(Math.floor((1440 - mv.end) / 60), delta)); // stay inside the day
+        if (delta !== mv.delta) { mv.delta = delta; paintMove(); }
+    });
+
+    document.addEventListener('pointerup', async () => {
+        if (!mv) return;
+        if (!mv.active) { mv = null; return; }
+        suppressEntryClick = true;
+        setTimeout(() => { suppressEntryClick = false; }, 0);
+        if (mv.delta === 0) { endMove(true); return; }
+        const m = endMove(false);
+        const start = toHHMM(m.start + m.delta * 60);
+        const end = toHHMM(m.end + m.delta * 60);
+        m.el.classList.add('saving');
+        const result = await post({ op: 'save', ...m.p, start, end });
+        if (result.ok) {
+            try { sessionStorage.setItem('tt_toast', tr('Moved to {from}–{to}', { from: start, to: end })); } catch (err) { /* ignore */ }
+            window.location.reload();
+        } else {
+            m.el.classList.remove('saving');
+            m.el.style.left = m.left;
+            if (m.label) m.label.textContent = m.labelText;
+            window.TT.toast((result.errors || [tr('Could not save.')])[0]);
+        }
+    });
+
+    document.addEventListener('pointercancel', () => { if (mv && mv.active) endMove(true); mv = null; });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mv && mv.active) { endMove(true); suppressEntryClick = true; setTimeout(() => { suppressEntryClick = false; }, 0); } });
+    // A drag ends with a click on the block: do not open the edit dialog for that
+    document.addEventListener('click', (e) => {
+        if (suppressEntryClick && e.target.closest('.tl-track .te')) { e.preventDefault(); e.stopImmediatePropagation(); }
+    }, true);
+    try {
+        const msg = sessionStorage.getItem('tt_toast');
+        if (msg) { sessionStorage.removeItem('tt_toast'); window.TT.toast(msg); }
+    } catch (err) { /* ignore */ }
+
     /* ----------------------------------------------------------- month view */
 
     function dayMenu(x, y, day) {

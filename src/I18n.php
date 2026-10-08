@@ -74,6 +74,7 @@ final class I18n
         'Previous',
         'Next',
         'Today',
+        'Moved to {from}–{to}',
     ];
 
     private static string $locale = self::DEFAULT;

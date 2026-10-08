@@ -299,6 +299,10 @@ a.tl-label:hover { text-decoration: none; background: var(--primary-soft); }
     box-shadow: inset 0 -3px 0 var(--a), 0 1px 2px rgba(25, 30, 60, .08);
 }
 .te:hover { background: color-mix(in srgb, var(--c) 32%, #fff); z-index: 5; }
+.tl-track .te { cursor: grab; user-select: none; -webkit-user-select: none; }
+.tl-track .te.moving { cursor: grabbing; z-index: 8; opacity: .9; box-shadow: inset 0 -3px 0 var(--a), 0 6px 16px rgba(25, 30, 60, .25); }
+.tl-track .te.saving { opacity: .6; pointer-events: none; }
+body.is-moving, body.is-moving * { cursor: grabbing !important; user-select: none; }
 .te-break { position: absolute; top: 0; bottom: 0; z-index: 0; pointer-events: none; border-left: 1px dashed color-mix(in srgb, var(--c) 70%, #fff); border-right: 1px dashed color-mix(in srgb, var(--c) 70%, #fff);
             background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .85) 0 4px, rgba(255, 255, 255, .35) 4px 8px); }
 .te > span:not(.te-break) { position: relative; z-index: 1; }

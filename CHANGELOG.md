@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.19 – 2026-10-08
+
+- Week and day views: drag an existing report sideways to move it within its day. It snaps to whole hours (the whole block shifts by the number of hours dragged, so its length and unpaid break stay the same), stays inside the day, shows the new time while dragging and is saved when you let go. Press Esc to cancel. A plain click still opens the report. Mouse and pen only; on touch screens tap the report and change its times in the dialog (a sideways swipe scrolls the timeline).
+
 ## 0.2.18 – 2026-10-08
 
 - Colour field on the Clients and Actions forms redone: the current colour is a larger rounded box, vertically centred beside a neat 5 × 2 palette grid (it used to sit lower and touch the palette dots). The palette swatch matching the current colour is ringed, and it follows the colour picker too.
