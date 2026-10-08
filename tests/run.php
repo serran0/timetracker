@@ -286,7 +286,6 @@ check('vat: non-billable has no amount', Entries::decorate(['entry_date' => '202
     'hourly_rate' => '100.00', 'vat_percent' => '25.00', 'rate_multiplier' => '1.00', 'is_billable' => 0, 'description' => null])['amount_vat'], null);
 $vs = Entries::summarize([$vrow, $vrow]);
 check('vat: summary totals', [$vs['amount'], $vs['amount_vat'], $vs['by_client'][1]['amount_vat']], [1600.0, 2000.0, 2000.0]);
-check('summary: actions listed per client', array_map(static fn($r) => $r['client'] . '/' . $r['name'], array_values(Entries::summarize([$vrow, $mk('2026-10-06', '09:00', '11:00', 0, 'Globex', 'N', 'x', null)])['by_client_action'])), ['A/N', 'Globex/N']);
 check('vat: money with parentheses', fmt_money_vat(800.0, 1000.0, 'SEK', '.'), '800.00 SEK (1 000.00 SEK)');
 check('vat: no parentheses without VAT', fmt_money_vat(800.0, 800.0, 'SEK', '.'), '800.00 SEK');
 $vents = [$vrow, $mk('2026-10-06', '09:00', '11:00', 0, 'Globex', 'Normal working time', 'No VAT here', '50.00')];

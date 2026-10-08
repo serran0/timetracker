@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.26 – 2026-10-08
+
+- Reverts 0.2.20: the *Per action* list in the summary again shows plain action names, merged across clients (no client name in parentheses).
+
 ## 0.2.25 – 2026-10-08
 
 - Actions page, quick setup: the "Copy actions from…" button now comes before the client drop-down (they were the other way round), and both have the same height.
