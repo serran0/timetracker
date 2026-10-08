@@ -1,6 +1,7 @@
 <?php
 /** @var array $user */
 /** @var array $users */
+/** @var array{total: int, page: int, pages: int, q: string} $paging */
 /** @var array $form */
 /** @var string[] $errors */
 /** @var string[] $timezones */
@@ -8,6 +9,12 @@
 <div class="page-head"><div><h1><?= te('Users') ?></h1><p class="muted"><?= te('Every user has a completely separate environment: their own clients, actions, working hours and time reports.') ?></p></div></div>
 <div class="split">
     <section class="card">
+        <form method="get" action="users.php" class="user-search">
+            <input type="search" name="q" value="<?= e($paging['q']) ?>" placeholder="<?= te('Search by username or name') ?>" aria-label="<?= te('Search by username or name') ?>" maxlength="64">
+            <button class="btn btn-sm" type="submit"><?= te('Search') ?></button>
+            <?php if ($paging['q'] !== ''): ?><a class="btn btn-sm" href="users.php"><?= te('Clear') ?></a><?php endif; ?>
+        </form>
+        <?php if (!$users): ?><p class="muted"><?= te('No users match your search.') ?></p><?php endif; ?>
         <div class="table-wrap">
         <table class="table">
             <thead><tr><th><?= te('User') ?></th><th><?= te('Role') ?></th><th><?= te('Language') ?></th><th><?= te('Last sign-in') ?></th><th></th></tr></thead>
@@ -39,6 +46,15 @@
             </tbody>
         </table>
         </div>
+        <?php if ($paging['pages'] > 1): ?>
+        <nav class="pager" aria-label="<?= te('Pages') ?>">
+            <span class="muted"><?= te('Page {page} of {pages} · {total} users', ['page' => $paging['page'], 'pages' => $paging['pages'], 'total' => $paging['total']]) ?></span>
+            <span class="pager-links">
+                <?php if ($paging['page'] > 1): ?><a class="btn btn-sm" href="<?= e(url('users.php', ['q' => $paging['q'], 'page' => $paging['page'] - 1])) ?>">‹ <?= te('Previous') ?></a><?php endif; ?>
+                <?php if ($paging['page'] < $paging['pages']): ?><a class="btn btn-sm" href="<?= e(url('users.php', ['q' => $paging['q'], 'page' => $paging['page'] + 1])) ?>"><?= te('Next') ?> ›</a><?php endif; ?>
+            </span>
+        </nav>
+        <?php endif; ?>
     </section>
     <section class="card">
         <h2><?= te('New user') ?></h2>

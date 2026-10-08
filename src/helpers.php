@@ -16,6 +16,70 @@ function is_https(): bool
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 }
 
+/** Does $ip fall inside $cidr ("10.0.0.0/8", "2001:db8::/32") or equal a single address? Handles IPv4 and IPv6. */
+function ip_in_range(string $ip, string $cidr): bool
+{
+    [$net, $bits] = array_pad(explode('/', $cidr, 2), 2, null);
+    $a = @inet_pton($ip);
+    $b = @inet_pton((string) $net);
+    if ($a === false || $b === false || strlen($a) !== strlen($b)) {
+        return false;
+    }
+    $max = strlen($a) * 8;
+    $bits = $bits === null ? $max : (int) $bits;
+    if ($bits < 0 || $bits > $max) {
+        return false;
+    }
+    $bytes = intdiv($bits, 8);
+    if ($bytes && substr($a, 0, $bytes) !== substr($b, 0, $bytes)) {
+        return false;
+    }
+    $rest = $bits % 8;
+    if ($rest === 0) {
+        return true;
+    }
+    $mask = (0xFF << (8 - $rest)) & 0xFF;
+    return (ord($a[$bytes]) & $mask) === (ord($b[$bytes]) & $mask);
+}
+
+/**
+ * The visitor's IP address. X-Forwarded-For is only believed when the request really came from one of the
+ * configured trusted proxies (config key "trusted_proxies"); then the right-most entry that is not itself a trusted
+ * proxy is the client. Without that setting REMOTE_ADDR is used, so the header cannot be forged.
+ * @param string[] $trusted IP addresses or CIDR ranges
+ */
+function client_ip_from(array $server, array $trusted): string
+{
+    $remote = (string) ($server['REMOTE_ADDR'] ?? '');
+    $isTrusted = static function (string $ip) use ($trusted): bool {
+        foreach ($trusted as $range) {
+            if (is_string($range) && ip_in_range($ip, $range)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    if ($remote === '' || !$trusted || !$isTrusted($remote)) {
+        return $remote !== '' ? $remote : '0.0.0.0';
+    }
+    $chain = array_reverse(array_map('trim', explode(',', (string) ($server['HTTP_X_FORWARDED_FOR'] ?? ''))));
+    foreach ($chain as $ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            break; // garbage in the chain: stop trusting anything further left
+        }
+        if (!$isTrusted($ip)) {
+            return $ip;
+        }
+    }
+    return $remote;
+}
+
+function client_ip(): string
+{
+    $trusted = \TimeTracker\Config::get('trusted_proxies', []);
+    return client_ip_from($_SERVER, is_array($trusted) ? $trusted : []);
+}
+
 function redirect(string $url): never
 {
     header('Location: ' . $url);

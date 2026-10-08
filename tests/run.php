@@ -121,6 +121,18 @@ check('export totals default on', ReportBuilder::options([])['totals'], true);
 check('export duration decimal comma', ReportBuilder::formatDuration(450, ['duration' => 'decimal', 'decimal' => ',']), '7,50');
 check('export duration h:mm', ReportBuilder::formatDuration(450, ['duration' => 'hm', 'decimal' => '.']), '7:30');
 
+// Client IP behind trusted proxies
+check('ip range: IPv4 CIDR', [ip_in_range('10.1.2.3', '10.0.0.0/8'), ip_in_range('11.1.2.3', '10.0.0.0/8'), ip_in_range('192.168.1.5', '192.168.1.5')], [true, false, true]);
+check('ip range: odd prefix length', [ip_in_range('172.17.0.9', '172.16.0.0/12'), ip_in_range('172.32.0.1', '172.16.0.0/12')], [true, false]);
+check('ip range: IPv6 and mixed families', [ip_in_range('2001:db8::1', '2001:db8::/32'), ip_in_range('2001:db9::1', '2001:db8::/32'), ip_in_range('10.0.0.1', '2001:db8::/32')], [true, false, false]);
+check('client ip: no trusted proxies, header ignored', client_ip_from(['REMOTE_ADDR' => '203.0.113.9', 'HTTP_X_FORWARDED_FOR' => '1.2.3.4'], []), '203.0.113.9');
+check('client ip: header from an untrusted sender ignored', client_ip_from(['REMOTE_ADDR' => '203.0.113.9', 'HTTP_X_FORWARDED_FOR' => '1.2.3.4'], ['10.0.0.0/8']), '203.0.113.9');
+check('client ip: via trusted proxy', client_ip_from(['REMOTE_ADDR' => '10.0.0.5', 'HTTP_X_FORWARDED_FOR' => '198.51.100.7'], ['10.0.0.0/8']), '198.51.100.7');
+check('client ip: forged left entry does not win', client_ip_from(['REMOTE_ADDR' => '10.0.0.5', 'HTTP_X_FORWARDED_FOR' => '1.1.1.1, 198.51.100.7, 10.0.0.9'], ['10.0.0.0/8']), '198.51.100.7');
+check('client ip: garbage header falls back', client_ip_from(['REMOTE_ADDR' => '10.0.0.5', 'HTTP_X_FORWARDED_FOR' => 'nonsense'], ['10.0.0.0/8']), '10.0.0.5');
+check('client ip: missing REMOTE_ADDR', client_ip_from([], []), '0.0.0.0');
+check('users search escapes wildcards', TimeTracker\Repository\Users::likeEscape('a_b%c\\d'), 'a\\_b\\%c\\\\d');
+
 // Remembered export options round-trip
 $o1 = ReportBuilder::options(['submitted' => '1', 'format' => 'txt', 'cols' => ['hours', 'date'], 'duration' => 'hm', 'delimiter' => ';', 'decimal' => ',', 'vat' => '1']);
 $o2 = ReportBuilder::options(ReportBuilder::restore(json_encode(ReportBuilder::storable($o1))));

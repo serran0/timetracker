@@ -69,10 +69,14 @@ if (is_post()) {
     }
 }
 
+$search = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 64);
+$result = Users::page($search, (int) ($_GET['page'] ?? 1));
+
 View::render('users', [
     'title'     => t('Users'),
     'user'      => $user,
-    'users'     => Users::all(),
+    'users'     => $result['rows'],
+    'paging'    => $result + ['q' => $search],
     'form'      => $form,
     'errors'    => $errors,
     'timezones' => DateTimeZone::listIdentifiers(),

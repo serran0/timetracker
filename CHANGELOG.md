@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.28 – 2026-10-08
+
+Scaling groundwork (for many users and several web servers):
+
+- **Real visitor IP behind a proxy.** New optional `trusted_proxies` setting (IPs or CIDR ranges). From those addresses `X-Forwarded-For` is honoured (right-most entry that is not a trusted proxy); from anyone else it is ignored. Before, every visitor behind a load balancer shared one address, so 20 failed logins from anyone would have locked everybody out.
+- **Shared sessions.** New optional `session.handler`: `db` (new `sessions` table, no row locking, one indexed read per request and a throttled touch), or `redis` / `memcached` with a `save_path`. The default stays PHP files. Session lifetime now follows the app's 12-hour idle limit.
+- **Login attempts.** The old-row cleanup no longer runs on every successful login (it scanned the table); it runs occasionally after failed logins, in bounded batches, using a new index on `attempted_at`.
+- **Admin Users page:** search by username or name and paging (50 per page) instead of loading every user.
+- Database schema 9: `sessions` table and the login-attempts index; existing installs upgrade automatically. See *Scaling* in the README.
+
 ## 0.2.27 – 2026-10-08
 
 - PHP support is now **8.2 to 8.4**, with 8.4 as the target (it was 8.5, running on 8.2+). The setup page's PHP check is green on 8.4, shows a note on 8.2/8.3 ("works, but PHP 8.4 is the targeted version") and a warning on anything newer than 8.4 (not supported). The README and the startup message say the same. The code uses no 8.5-only features, so there are no functional changes.

@@ -8,9 +8,37 @@ use TimeTracker\Db;
 
 final class Users
 {
-    public static function all(): array
+    public const PER_PAGE = 50;
+
+    /** Escape LIKE wildcards so a search for "100%" or "a_b" matches literally. */
+    public static function likeEscape(string $s): string
     {
-        return Db::all('SELECT id, username, display_name, is_admin, is_active, timezone, locale, created_at, last_login_at FROM users ORDER BY username');
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
+    }
+
+    /**
+     * One page of users, optionally filtered by a search text (username or display name).
+     * @return array{rows: array, total: int, page: int, pages: int}
+     */
+    public static function page(string $q = '', int $page = 1, int $perPage = self::PER_PAGE): array
+    {
+        $where = '';
+        $params = [];
+        $q = trim($q);
+        if ($q !== '') {
+            $like = '%' . self::likeEscape($q) . '%';
+            $where = ' WHERE username LIKE ? OR display_name LIKE ?';
+            $params = [$like, $like];
+        }
+        $total = (int) Db::value('SELECT COUNT(*) FROM users' . $where, $params);
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = min(max(1, $page), $pages);
+        $rows = Db::all(
+            'SELECT id, username, display_name, is_admin, is_active, timezone, locale, created_at, last_login_at FROM users'
+            . $where . ' ORDER BY username LIMIT ' . (int) $perPage . ' OFFSET ' . (int) (($page - 1) * $perPage),
+            $params
+        );
+        return ['rows' => $rows, 'total' => $total, 'page' => $page, 'pages' => $pages];
     }
 
     public static function find(int $id): ?array

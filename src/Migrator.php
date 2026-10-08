@@ -9,7 +9,7 @@ use PDO;
  * Upgrades an existing database to the schema number the code expects (TT_SCHEMA).
  * Each step is idempotent, and a database lock stops two requests from migrating at once.
  *
- * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring), 7 = 0.2.17 (VAT per client), 8 = 0.2.22 (remembered export options).
+ * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring), 7 = 0.2.17 (VAT per client), 8 = 0.2.22 (remembered export options), 9 = 0.2.28 (database sessions, login-attempt index).
  */
 final class Migrator
 {
@@ -50,6 +50,21 @@ final class Migrator
         $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
         $q->execute([$table, $column]);
         return (bool) $q->fetchColumn();
+    }
+
+    /** 0.2.28: table for database-backed sessions (optional feature) and an index so login-attempt cleanup does not scan. */
+    private static function toSchema9(PDO $pdo): void
+    {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS sessions (
+            id            VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            data          MEDIUMBLOB   NOT NULL,
+            last_activity INT UNSIGNED NOT NULL,
+            PRIMARY KEY (id),
+            KEY idx_sessions_activity (last_activity)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='only used when session.handler = db'");
+        if (!self::indexExists($pdo, 'login_attempts', 'idx_attempts_time')) {
+            $pdo->exec('ALTER TABLE login_attempts ADD KEY idx_attempts_time (attempted_at)');
+        }
     }
 
     /** 0.2.22: the export page remembers the user's format options. */

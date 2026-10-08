@@ -7,9 +7,9 @@ declare(strict_types=1);
  */
 
 define('TT_ROOT', dirname(__DIR__));
-const TT_VERSION = '0.2.27';
+const TT_VERSION = '0.2.28';
 /** Database schema number; bump together with a new step in src/Migrator.php. */
-const TT_SCHEMA = 8;
+const TT_SCHEMA = 9;
 
 require_once __DIR__ . '/helpers.php';
 
@@ -60,6 +60,16 @@ if (is_https()) {
 // Session
 ini_set('session.use_strict_mode', '1');
 ini_set('session.use_only_cookies', '1');
+// Where sessions live: 'files' (PHP default, fine for one server), 'db' (shared via the database), or 'redis' /
+// 'memcached' (needs that PHP extension; set 'save_path'). See "Scaling" in the README.
+$sessionHandler = (string) Config::get('session.handler', 'files');
+if ($sessionHandler === 'db' && Config::isInstalled()) {
+    session_set_save_handler(new \TimeTracker\DbSessionHandler(\TimeTracker\Auth::IDLE_SECONDS), true);
+} elseif (in_array($sessionHandler, ['redis', 'memcached'], true) && ($path = (string) Config::get('session.save_path', '')) !== '') {
+    ini_set('session.save_handler', $sessionHandler);
+    ini_set('session.save_path', $path);
+}
+ini_set('session.gc_maxlifetime', (string) \TimeTracker\Auth::IDLE_SECONDS);
 session_name('tt_session');
 session_set_cookie_params([
     'lifetime' => 0,

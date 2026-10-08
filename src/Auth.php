@@ -11,7 +11,7 @@ final class Auth
     private const MAX_FAILURES_PER_USER = 5;
     private const MAX_FAILURES_PER_IP = 20;
     private const LOCK_MINUTES = 15;
-    private const IDLE_SECONDS = 12 * 3600;
+    public const IDLE_SECONDS = 12 * 3600;
 
     private static ?array $user = null;
     private static bool $loaded = false;
@@ -88,7 +88,7 @@ final class Auth
      */
     public static function attempt(string $username, string $password): array
     {
-        $ip = substr($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0', 0, 45);
+        $ip = substr(client_ip(), 0, 45);
         $username = substr($username, 0, 64);
 
         if (self::isLocked($username, $ip)) {
@@ -102,6 +102,10 @@ final class Auth
 
         if (!$valid) {
             Db::run('INSERT INTO login_attempts (username, ip) VALUES (?, ?)', [$username, $ip]);
+            // Housekeeping off the hot path: now and then, in small indexed batches (never on a successful login).
+            if (random_int(1, 25) === 1) {
+                Db::run('DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 DAY) LIMIT 2000');
+            }
             return ['ok' => false, 'error' => t('Invalid username or password.')];
         }
 
@@ -116,7 +120,6 @@ final class Auth
         }
         Db::run('UPDATE users SET last_login_at = NOW() WHERE id = ?', [$user['id']]);
         Db::run('DELETE FROM login_attempts WHERE username = ?', [$username]);
-        Db::run('DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
         self::$loaded = false;
         self::$user = null;
         return ['ok' => true, 'error' => null];

@@ -108,8 +108,17 @@ CREATE TABLE login_attempts (
     attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_attempts_username (username, attempted_at),
-    KEY idx_attempts_ip (ip, attempted_at)
+    KEY idx_attempts_ip (ip, attempted_at),
+    KEY idx_attempts_time (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE sessions (
+    id            VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    data          MEDIUMBLOB   NOT NULL,
+    last_activity INT UNSIGNED NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_sessions_activity (last_activity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='only used when session.handler = db';
 
 CREATE TABLE app_meta (
     meta_key   VARCHAR(64)  NOT NULL,

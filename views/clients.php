@@ -27,10 +27,10 @@ $editing = !empty($form['id']);
                 $next = $active ? ($dir === 'asc' ? 'desc' : 'asc') : ($num ? 'desc' : 'asc');
                 $arrow = $active ? '<span class="sort-arrow" aria-hidden="true">' . ($dir === 'asc' ? '▲' : '▼') . '</span>' : '';
                 return '<th class="' . ($num ? 'num ' : '') . ($active ? 'sorted' : '') . '"' . ($active ? ' aria-sort="' . ($dir === 'asc' ? 'ascending' : 'descending') . '"' : '') . '>'
-                    . '<a class="sort-link" href="' . e(url('clients.php', ['sort' => $key, 'dir' => $next])) . '">' . e(t($label)) . $arrow . '</a></th>';
+                    . '<a class="sort-link" href="' . e(url('clients.php', ['sort' => $key, 'dir' => $next])) . '">' . e($label) . $arrow . '</a></th>';
             };
             ?>
-            <thead><tr><?= $th('name', 'Client') ?><?= $th('rate', 'Rate / h', true) ?><th class="num"><?= te('VAT') ?></th><?= $th('actions', 'Actions', true) ?><?= $th('reports', 'Reports', true) ?><th></th></tr></thead>
+            <thead><tr><?= $th('name', t('Client')) ?><?= $th('rate', t('Rate / h'), true) ?><th class="num"><?= te('VAT') ?></th><?= $th('actions', t('Actions'), true) ?><?= $th('reports', t('Reports'), true) ?><th></th></tr></thead>
             <tbody>
             <?php foreach ($clients as $c): ?>
                 <tr class="<?= $c['is_archived'] ? 'is-archived' : '' ?>">

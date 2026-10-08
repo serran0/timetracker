@@ -2,7 +2,7 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month.
 
-**Version 0.2.27** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.2.28** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
@@ -37,6 +37,22 @@ Requirements: PHP 8.2 to 8.4 (8.4 recommended; newer versions are not supported)
 Upgrading from an older version: replace the files and open the site; the database is upgraded automatically (the database user needs ALTER privilege).
 
 Setup writes `config/config.php` (mode `0640`, git-ignored). Once it exists the installer is disabled; delete that file to run setup again. Setup refuses to touch a database that already contains Timetracker tables.
+
+### Scaling (many users, several web servers)
+
+Everything is scoped by user, so the web tier is stateless apart from the session. Optional settings in `config/config.php`:
+
+```php
+// Behind a load balancer / reverse proxy: list its addresses so the real visitor IP is used
+// (login throttling is per IP; without this every visitor shares the proxy's address).
+'trusted_proxies' => ['10.0.0.0/8', '192.168.1.5'],
+
+// Sessions shared between web servers. 'files' is the default and fine for one server.
+'session' => ['handler' => 'db'],                                         // the `sessions` table, no extra software
+// 'session' => ['handler' => 'redis', 'save_path' => 'tcp://redis:6379'], // needs the PHP redis extension (also 'memcached')
+```
+
+`trusted_proxies` makes the app read `X-Forwarded-For`, but only from those addresses, and it takes the right-most entry that is not itself a trusted proxy, so a visitor cannot forge their IP. Switching the session handler signs everybody out once. Upgrade first (the upgrade creates the `sessions` table), then change the setting.
 
 ### Local development
 
