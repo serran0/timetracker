@@ -66,6 +66,28 @@ final class ReportBuilder
         ];
     }
 
+    /** The format options worth remembering, as a query-style array that options() understands. */
+    public static function storable(array $opts): array
+    {
+        return array_filter([
+            'submitted' => '1',
+            'format'    => $opts['format'],
+            'cols'      => $opts['cols'],
+            'duration'  => $opts['duration'],
+            'delimiter' => $opts['delimiter'],
+            'decimal'   => $opts['decimal'],
+            'totals'    => $opts['totals'] ? '1' : null,
+            'vat'       => $opts['vat'] ? '1' : null,
+        ], static fn($v) => $v !== null);
+    }
+
+    /** Decodes remembered options (JSON) into a query-style array, or null when there are none. */
+    public static function restore(?string $json): ?array
+    {
+        $data = $json !== null && $json !== '' ? json_decode($json, true) : null;
+        return is_array($data) && $data ? $data + ['submitted' => '1'] : null;
+    }
+
     /**
      * @return array{headers: string[], types: string[], keys: string[], rows: array<int, array>, totals: ?array}
      */

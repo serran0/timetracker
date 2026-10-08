@@ -27,7 +27,17 @@ if ($to < $from) {
 }
 
 $filters = Calendar::filters($_GET);
-$opts = ReportBuilder::options($_GET);
+// Format options are remembered per user: a submitted form saves them, a fresh visit starts from the saved ones.
+$saved = ReportBuilder::restore($user['export_prefs'] ?? null);
+$opts = ReportBuilder::options(isset($_GET['submitted']) || !$saved ? $_GET : $_GET + $saved);
+if (isset($_GET['submitted'])) {
+    $json = json_encode(ReportBuilder::storable($opts), JSON_THROW_ON_ERROR);
+    if ($json !== ($user['export_prefs'] ?? null)) {
+        TimeTracker\Db::run('UPDATE users SET export_prefs = ? WHERE id = ?', [$json, $uid]);
+    }
+} elseif ($opts['format'] === 'xlsx' && !XlsxExporter::available()) {
+    $opts['format'] = 'csv'; // a remembered Excel choice cannot be used on a server without the zip extension
+}
 $clients = Clients::selectable($uid);
 $actions = Actions::names($uid); // action filter is by name across clients
 

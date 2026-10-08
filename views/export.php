@@ -72,6 +72,7 @@ $toStr = $to->format('Y-m-d');
 
         <section class="card">
             <h2><?= te('3 · Format & columns') ?></h2>
+            <p class="muted setting-help"><?= te('Your choices here are remembered for next time.') ?></p>
             <fieldset>
                 <legend><?= te('File format') ?></legend>
                 <div class="radio-row">

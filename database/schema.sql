@@ -14,6 +14,7 @@ CREATE TABLE users (
     locale        VARCHAR(5)   NOT NULL DEFAULT 'en',
     show_holidays TINYINT(1)   NOT NULL DEFAULT 1 COMMENT 'overlay Swedish red days in the calendar',
     default_color VARCHAR(6)   NOT NULL DEFAULT 'client' COMMENT 'calendar colouring: client or action',
+    export_prefs  TEXT         NULL COMMENT 'remembered export format options (JSON)',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at DATETIME     NULL,
     lunch_start   TIME         NULL COMMENT 'default unpaid break window',

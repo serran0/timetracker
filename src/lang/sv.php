@@ -59,6 +59,7 @@ return [
     'Already installed' => 'Redan installerad',
     'Amount' => 'Belopp',
     'Amount incl. VAT' => 'Belopp inkl. moms',
+    'Your choices here are remembered for next time.' => 'Dina val här sparas till nästa gång.',
     'Include VAT (amounts also shown including VAT)' => 'Inkludera moms (belopp visas även inklusive moms)',
     '{amount} incl. VAT' => '{amount} inkl. moms',
     'VAT' => 'Moms',

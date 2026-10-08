@@ -121,6 +121,14 @@ check('export totals default on', ReportBuilder::options([])['totals'], true);
 check('export duration decimal comma', ReportBuilder::formatDuration(450, ['duration' => 'decimal', 'decimal' => ',']), '7,50');
 check('export duration h:mm', ReportBuilder::formatDuration(450, ['duration' => 'hm', 'decimal' => '.']), '7:30');
 
+// Remembered export options round-trip
+$o1 = ReportBuilder::options(['submitted' => '1', 'format' => 'txt', 'cols' => ['hours', 'date'], 'duration' => 'hm', 'delimiter' => ';', 'decimal' => ',', 'vat' => '1']);
+$o2 = ReportBuilder::options(ReportBuilder::restore(json_encode(ReportBuilder::storable($o1))));
+check('export prefs round-trip', $o2, $o1);
+check('export prefs: switched-off options stay off', [$o2['totals'], $o2['vat']], [false, true]);
+check('export prefs: nothing saved', ReportBuilder::restore(null), null);
+check('export prefs: garbage is ignored', ReportBuilder::options(ReportBuilder::restore('{"format":"evil","decimal":"x"}'))['format'], 'csv');
+
 // Plain-text export: output follows the ticked columns
 $mk = static fn(string $date, string $s, string $e, int $brk, string $client, string $action, string $desc, ?string $rate) => Entries::decorate([
     'id' => 1, 'entry_date' => $date, 'start_time' => $s . ':00', 'end_time' => $e . ':00', 'break_minutes' => $brk,

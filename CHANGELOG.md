@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.22 – 2026-10-08
+
+- Export page: all the *Format & columns* choices are remembered per user and used the next time you open the page, on any device: file format, ticked columns, duration format, CSV delimiter, decimal mark, the totals row and the VAT option. They are saved when you press *Update preview* or *Download export*. The period and the client/action/billing filters are not remembered.
+- Database schema 8: `users.export_prefs`; existing installs upgrade automatically.
+
 ## 0.2.21 – 2026-10-08
 
 - Clients page: the client table can be sorted by *Client* (name), *Rate / h*, *Actions* and *Reports*. Click a header to sort (numbers start with the highest first), click again to reverse; the active column shows an arrow. Clients without a rate always come last, archived clients stay at the bottom, and equal values fall back to name order. The choice is remembered for the session, so it survives editing or archiving a client.
