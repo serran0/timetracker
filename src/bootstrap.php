@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 
 define('TT_ROOT', dirname(__DIR__));
-const TT_VERSION = '0.2.26';
+const TT_VERSION = '0.2.27';
 /** Database schema number; bump together with a new step in src/Migrator.php. */
 const TT_SCHEMA = 8;
 
@@ -28,7 +28,7 @@ use TimeTracker\Config;
 
 if (PHP_VERSION_ID < 80200) {
     http_response_code(500);
-    exit('Timetracker requires PHP 8.2 or newer (PHP 8.5 recommended). This server runs ' . PHP_VERSION . '.');
+    exit('Timetracker requires PHP 8.2 to 8.4 (PHP 8.4 recommended). This server runs ' . PHP_VERSION . '.');
 }
 
 mb_internal_encoding('UTF-8');

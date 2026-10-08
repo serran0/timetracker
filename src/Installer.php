@@ -38,11 +38,14 @@ final class Installer
     {
         $checks = [];
         $v = PHP_VERSION;
-        $checks[] = PHP_VERSION_ID >= 80500
-            ? self::check(t('PHP version'), 'ok', $v)
-            : (PHP_VERSION_ID >= 80200
-                ? self::check(t('PHP version'), 'warn', t('{v} – works, but PHP 8.5 is the targeted version.', ['v' => $v]))
-                : self::check(t('PHP version'), 'fail', t('{v} – PHP 8.2 or newer is required (8.5 recommended).', ['v' => $v])));
+        // Supported: PHP 8.2 to 8.4 (8.4 is the target). Newer versions are not tested, so they only get a warning.
+        $checks[] = PHP_VERSION_ID < 80200
+            ? self::check(t('PHP version'), 'fail', t('{v} – PHP 8.2 or newer is required (8.4 recommended).', ['v' => $v]))
+            : (PHP_VERSION_ID >= 80500
+                ? self::check(t('PHP version'), 'warn', t('{v} – newer than PHP 8.4, the newest version this app supports.', ['v' => $v]))
+                : (PHP_VERSION_ID >= 80400
+                    ? self::check(t('PHP version'), 'ok', $v)
+                    : self::check(t('PHP version'), 'warn', t('{v} – works, but PHP 8.4 is the targeted version.', ['v' => $v]))));
 
         foreach (['pdo_mysql' => 'PDO MySQL driver', 'mbstring' => 'mbstring', 'ctype' => 'ctype', 'json' => 'JSON', 'session' => 'Sessions'] as $ext => $label) {
             $checks[] = extension_loaded($ext)

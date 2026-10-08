@@ -2,7 +2,7 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month.
 
-**Version 0.2.26** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.2.27** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
@@ -23,7 +23,7 @@ A light, modern PHP web app for consultants who bill clients by the hour. Track 
 
 ## Install
 
-Requirements: PHP 8.2+ (8.5 recommended) with `pdo_mysql`, `mbstring`, `ctype`, `json` (and `zip` for Excel export), and a MySQL 5.7+/8 or MariaDB 10.3+ server.
+Requirements: PHP 8.2 to 8.4 (8.4 recommended; newer versions are not supported) with `pdo_mysql`, `mbstring`, `ctype`, `json` (and `zip` for Excel export), and a MySQL 5.7+/8 or MariaDB 10.3+ server.
 
 1. Put the project on your server and point the web server's **document root at `public/`**.
    (If you can only use the project folder as the root, the included `.htaccess` forwards requests to `public/` and blocks everything else – Apache only.)

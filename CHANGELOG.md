@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.27 – 2026-10-08
+
+- PHP support is now **8.2 to 8.4**, with 8.4 as the target (it was 8.5, running on 8.2+). The setup page's PHP check is green on 8.4, shows a note on 8.2/8.3 ("works, but PHP 8.4 is the targeted version") and a warning on anything newer than 8.4 (not supported). The README and the startup message say the same. The code uses no 8.5-only features, so there are no functional changes.
+
 ## 0.2.26 – 2026-10-08
 
 - Reverts 0.2.20: the *Per action* list in the summary again shows plain action names, merged across clients (no client name in parentheses).
