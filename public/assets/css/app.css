@@ -188,6 +188,39 @@ details.multi[open] > summary { border-color: var(--primary); }
 .count { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--primary); color: #fff; font-size: .72rem; text-align: center; margin-left: 4px; }
 .multi-menu { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; min-width: 230px; max-height: 320px; overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 12px 4px; }
 
+/* ----------------------------------------------------------- date pickers (month / week) */
+.datepick { position: relative; display: flex; align-items: center; gap: 8px; margin: 0; font-size: .75rem; color: var(--muted); }
+.datepick > span { white-space: nowrap; }
+.dp-btn { display: flex; align-items: center; height: var(--fb-h, 34px); box-sizing: border-box; padding: 0 28px 0 10px; border: 1px solid var(--border-strong); border-radius: 9px; font: inherit; font-size: .88rem; font-weight: 500; color: var(--text); cursor: pointer; white-space: nowrap; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7390' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center; }
+.dp-btn[aria-expanded="true"] { border-color: var(--primary); }
+.dp-pop { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; width: 280px; max-width: calc(100vw - 32px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 10px; color: var(--text); font-size: .88rem; }
+.dp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.dp-title { font-size: .95rem; }
+.dp-nav { width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.dp-nav:hover { background: var(--bg, #f4f6fb); }
+.dp-months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.dp-month { height: 38px; border: 1px solid transparent; border-radius: 8px; background: transparent; font: inherit; color: var(--text); cursor: pointer; text-transform: capitalize; }
+.dp-month:hover { background: var(--primary-soft, #eaeefe); }
+.dp-month.is-today { border-color: var(--border-strong); }
+.dp-month.is-selected { background: var(--primary); color: #fff; }
+.dp-weeks { width: 100%; border-collapse: separate; border-spacing: 0 2px; table-layout: fixed; }
+.dp-weeks th { font-size: .7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; padding: 2px 0 4px; text-align: center; }
+.dp-weeks td { padding: 0; text-align: center; }
+.dp-weeks th.dp-wk, .dp-weeks td.dp-wk { width: 34px; border-right: 1px solid var(--border); }
+.dp-day { width: 100%; height: 30px; border: 0; background: transparent; font: inherit; font-size: .85rem; color: var(--text); cursor: pointer; padding: 0; }
+.dp-wk .dp-day { color: var(--muted); font-size: .75rem; font-weight: 600; }
+.dp-day.is-other { color: var(--muted); opacity: .55; }
+.dp-day.is-today { font-weight: 700; color: var(--primary); text-decoration: underline; }
+.dp-week { cursor: pointer; }
+.dp-week:hover td, .dp-week:focus-within td { background: var(--primary-soft, #eaeefe); }
+.dp-week:hover td:first-child, .dp-week:focus-within td:first-child { border-radius: 8px 0 0 8px; }
+.dp-week:hover td:last-child, .dp-week:focus-within td:last-child { border-radius: 0 8px 8px 0; }
+.dp-week.is-selected td { background: var(--primary); }
+.dp-week.is-selected .dp-day, .dp-week.is-selected .dp-day.is-today { color: #fff; }
+.dp-week.is-selected td:first-child { border-radius: 8px 0 0 8px; }
+.dp-week.is-selected td:last-child { border-radius: 0 8px 8px 0; }
+.dp-foot { margin-top: 8px; display: flex; justify-content: flex-end; }
+
 /* ----------------------------------------------------------- month view */
 .month { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .month-row { display: grid; grid-template-columns: 46px repeat(7, minmax(0, 1fr)) 70px; }
@@ -391,6 +424,8 @@ body.auth .container > .alert { width: 100%; max-width: 400px; }
     .filterbar { padding: 10px; }
     .filterbar label.fb-field { flex: 1 1 130px; flex-direction: column; align-items: stretch; gap: 3px; }
     .filterbar input, .filterbar select { width: 100%; }
+    .filterbar .datepick { flex: 1 1 130px; flex-direction: column; align-items: stretch; gap: 3px; }
+    .filterbar .dp-btn { width: 100%; }
     details.multi { flex: 1 1 130px; }
 
     /* month: compact grid with dots */

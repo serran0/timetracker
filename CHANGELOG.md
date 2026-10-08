@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.12 – 2026-10-08
+
+- The date picker is back in the calendar filter bar, with a variant per view:
+  - **Month:** a month picker with year arrows and a 12-month grid.
+  - **Week:** a month calendar showing all days with a week-number column on the left; hovering a row highlights the whole week, and clicking it opens that week.
+  - **Day:** the normal date picker, as before.
+- All three keep the active filters, are localised (English/Swedish) and work on touch screens. Escape or a click outside closes the picker.
+
 ## 0.2.11 – 2026-10-08
 
 - The "Go to date" picker is removed from the filter bar in the month and week views (navigate with the arrows, *Today* and the view tabs). The day view keeps it, and the list view keeps its From/To period. The current period is still kept when filters are applied.

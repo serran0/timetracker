@@ -197,6 +197,8 @@ return [
     'from {time}' => 'från {time}',
     'Generated' => 'Skapad',
     'Go to date' => 'Gå till datum',
+    'Go to month' => 'Gå till månad',
+    'Go to week' => 'Gå till vecka',
     'Go to sign in' => 'Gå till inloggningen',
     'Good Friday' => 'Långfredagen',
     'Host' => 'Värd',

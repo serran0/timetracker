@@ -70,6 +70,10 @@ final class I18n
         'New report {from}–{to}',
         'Report whole working week (minus daily lunch break)',
         'Week {n}',
+        'Wk',
+        'Previous',
+        'Next',
+        'Today',
     ];
 
     private static string $locale = self::DEFAULT;
@@ -166,6 +170,14 @@ final class I18n
         for ($i = 0; $i < 7; $i++) {
             $dow[] = self::dayName($i === 0 ? 7 : $i, true); // JS getDay(): 0 = Sunday
         }
-        return ['locale' => self::$locale, 'decimal' => self::decimalMark(), 'dow' => $dow, 'strings' => $strings];
+        $months = $monthsShort = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $months[] = self::monthName($m);
+            $monthsShort[] = self::monthName($m, true);
+        }
+        return [
+            'locale' => self::$locale, 'decimal' => self::decimalMark(), 'dow' => $dow,
+            'months' => $months, 'monthsShort' => $monthsShort, 'strings' => $strings,
+        ];
     }
 }

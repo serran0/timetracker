@@ -120,3 +120,138 @@
         });
     }
 })();
+
+// Calendar filter bar: month picker (year + month grid) and week picker (whole-week rows with week numbers).
+(() => {
+    'use strict';
+    const T = window.TT;
+    const i18n = T.i18n;
+    const pad = (n) => String(n).padStart(2, '0');
+    const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    const monday = (d) => addDays(d, -((d.getDay() + 6) % 7));
+    // ISO 8601 week number: the week belongs to the year of its Thursday.
+    const isoWeek = (d) => {
+        const th = addDays(monday(d), 3);
+        const jan1 = new Date(th.getFullYear(), 0, 1);
+        return Math.floor((th - jan1) / 864e5 / 7) + 1;
+    };
+    const mondayFirst = [1, 2, 3, 4, 5, 6, 0].map((i) => (i18n.dow || [])[i] || '');
+
+    const el = (tag, cls, text) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text !== undefined) n.textContent = text;
+        return n;
+    };
+
+    document.querySelectorAll('[data-datepick]').forEach((root) => {
+        const mode = root.dataset.datepick;
+        const input = root.querySelector('input[name=date]');
+        const toggle = root.querySelector('[data-dp-toggle]');
+        const selected = parse(input.value);
+        const todayD = new Date();
+        const today = new Date(todayD.getFullYear(), todayD.getMonth(), todayD.getDate());
+        let view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+        let pop = null;
+
+        const pick = (d) => {
+            input.value = iso(d);
+            if (input.form) input.form.submit();
+        };
+        const nav = (label, onClick) => {
+            const b = el('button', 'dp-nav', label === 'prev' ? '‹' : '›');
+            b.type = 'button';
+            b.setAttribute('aria-label', T.t(label === 'prev' ? 'Previous' : 'Next'));
+            b.addEventListener('click', onClick);
+            return b;
+        };
+
+        const render = () => {
+            pop.textContent = '';
+            const head = el('div', 'dp-head');
+            if (mode === 'month') {
+                head.append(nav('prev', () => { view = new Date(view.getFullYear() - 1, 0, 1); render(); }),
+                    el('strong', 'dp-title', String(view.getFullYear())),
+                    nav('next', () => { view = new Date(view.getFullYear() + 1, 0, 1); render(); }));
+                pop.appendChild(head);
+                const grid = el('div', 'dp-months');
+                (i18n.monthsShort || []).forEach((name, m) => {
+                    const b = el('button', 'dp-month', name);
+                    b.type = 'button';
+                    b.title = (i18n.months || [])[m] + ' ' + view.getFullYear();
+                    if (view.getFullYear() === selected.getFullYear() && m === selected.getMonth()) b.classList.add('is-selected');
+                    if (view.getFullYear() === today.getFullYear() && m === today.getMonth()) b.classList.add('is-today');
+                    b.addEventListener('click', () => pick(new Date(view.getFullYear(), m, 1)));
+                    grid.appendChild(b);
+                });
+                pop.appendChild(grid);
+            } else {
+                head.append(nav('prev', () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); render(); }),
+                    el('strong', 'dp-title', (i18n.months || [])[view.getMonth()] + ' ' + view.getFullYear()),
+                    nav('next', () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); render(); }));
+                pop.appendChild(head);
+                const table = el('table', 'dp-weeks');
+                const hr = el('tr');
+                hr.appendChild(el('th', 'dp-wk', T.t('Wk')));
+                mondayFirst.forEach((n) => hr.appendChild(el('th', '', n)));
+                const thead = el('thead');
+                thead.appendChild(hr);
+                table.appendChild(thead);
+                const tbody = el('tbody');
+                const selMonday = iso(monday(selected));
+                const lastMonday = monday(new Date(view.getFullYear(), view.getMonth() + 1, 0));
+                for (let start = monday(view); start <= lastMonday; start = addDays(start, 7)) {
+                    const tr = el('tr', 'dp-week');
+                    if (iso(start) === selMonday) tr.classList.add('is-selected');
+                    const wk = el('td', 'dp-wk');
+                    const wb = el('button', 'dp-day', String(isoWeek(start)));
+                    wb.type = 'button';
+                    wb.setAttribute('aria-label', T.t('Week {n}', { n: isoWeek(start) }));
+                    wk.appendChild(wb);
+                    tr.appendChild(wk);
+                    const rowMonday = start;
+                    for (let i = 0; i < 7; i++) {
+                        const d = addDays(rowMonday, i);
+                        const td = el('td');
+                        const b = el('button', 'dp-day', String(d.getDate()));
+                        b.type = 'button';
+                        if (d.getMonth() !== view.getMonth()) b.classList.add('is-other');
+                        if (iso(d) === iso(today)) b.classList.add('is-today');
+                        td.appendChild(b);
+                        tr.appendChild(td);
+                    }
+                    tr.addEventListener('click', () => pick(rowMonday));
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+                pop.appendChild(table);
+            }
+            const foot = el('div', 'dp-foot');
+            const tb = el('button', 'btn btn-sm', T.t('Today'));
+            tb.type = 'button';
+            tb.addEventListener('click', () => pick(today));
+            foot.appendChild(tb);
+            pop.appendChild(foot);
+        };
+
+        const close = () => {
+            if (!pop) return;
+            pop.remove();
+            pop = null;
+            toggle.setAttribute('aria-expanded', 'false');
+        };
+        const open = () => {
+            view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+            pop = el('div', 'dp-pop');
+            pop.setAttribute('role', 'dialog');
+            root.appendChild(pop);
+            toggle.setAttribute('aria-expanded', 'true');
+            render();
+        };
+        toggle.addEventListener('click', () => (pop ? close() : open()));
+        document.addEventListener('click', (e) => { if (pop && e.target.isConnected && !root.contains(e.target)) close(); });
+        document.addEventListener('keydown', (e) => { if (pop && e.key === 'Escape') { close(); toggle.focus(); } });
+    });
+})();

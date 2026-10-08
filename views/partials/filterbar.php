@@ -36,9 +36,19 @@ $exportUrl = url('export.php', [
         <label class="fb-field"><?= te('Go to date') ?>
             <input type="date" name="date" value="<?= e($range['date']->format('Y-m-d')) ?>" data-autosubmit>
         </label>
+    <?php elseif ($view === 'week'): ?>
+        <?php $pickLabel = te('Wk {n}', ['n' => $range['from']->format('W')]) . ' · ' . e(date_l10n($range['from'], 'j M') . ' – ' . date_l10n($range['to'], 'j M Y')); ?>
+        <div class="fb-field datepick" data-datepick="week">
+            <span><?= te('Go to week') ?></span>
+            <button type="button" class="dp-btn" data-dp-toggle aria-haspopup="dialog" aria-expanded="false"><?= $pickLabel ?></button>
+            <input type="hidden" name="date" value="<?= e($range['date']->format('Y-m-d')) ?>">
+        </div>
     <?php else: ?>
-        <?php /* month and week: no date control; keep the period when filters are applied */ ?>
-        <input type="hidden" name="date" value="<?= e($range['date']->format('Y-m-d')) ?>">
+        <div class="fb-field datepick" data-datepick="month">
+            <span><?= te('Go to month') ?></span>
+            <button type="button" class="dp-btn" data-dp-toggle aria-haspopup="dialog" aria-expanded="false"><?= e(date_l10n($range['date'], 'F Y')) ?></button>
+            <input type="hidden" name="date" value="<?= e($range['date']->format('Y-m-d')) ?>">
+        </div>
     <?php endif; ?>
 
     <details class="multi fb-field">
