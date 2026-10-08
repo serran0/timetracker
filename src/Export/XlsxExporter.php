@@ -37,20 +37,33 @@ final class XlsxExporter
 
         $sumRows = [];
         $hmStyle = $opts['duration'] === 'hm';
+        $hasVat = !empty($opts['vat']) && abs($summary['amount_vat'] - $summary['amount']) >= 0.005; // only when the option is on and some client has VAT
         foreach (['by_client' => t('Client'), 'by_action' => t('Action')] as $key => $label) {
-            $sumRows[] = [self::cell($label, self::S_HEAD), self::cell(t('Duration'), self::S_HEAD), self::cell(t('Amount'), self::S_HEAD)];
+            $head = [self::cell($label, self::S_HEAD), self::cell(t('Duration'), self::S_HEAD), self::cell(t('Amount'), self::S_HEAD)];
+            if ($hasVat) {
+                $head[] = self::cell(t('Amount incl. VAT'), self::S_HEAD);
+            }
+            $sumRows[] = $head;
             foreach ($summary[$key] as $row) {
-                $sumRows[] = [
+                $line = [
                     self::cell($row['label'] ?? $row['name']),
                     $hmStyle ? self::num($row['minutes'] / 1440, self::S_HM) : self::num($row['minutes'] / 60, self::S_NUM),
                     $row['amount'] > 0 ? self::num($row['amount'], self::S_NUM) : self::cell(''),
                 ];
+                if ($hasVat) {
+                    $line[] = $row['amount'] > 0 ? self::num($row['amount_vat'], self::S_NUM) : self::cell('');
+                }
+                $sumRows[] = $line;
             }
-            $sumRows[] = [
+            $total = [
                 self::cell(t('Total'), self::S_BOLD),
                 $hmStyle ? self::num($summary['minutes'] / 1440, self::S_BOLD_HM) : self::num($summary['minutes'] / 60, self::S_BOLD_NUM),
                 $summary['amount'] > 0 ? self::num($summary['amount'], self::S_BOLD_NUM) : self::cell(''),
             ];
+            if ($hasVat) {
+                $total[] = $summary['amount'] > 0 ? self::num($summary['amount_vat'], self::S_BOLD_NUM) : self::cell('');
+            }
+            $sumRows[] = $total;
             $sumRows[] = [];
         }
         $sheet2 = self::sheet([], $sumRows, false, []);

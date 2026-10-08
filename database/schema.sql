@@ -29,6 +29,7 @@ CREATE TABLE clients (
     reference   VARCHAR(160) NULL,
     color       CHAR(7)      NOT NULL DEFAULT '#4f46e5',
     hourly_rate DECIMAL(10,2) NULL,
+    vat_percent DECIMAL(5,2)  NOT NULL DEFAULT 0 COMMENT 'VAT shown next to amounts; 0 = none',
     notes       TEXT         NULL,
     is_archived TINYINT(1)   NOT NULL DEFAULT 0,
     created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

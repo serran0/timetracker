@@ -65,7 +65,7 @@ if (is_post()) {
 if ($form === null) {
     $editId = (int) ($_GET['edit'] ?? 0);
     $row = $editId ? Clients::find($uid, $editId) : null;
-    $form = $row ?? ['id' => null, 'name' => '', 'reference' => '', 'color' => Clients::nextColor($uid), 'hourly_rate' => null, 'notes' => ''];
+    $form = $row ?? ['id' => null, 'name' => '', 'reference' => '', 'color' => Clients::nextColor($uid), 'hourly_rate' => null, 'vat_percent' => 0, 'notes' => ''];
 }
 
 View::render('clients', [

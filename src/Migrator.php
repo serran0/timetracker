@@ -9,7 +9,7 @@ use PDO;
  * Upgrades an existing database to the schema number the code expects (TT_SCHEMA).
  * Each step is idempotent, and a database lock stops two requests from migrating at once.
  *
- * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring).
+ * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring), 7 = 0.2.17 (VAT per client).
  */
 final class Migrator
 {
@@ -50,6 +50,14 @@ final class Migrator
         $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
         $q->execute([$table, $column]);
         return (bool) $q->fetchColumn();
+    }
+
+    /** 0.2.17: VAT percentage per client (0 = none, so existing amounts look the same until a VAT rate is set). */
+    private static function toSchema7(PDO $pdo): void
+    {
+        if (!self::columnExists($pdo, 'clients', 'vat_percent')) {
+            $pdo->exec("ALTER TABLE clients ADD COLUMN vat_percent DECIMAL(5,2) NOT NULL DEFAULT 0 COMMENT 'VAT shown next to amounts; 0 = none' AFTER hourly_rate");
+        }
     }
 
     /** 0.2.14: the user's default for colouring the calendar (by client or by action). */

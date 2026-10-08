@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.17 – 2026-10-08
+
+- **VAT per client.** Each client has a *VAT (%)* field (empty/0 = no VAT). Wherever an amount is calculated, the figure including VAT follows in parentheses, e.g. `3 325.00 (4 172.88)`: report list and its total, the summary, and the export preview. Totals add up the per-report VAT-inclusive amounts. The clients list shows each client's VAT. Clients without VAT show no parentheses.
+- **Exports:** a new *Include VAT* option (on by default) on the export page. When on, CSV and Excel get an *Amount incl. VAT* column after *Amount* (and the Excel summary sheet a matching column), and the plain-text report shows `[800.00 SEK (1 000.00 SEK)]` on lines, summaries and the total. When off, exports contain no VAT figures.
+- Database schema 7: `clients.vat_percent`; existing installs upgrade automatically with VAT 0, so nothing changes until you set a rate.
+
 ## 0.2.16 – 2026-10-08
 
 - List view: the "Colour by…" control is removed from the filter bar, since the list has no colour choice to make. The other views keep it.

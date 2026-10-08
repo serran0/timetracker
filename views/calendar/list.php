@@ -43,14 +43,14 @@ $total = 0;
                     <?php if (!$e['billable']): ?><span class="badge"><?= te('non-billable') ?></span><?php endif; ?>
                     <?php if ($e['description']): ?><div class="desc"><?= nl2br(e($e['description'])) ?></div><?php endif; ?>
                 </td>
-                <td class="num"><?= $e['amount'] !== null ? e(fmt_money($e['amount'])) : '<span class="muted">–</span>' ?></td>
+                <td class="num"><?= $e['amount'] !== null ? e(fmt_money_vat($e['amount'], $e['amount_vat'])) : '<span class="muted">–</span>' ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
     <?php endforeach; ?>
     <tfoot>
     <tr><td colspan="2"><strong><?= te('Total') ?></strong></td><td class="num"><strong><?= e(fmt_dur($total)) ?></strong></td><td></td>
-        <td class="num"><strong><?= $summary['amount'] > 0 ? e(fmt_money($summary['amount']) . ' ' . $cur) : '' ?></strong></td></tr>
+        <td class="num"><strong><?= $summary['amount'] > 0 ? e(fmt_money_vat($summary['amount'], $summary['amount_vat'], $cur)) : '' ?></strong></td></tr>
     </tfoot>
 </table>
 </div>

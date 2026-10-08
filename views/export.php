@@ -114,6 +114,7 @@ $toStr = $to->format('Y-m-d');
                 </label>
             </div>
             <label class="check-label"><input type="checkbox" name="totals" value="1" <?= $opts['totals'] ? 'checked' : '' ?>> <?= te('Add a totals row') ?></label>
+            <label class="check-label"><input type="checkbox" name="vat" value="1" <?= $opts['vat'] ? 'checked' : '' ?>> <?= te('Include VAT (amounts also shown including VAT)') ?></label>
         </section>
     </div>
 
@@ -124,7 +125,7 @@ $toStr = $to->format('Y-m-d');
                 <div class="kpi"><span class="kpi-label"><?= te('Reports') ?></span><span class="kpi-value"><?= (int) $rowCount ?></span></div>
                 <div class="kpi"><span class="kpi-label"><?= te('Hours') ?></span><span class="kpi-value"><?= e(fmt_dec($summary['minutes'])) ?></span></div>
                 <?php if ($summary['amount'] > 0): ?>
-                <div class="kpi"><span class="kpi-label"><?= te('Amount') ?></span><span class="kpi-value"><?= e(fmt_money($summary['amount'])) ?></span></div>
+                <div class="kpi"><span class="kpi-label"><?= te('Amount') ?></span><span class="kpi-value"><?= e(fmt_money_vat($summary['amount'], $opts['vat'] ? $summary['amount_vat'] : null)) ?></span></div>
                 <?php endif; ?>
             </div>
             <?php if ($table['rows']): ?>

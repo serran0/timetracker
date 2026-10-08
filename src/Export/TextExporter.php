@@ -30,6 +30,11 @@ final class TextExporter
         $mark = $opts['decimal'];
         $dualDur = static fn(int|float $m): string => fmt_dur($m) . ' (' . fmt_dec($m, 2, $mark) . ' h)';
         $money = static fn(float $v): string => fmt_money($v, $cur, $mark);
+        // "net (gross)": the VAT-inclusive figure follows in parentheses when the VAT option is on and VAT applies.
+        $amt = static function (float $net, float $gross) use ($opts, $money): string {
+            return (!empty($opts['vat']) && abs($gross - $net) >= 0.005) ? $money($net) . ' (' . $money($gross) . ')' : $money($net);
+        };
+        $hasAmount = $has('amount');
         $rule = static fn(string $ch): string => str_repeat($ch, self::WIDTH);
         $L = [];
 
@@ -58,7 +63,7 @@ final class TextExporter
         $showTotals = !empty($opts['totals']);
 
         // One entry line from the ticked columns.
-        $line = static function (array $r) use ($has, $dur, $money, $cur, $mark): array {
+        $line = static function (array $r) use ($has, $dur, $money, $amt, $hasAmount): array {
             $parts = [];
             if ($has('start') && $has('end')) {
                 $parts[] = $r['start'] . '-' . $r['end'];
@@ -90,8 +95,8 @@ final class TextExporter
             if ($has('rate') && $r['effective_rate'] !== null) {
                 $parts[] = '@ ' . $money($r['effective_rate']) . '/h';
             }
-            if ($has('amount') && $r['amount'] !== null) {
-                $parts[] = '[' . $money($r['amount']) . ']';
+            if ($hasAmount && $r['amount'] !== null) {
+                $parts[] = '[' . $amt($r['amount'], $r['amount_vat']) . ']';
             }
             return $parts;
         };
@@ -138,7 +143,7 @@ final class TextExporter
         if ($showTotals) {
             $sum = Entries::summarize($entries);
             $showHours = $has('hours');
-            $showAmount = $has('amount') && $sum['amount'] > 0;
+            $showAmount = $hasAmount && $sum['amount'] > 0;
 
             // Per-client / per-action summaries, only when that column is ticked and there is a figure to show.
             $groups = [];
@@ -158,7 +163,7 @@ final class TextExporter
                             $cells[] = str_pad($dualDur($it['minutes']), 18);
                         }
                         if ($showAmount && $it['amount'] > 0) {
-                            $cells[] = $money($it['amount']);
+                            $cells[] = $amt($it['amount'], $it['amount_vat']);
                         }
                         $L[] = sprintf('  %-30s %s', mb_strimwidth($it['label'] ?? $it['name'], 0, 30, '…'), rtrim(implode('  ', $cells)));
                     }
@@ -172,7 +177,7 @@ final class TextExporter
                 $totals[] = [mb_strtoupper(t('Billable hours')), $dualDur($sum['billable_minutes'])];
             }
             if ($showAmount) {
-                $totals[] = [mb_strtoupper(t('Total amount')), $money($sum['amount'])];
+                $totals[] = [mb_strtoupper(t('Total amount')), $amt($sum['amount'], $sum['amount_vat'])];
             }
             if ($totals) {
                 $L[] = $rule('=');

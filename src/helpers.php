@@ -143,6 +143,13 @@ function fmt_dec(int|float $minutes, int $decimals = 2, ?string $mark = null): s
     return number_format($minutes / 60, $decimals, $mark ?? \TimeTracker\I18n::decimalMark(), '');
 }
 
+/** "1 000,00 SEK (1 250,00 SEK)": the amount with the VAT-inclusive figure in parentheses when VAT applies. */
+function fmt_money_vat(float $net, ?float $gross, string $currency = '', ?string $mark = null): string
+{
+    $out = fmt_money($net, $currency, $mark);
+    return ($gross !== null && abs($gross - $net) >= 0.005) ? $out . ' (' . fmt_money($gross, $currency, $mark) . ')' : $out;
+}
+
 function fmt_money(float $amount, string $currency = '', ?string $mark = null): string
 {
     return number_format($amount, 2, $mark ?? \TimeTracker\I18n::decimalMark(), ' ') . ($currency !== '' ? ' ' . $currency : '');

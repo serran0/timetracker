@@ -25,7 +25,7 @@ $groups = [t('Per client') => $summary['by_client'], t('Per action') => $summary
         <div class="kpi">
             <span class="kpi-label"><?= te('Est. amount') ?></span>
             <span class="kpi-value"><?= e(fmt_money($summary['amount'])) ?></span>
-            <span class="kpi-sub"><?= e($cur) ?></span>
+            <span class="kpi-sub"><?= e($cur) ?><?php if (abs($summary['amount_vat'] - $summary['amount']) >= 0.005): ?> · (<?= te('{amount} incl. VAT', ['amount' => fmt_money($summary['amount_vat'])]) ?>)<?php endif; ?></span>
         </div>
         <?php endif; ?>
         <div class="kpi">

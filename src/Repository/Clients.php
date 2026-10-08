@@ -55,12 +55,22 @@ final class Clients
         } else {
             $rate = round((float) $rate, 2);
         }
+        $vat = str_replace(',', '.', trim((string) ($in['vat_percent'] ?? '')));
+        if ($vat === '') {
+            $vat = 0.0;
+        } elseif (!is_numeric($vat) || (float) $vat < 0 || (float) $vat > 100) {
+            $errors[] = t('VAT must be a percentage between 0 and 100.');
+            $vat = 0.0;
+        } else {
+            $vat = round((float) $vat, 2);
+        }
         $ref = trim((string) ($in['reference'] ?? ''));
         $data = [
             'name'        => $name,
             'reference'   => $ref !== '' ? mb_substr($ref, 0, 160) : null,
             'color'       => valid_color((string) ($in['color'] ?? '')),
             'hourly_rate' => $rate,
+            'vat_percent' => $vat,
             'notes'       => trim((string) ($in['notes'] ?? '')) ?: null,
         ];
         return [$data, $errors];
@@ -69,12 +79,12 @@ final class Clients
     public static function save(int $uid, array $d, ?int $id = null): int
     {
         if ($id) {
-            Db::run('UPDATE clients SET name=?, reference=?, color=?, hourly_rate=?, notes=? WHERE id=? AND user_id=?',
-                [$d['name'], $d['reference'], $d['color'], $d['hourly_rate'], $d['notes'], $id, $uid]);
+            Db::run('UPDATE clients SET name=?, reference=?, color=?, hourly_rate=?, vat_percent=?, notes=? WHERE id=? AND user_id=?',
+                [$d['name'], $d['reference'], $d['color'], $d['hourly_rate'], $d['vat_percent'], $d['notes'], $id, $uid]);
             return $id;
         }
-        return Db::insert('INSERT INTO clients (user_id, name, reference, color, hourly_rate, notes) VALUES (?,?,?,?,?,?)',
-            [$uid, $d['name'], $d['reference'], $d['color'], $d['hourly_rate'], $d['notes']]);
+        return Db::insert('INSERT INTO clients (user_id, name, reference, color, hourly_rate, vat_percent, notes) VALUES (?,?,?,?,?,?,?)',
+            [$uid, $d['name'], $d['reference'], $d['color'], $d['hourly_rate'], $d['vat_percent'], $d['notes']]);
     }
 
     public static function setArchived(int $uid, int $id, bool $archived): void

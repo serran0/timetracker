@@ -30,6 +30,9 @@ final class ReportBuilder
         'description' => ['Description', 'text'],
     ];
 
+    /** Extra column that follows "Amount" when the VAT option is on (not selectable on its own). */
+    public const VAT_COLUMN = ['Amount incl. VAT', 'money'];
+
     /** Marker for the first cell of the totals row; exporters print the translated word. */
     public const TOTAL = "\0TOTAL";
 
@@ -59,6 +62,7 @@ final class ReportBuilder
             'delimiter' => in_array($q['delimiter'] ?? '', [',', ';', 'tab'], true) ? $q['delimiter'] : ',',
             'decimal'   => ($q['decimal'] ?? '') === ',' ? ',' : '.',
             'totals'    => !array_key_exists('submitted', $q) || !empty($q['totals']),
+            'vat'       => !array_key_exists('submitted', $q) || !empty($q['vat']), // also show amounts including VAT
         ];
     }
 
@@ -67,9 +71,16 @@ final class ReportBuilder
      */
     public static function table(array $entries, array $opts): array
     {
-        $keys = $opts['cols'];
-        $headers = array_map(static fn($k) => t(self::COLUMNS[$k][0]), $keys);
-        $types = array_map(static fn($k) => self::COLUMNS[$k][1], $keys);
+        $keys = [];
+        foreach ($opts['cols'] as $k) {
+            $keys[] = $k;
+            if ($k === 'amount' && !empty($opts['vat'])) {
+                $keys[] = 'amount_vat';
+            }
+        }
+        $def = static fn(string $k): array => $k === 'amount_vat' ? self::VAT_COLUMN : self::COLUMNS[$k];
+        $headers = array_map(static fn($k) => t($def($k)[0]), $keys);
+        $types = array_map(static fn($k) => $def($k)[1], $keys);
 
         $rows = [];
         foreach ($entries as $e) {
@@ -87,6 +98,7 @@ final class ReportBuilder
                 'billable'    => $e['billable'] ? t('Yes') : t('No'),
                 'rate'        => $e['effective_rate'],
                 'amount'      => $e['amount'],
+                'amount_vat'  => $e['amount_vat'],
                 'description' => (string) ($e['description'] ?? ''),
             ];
             $rows[] = array_map(static fn($k) => $all[$k], $keys);
@@ -100,6 +112,7 @@ final class ReportBuilder
                 $totals[$i] = match ($k) {
                     'hours'  => $sum['minutes'],
                     'amount' => $sum['amount'] > 0 ? round($sum['amount'], 2) : null,
+                    'amount_vat' => $sum['amount'] > 0 ? round($sum['amount_vat'], 2) : null,
                     default  => null,
                 };
             }

@@ -268,6 +268,32 @@ check('range is inclusive', array_keys(Holidays::forRange($on, '2026-12-24', '20
 check('range across the year boundary', array_keys(Holidays::forRange($on, '2026-12-30', '2027-01-06')), ['2026-12-31', '2027-01-01', '2027-01-06']);
 check('range without holidays', Holidays::forRange($on, '2026-02-01', '2026-02-28'), []);
 // own work-free days: validation
+// VAT per client
+$vrow = Entries::decorate(['entry_date' => '2026-10-05', 'start_time' => '08:00:00', 'end_time' => '17:00:00', 'break_minutes' => 60,
+    'hourly_rate' => '100.00', 'vat_percent' => '25.00', 'rate_multiplier' => '1.00', 'is_billable' => 1, 'description' => null,
+    'client_id' => 1, 'client_name' => 'A', 'client_color' => '#000', 'client_reference' => null, 'action_id' => 1, 'action_name' => 'N', 'action_color' => '#000']);
+check('vat: amount incl. VAT', [$vrow['amount'], $vrow['amount_vat']], [800.0, 1000.0]);
+check('vat: no VAT keeps the amount', $ents[0]['amount_vat'], $ents[0]['amount']);
+check('vat: non-billable has no amount', Entries::decorate(['entry_date' => '2026-10-05', 'start_time' => '08:00:00', 'end_time' => '09:00:00', 'break_minutes' => 0,
+    'hourly_rate' => '100.00', 'vat_percent' => '25.00', 'rate_multiplier' => '1.00', 'is_billable' => 0, 'description' => null])['amount_vat'], null);
+$vs = Entries::summarize([$vrow, $vrow]);
+check('vat: summary totals', [$vs['amount'], $vs['amount_vat'], $vs['by_client'][1]['amount_vat']], [1600.0, 2000.0, 2000.0]);
+check('vat: money with parentheses', fmt_money_vat(800.0, 1000.0, 'SEK', '.'), '800.00 SEK (1 000.00 SEK)');
+check('vat: no parentheses without VAT', fmt_money_vat(800.0, 800.0, 'SEK', '.'), '800.00 SEK');
+$vents = [$vrow, $mk('2026-10-06', '09:00', '11:00', 0, 'Globex', 'Normal working time', 'No VAT here', '50.00')];
+$vtxt = static fn(array $cols, bool $vat) => TextExporter::render($vents, ['cols' => $cols, 'duration' => 'decimal', 'decimal' => '.', 'totals' => true, 'vat' => $vat, 'format' => 'txt', 'delimiter' => ','], $meta);
+$o = $vtxt(['date', 'amount'], true);
+check('vat: text line has both figures', str_contains($o, '[800.00 SEK (1 000.00 SEK)]'), true);
+check('vat: text line without VAT stays plain', str_contains($o, '[100.00 SEK]'), true);
+check('vat: text total has both figures', str_contains($o, '900.00 SEK (1 100.00 SEK)'), true);
+$o = $vtxt(['date', 'amount'], false);
+check('vat: option off shows no VAT figures', [str_contains($o, '1 000.00'), str_contains($o, '1 100.00'), str_contains($o, '[800.00 SEK]')], [false, false, true]);
+check('vat: no amount column, no VAT figures', str_contains($vtxt(['date', 'hours'], true), '1 000.00'), false);
+$vt = ReportBuilder::table($vents, ['cols' => ['amount'], 'totals' => true, 'vat' => true]);
+check('vat: export table adds the VAT column after Amount', [$vt['keys'], $vt['rows'][0], $vt['totals']], [['amount', 'amount_vat'], [800.0, 1000.0], [900.0, 1100.0]]);
+check('vat: export table without the option', ReportBuilder::table($vents, ['cols' => ['amount'], 'totals' => true, 'vat' => false])['keys'], ['amount']);
+check('vat: option defaults on, can be switched off', [ReportBuilder::options([])['vat'], ReportBuilder::options(['submitted' => '1'])['vat'], ReportBuilder::options(['submitted' => '1', 'vat' => '1'])['vat']], [true, false, true]);
+
 [$d, $e] = FreeDays::parse(['from' => '2026-07-06', 'to' => '2026-07-17', 'name' => ' Summer holiday ']);
 check('free days: valid range', [$d['start_date'], $d['end_date'], $d['name'], $e], ['2026-07-06', '2026-07-17', 'Summer holiday', []]);
 [$d, $e] = FreeDays::parse(['from' => '2026-05-15', 'to' => '', 'name' => '']);

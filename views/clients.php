@@ -20,7 +20,7 @@ $editing = !empty($form['id']);
         <?php else: ?>
         <div class="table-wrap">
         <table class="table">
-            <thead><tr><th><?= te('Client') ?></th><th class="num"><?= te('Rate / h') ?></th><th class="num"><?= te('Actions') ?></th><th class="num"><?= te('Reports') ?></th><th></th></tr></thead>
+            <thead><tr><th><?= te('Client') ?></th><th class="num"><?= te('Rate / h') ?></th><th class="num"><?= te('VAT') ?></th><th class="num"><?= te('Actions') ?></th><th class="num"><?= te('Reports') ?></th><th></th></tr></thead>
             <tbody>
             <?php foreach ($clients as $c): ?>
                 <tr class="<?= $c['is_archived'] ? 'is-archived' : '' ?>">
@@ -31,6 +31,7 @@ $editing = !empty($form['id']);
                         <?php if ($c['reference']): ?><br><small class="muted"><?= e($c['reference']) ?></small><?php endif; ?>
                     </td>
                     <td class="num"><?= $c['hourly_rate'] !== null ? e(fmt_money((float) $c['hourly_rate'], $user['currency'])) : '<span class="muted">–</span>' ?></td>
+                    <td class="num"><?= (float) $c['vat_percent'] > 0 ? e(rtrim(rtrim(number_format((float) $c['vat_percent'], 2, TimeTracker\I18n::decimalMark(), ''), '0'), TimeTracker\I18n::decimalMark())) . ' %' : '<span class="muted">–</span>' ?></td>
                     <td class="num"><a href="actions.php?client=<?= (int) $c['id'] ?>"><?= (int) $c['action_count'] ?></a></td>
                     <td class="num"><?= (int) $c['entry_count'] ?></td>
                     <td class="row-actions">
@@ -73,6 +74,10 @@ $editing = !empty($form['id']);
                 </label>
                 <label><?= te('Hourly rate ({currency})', ['currency' => $user['currency']]) ?>
                     <input type="text" inputmode="decimal" name="hourly_rate" value="<?= $form['hourly_rate'] !== null ? e((string) $form['hourly_rate']) : '' ?>" placeholder="<?= te('e.g. 95') ?>">
+                </label>
+                <label><?= te('VAT (%)') ?>
+                    <input type="text" inputmode="decimal" name="vat_percent" value="<?= (float) ($form['vat_percent'] ?? 0) > 0 ? e((string) (float) $form['vat_percent']) : '' ?>" placeholder="<?= te('e.g. 25') ?>">
+                    <small class="muted"><?= te('Amounts for this client are also shown including VAT, in parentheses. Leave empty for none.') ?></small>
                 </label>
             </div>
             <label><?= te('Notes') ?>

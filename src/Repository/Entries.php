@@ -14,7 +14,7 @@ final class Entries
     public static function search(int $uid, string $from, string $to, array $filter = []): array
     {
         $sql = 'SELECT e.id, e.entry_date, e.start_time, e.end_time, e.break_minutes, e.description,
-                       e.client_id, c.name AS client_name, c.color AS client_color, c.hourly_rate, c.reference AS client_reference,
+                       e.client_id, c.name AS client_name, c.color AS client_color, c.hourly_rate, c.vat_percent, c.reference AS client_reference,
                        e.action_id, a.name AS action_name, a.color AS action_color, a.rate_multiplier, a.is_billable
                 FROM time_entries e
                 JOIN clients c ON c.id = e.client_id
@@ -76,30 +76,37 @@ final class Entries
         $r['billable'] = $billable;
         $r['effective_rate'] = ($rate !== null && $billable) ? round($rate * (float) $r['rate_multiplier'], 2) : null;
         $r['amount'] = $r['effective_rate'] !== null ? round($minutes / 60 * $r['effective_rate'], 2) : null;
+        // Amount including the client's VAT; equal to the amount when the client has no VAT.
+        $vat = (float) ($r['vat_percent'] ?? 0);
+        $r['vat_percent'] = $vat;
+        $r['amount_vat'] = $r['amount'] !== null ? round($r['amount'] * (1 + $vat / 100), 2) : null;
         return $r;
     }
 
     /** Totals over a list of decorated rows. */
     public static function summarize(array $rows): array
     {
-        $sum = ['minutes' => 0, 'billable_minutes' => 0, 'amount' => 0.0, 'count' => count($rows), 'by_client' => [], 'by_action' => []];
+        $sum = ['minutes' => 0, 'billable_minutes' => 0, 'amount' => 0.0, 'amount_vat' => 0.0, 'count' => count($rows), 'by_client' => [], 'by_action' => []];
         foreach ($rows as $r) {
             $sum['minutes'] += $r['minutes'];
             if ($r['billable']) {
                 $sum['billable_minutes'] += $r['minutes'];
             }
             $sum['amount'] += (float) $r['amount'];
+            $sum['amount_vat'] += (float) $r['amount_vat'];
 
             $c = &$sum['by_client'][$r['client_id']];
-            $c ??= ['name' => $r['client_name'], 'label' => $r['client_name'], 'color' => $r['client_color'], 'minutes' => 0, 'amount' => 0.0];
+            $c ??= ['name' => $r['client_name'], 'label' => $r['client_name'], 'color' => $r['client_color'], 'minutes' => 0, 'amount' => 0.0, 'amount_vat' => 0.0];
             $c['minutes'] += $r['minutes'];
             $c['amount'] += (float) $r['amount'];
+            $c['amount_vat'] += (float) $r['amount_vat'];
             unset($c);
 
             $a = &$sum['by_action'][$r['action_name']]; // grouped by name across clients
-            $a ??= ['name' => $r['action_name'], 'label' => $r['action_label'], 'color' => $r['action_color'], 'minutes' => 0, 'amount' => 0.0];
+            $a ??= ['name' => $r['action_name'], 'label' => $r['action_label'], 'color' => $r['action_color'], 'minutes' => 0, 'amount' => 0.0, 'amount_vat' => 0.0];
             $a['minutes'] += $r['minutes'];
             $a['amount'] += (float) $r['amount'];
+            $a['amount_vat'] += (float) $r['amount_vat'];
             unset($a);
         }
         uasort($sum['by_client'], static fn($x, $y) => $y['minutes'] <=> $x['minutes']);
