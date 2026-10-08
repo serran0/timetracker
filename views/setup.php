@@ -18,7 +18,7 @@ $renderChecks = static function (array $list) use ($icons): void {
 <div class="auth-wrap wide">
     <div class="auth-head">
         <h1><?= te('Set up Timetracker') ?></h1>
-        <p class="muted"><?= te('Enter your MySQL credentials and create the first administrator. Setup checks the server and database permissions, creates the tables and saves the configuration.') ?></p>
+        <p class="muted"><?= te('Enter your MySQL credentials and create the first administrator (administrators manage Timetracker; time is reported by regular users that you add afterwards). Setup checks the server and database permissions, creates the tables and saves the configuration.') ?></p>
     </div>
 
     <?php foreach ($errors as $err): ?>

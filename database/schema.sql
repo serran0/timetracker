@@ -15,6 +15,7 @@ CREATE TABLE users (
     show_holidays TINYINT(1)   NOT NULL DEFAULT 1 COMMENT 'overlay Swedish red days in the calendar',
     default_color VARCHAR(6)   NOT NULL DEFAULT 'client' COMMENT 'calendar colouring: client or action',
     export_prefs  TEXT         NULL COMMENT 'remembered export format options (JSON)',
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'set for placeholder and reset passwords',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at DATETIME     NULL,
     lunch_start   TIME         NULL COMMENT 'default unpaid break window',
@@ -119,6 +120,25 @@ CREATE TABLE sessions (
     PRIMARY KEY (id),
     KEY idx_sessions_activity (last_activity)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='only used when session.handler = db';
+
+CREATE TABLE audit_log (
+    id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    created_at DATETIME     NOT NULL,
+    user_id    INT UNSIGNED NULL COMMENT 'no foreign key: the log outlives accounts',
+    username   VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'name at the time of the event',
+    action     VARCHAR(40)  NOT NULL COMMENT 'event code, see Audit::EVENTS',
+    params     TEXT         NULL COMMENT 'JSON values for the description; never client or report details',
+    PRIMARY KEY (id),
+    KEY idx_audit_time (created_at),
+    KEY idx_audit_user (username, created_at),
+    KEY idx_audit_action (action, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE settings (
+    setting_key   VARCHAR(64) NOT NULL,
+    setting_value TEXT        NOT NULL,
+    PRIMARY KEY (setting_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE app_meta (
     meta_key   VARCHAR(64)  NOT NULL,

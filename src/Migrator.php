@@ -9,7 +9,7 @@ use PDO;
  * Upgrades an existing database to the schema number the code expects (TT_SCHEMA).
  * Each step is idempotent, and a database lock stops two requests from migrating at once.
  *
- * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring), 7 = 0.2.17 (VAT per client), 8 = 0.2.22 (remembered export options), 9 = 0.2.28 (database sessions, login-attempt index).
+ * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring), 7 = 0.2.17 (VAT per client), 8 = 0.2.22 (remembered export options), 9 = 0.2.28 (database sessions, login-attempt index), 10 = 0.3.0 (admin panel: separate administrator accounts, audit log, settings).
  */
 final class Migrator
 {
@@ -50,6 +50,48 @@ final class Migrator
         $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
         $q->execute([$table, $column]);
         return (bool) $q->fetchColumn();
+    }
+
+    /**
+     * 0.3.0: the admin panel. Administrator and regular accounts become separate kinds: administrator rights are removed
+     * from every existing account and a placeholder administrator (admin1 / admin1, password change forced at first
+     * sign-in) is created. Also adds the audit log and the settings table.
+     */
+    private static function toSchema10(PDO $pdo): void
+    {
+        $firstRun = !self::columnExists($pdo, 'users', 'must_change_password');
+        if ($firstRun) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'set for placeholder and reset passwords' AFTER export_prefs");
+        }
+        $pdo->exec("CREATE TABLE IF NOT EXISTS audit_log (
+            id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            created_at DATETIME     NOT NULL,
+            user_id    INT UNSIGNED NULL COMMENT 'no foreign key: the log outlives accounts',
+            username   VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'name at the time of the event',
+            action     VARCHAR(40)  NOT NULL COMMENT 'event code, see Audit::EVENTS',
+            params     TEXT         NULL COMMENT 'JSON values for the description; never client or report details',
+            PRIMARY KEY (id),
+            KEY idx_audit_time (created_at),
+            KEY idx_audit_user (username, created_at),
+            KEY idx_audit_action (action, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS settings (
+            setting_key   VARCHAR(64) NOT NULL,
+            setting_value TEXT        NOT NULL,
+            PRIMARY KEY (setting_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        if ($firstRun) {
+            $pdo->exec('UPDATE users SET is_admin = 0 WHERE is_admin = 1');
+            $name = 'admin1';
+            for ($i = 2; (bool) $pdo->query("SELECT 1 FROM users WHERE username = " . $pdo->quote($name))->fetchColumn(); $i++) {
+                $name = 'admin' . $i;
+            }
+            $pdo->prepare("INSERT INTO users (username, display_name, password_hash, is_admin, must_change_password, timezone, currency, locale) VALUES (?, 'Administrator', ?, 1, 1, 'UTC', 'EUR', 'en')")
+                ->execute([$name, password_hash('admin1', PASSWORD_DEFAULT)]);
+            $pdo->prepare('INSERT INTO audit_log (created_at, user_id, username, action, params) VALUES (?, NULL, ?, ?, ?)')
+                ->execute([date('Y-m-d H:i:s'), 'system', 'system.roles', json_encode(['username' => $name])]);
+        }
     }
 
     /** 0.2.28: table for database-backed sessions (optional feature) and an index so login-attempt cleanup does not scan. */

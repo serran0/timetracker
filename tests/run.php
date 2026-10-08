@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 define('TT_ROOT', dirname(__DIR__));
 const TT_VERSION = 'test';
+preg_match('/const TT_SCHEMA = (\d+);/', (string) file_get_contents(TT_ROOT . '/src/bootstrap.php'), $schemaMatch);
+define('TT_SCHEMA', (int) $schemaMatch[1]);
 require TT_ROOT . '/src/helpers.php';
 spl_autoload_register(static function (string $c): void {
     $f = TT_ROOT . '/src/' . str_replace('\\', '/', substr($c, strlen('TimeTracker\\'))) . '.php';
@@ -132,6 +134,56 @@ check('client ip: forged left entry does not win', client_ip_from(['REMOTE_ADDR'
 check('client ip: garbage header falls back', client_ip_from(['REMOTE_ADDR' => '10.0.0.5', 'HTTP_X_FORWARDED_FOR' => 'nonsense'], ['10.0.0.0/8']), '10.0.0.5');
 check('client ip: missing REMOTE_ADDR', client_ip_from([], []), '0.0.0.0');
 check('users search escapes wildcards', TimeTracker\Repository\Users::likeEscape('a_b%c\\d'), 'a\\_b\\%c\\\\d');
+
+// Audit log: descriptions are built from templates, and every event has a label and category
+check('audit: description is filled from stored params', TimeTracker\Audit::describe(['action' => 'auth.login', 'params' => '{"ip":"203.0.113.9"}']), 'Signed in from 203.0.113.9');
+check('audit: opaque time-reporting description', TimeTracker\Audit::describe(['action' => 'entry.delete', 'params' => null]), 'Deleted a time report');
+check('audit: unknown event code is shown as is', TimeTracker\Audit::describe(['action' => 'nope', 'params' => null]), 'nope');
+check('audit: every event has category, label and template', array_filter(TimeTracker\Audit::EVENTS, static fn($e) => !isset(TimeTracker\Audit::CATEGORIES[$e[0]]) || $e[1] === '' || $e[2] === ''), []);
+$leaky = array_filter(TimeTracker\Audit::EVENTS, static fn($e, $code) => str_starts_with($code, 'client.') || str_starts_with($code, 'action.') || str_starts_with($code, 'entry.')
+    ? (bool) preg_match('/\{(name|client|label|description|start|end|amount|date)\}/', $e[2]) : false, ARRAY_FILTER_USE_BOTH);
+check('audit: time-reporting events carry no client/report details', array_keys($leaky), []);
+check('audit: per-page choices', TimeTracker\Audit::PER_PAGE_CHOICES, [50, 100, 250, 500]);
+
+// Settings: recipient lists
+check('settings: recipients are parsed, validated and de-duplicated', TimeTracker\Settings::recipients("a@example.com, B@example.com;a@example.com\nnot-an-address\n c@example.org"), ['a@example.com', 'B@example.com', 'c@example.org']);
+
+// Structure check parses the real schema file
+$parsed = TimeTracker\SystemInfo::parseSchema((string) file_get_contents(TT_ROOT . '/database/schema.sql'));
+check('structure: tables found in schema.sql', array_keys($parsed) === array_values(array_unique(array_keys($parsed))) && count($parsed) >= 10, true);
+check('structure: columns, indexes and foreign keys are read', [$parsed['users']['columns']['must_change_password'] ?? null, in_array('uq_users_username', $parsed['users']['indexes'], true), in_array('fk_entries_user', $parsed['time_entries']['foreign_keys'], true), $parsed['audit_log']['columns']['id'] ?? null], ['tinyint', true, true, 'bigint']);
+
+// Backup files: only the shapes the backup writes are accepted
+$bk = static function (array $lines): string {
+    $f = tempnam(sys_get_temp_dir(), 'ttbk');
+    file_put_contents($f, implode("\n", $lines) . "\n");
+    return $f;
+};
+$good = [TimeTracker\Backup::HEADER, '-- Schema: ' . TT_SCHEMA, 'SET NAMES utf8mb4;', 'SET FOREIGN_KEY_CHECKS=0;',
+    'DROP TABLE IF EXISTS `users`;', 'CREATE TABLE `users` ( `id` int NOT NULL ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;',
+    "INSERT INTO `users` (`id`) VALUES (1),(2);", 'DROP TABLE IF EXISTS `app_meta`;', 'CREATE TABLE `app_meta` ( `meta_key` varchar(64) ) ENGINE=InnoDB;',
+    'SET FOREIGN_KEY_CHECKS=1;', TimeTracker\Backup::FOOTER];
+$inspect = static function (array $lines) use ($bk): string {
+    $f = $bk($lines);
+    try {
+        $r = TimeTracker\Backup::inspect($f);
+        return 'ok:' . $r['statements'];
+    } catch (RuntimeException $e) {
+        return 'refused';
+    } finally {
+        unlink($f);
+    }
+};
+check('backup: a well-formed file is accepted', $inspect($good), 'ok:8');
+check('backup: wrong first line is refused', $inspect(array_merge(['-- hello'], array_slice($good, 1))), 'refused');
+check('backup: truncated file (no end marker) is refused', $inspect(array_slice($good, 0, -1)), 'refused');
+check('backup: newer schema is refused', $inspect(array_merge([$good[0], '-- Schema: ' . (TT_SCHEMA + 1)], array_slice($good, 2))), 'refused');
+check('backup: arbitrary SQL is refused', $inspect(array_merge(array_slice($good, 0, 4), ['DROP DATABASE timetracker;'], array_slice($good, 4))), 'refused');
+check('backup: a second statement on a line is refused', $inspect(array_merge(array_slice($good, 0, 6), ["INSERT INTO `users` (`id`) VALUES (1); DROP TABLE `users`;"], array_slice($good, 7))), 'refused');
+check('backup: semicolons inside strings are fine', $inspect(array_merge(array_slice($good, 0, 6), ["INSERT INTO `users` (`id`,`n`) VALUES (1,'a; b \\' ; c');"], array_slice($good, 7))), 'ok:8');
+check('backup: comments smuggled into a statement are refused', $inspect(array_merge(array_slice($good, 0, 6), ["INSERT INTO `users` (`id`) VALUES (1) -- x;"], array_slice($good, 7))), 'refused');
+check('backup: tables outside Timetracker are refused', $inspect(array_merge(array_slice($good, 0, 6), ["INSERT INTO `mysql.user` (`id`) VALUES (1);"], array_slice($good, 7))), 'refused');
+check('backup: the users table is required', $inspect(array_values(array_filter($good, static fn($l) => !str_contains($l, '`users`')))), 'refused');
 
 // Remembered export options round-trip
 $o1 = ReportBuilder::options(['submitted' => '1', 'format' => 'txt', 'cols' => ['hours', 'date'], 'duration' => 'hm', 'delimiter' => ';', 'decimal' => ',', 'vat' => '1']);

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 – 2026-10-08
+
+**Admin panel.** Administrators now have their own area and no longer do time reporting.
+
+- **Separate account kinds.** An account is either an *administrator* (manages Timetracker, no calendar/clients/actions/reports, no workspace) or a *regular user* (reports time, no admin access). The choice is made when the account is created and is final. The *Users* page is gone from the regular user's menu and moved into the admin panel; administrators who open a time-reporting page are sent to the panel, regular users get a 403 on admin pages.
+- **Upgrade behaviour.** On the first run, administrator rights are removed from all existing accounts (their data is untouched) and a placeholder administrator **admin1 / admin1** is created. It must choose a new password at its first sign-in (the forced-change page is also used after an administrator resets a password or creates an account with that option). Fresh installs create the administrator chosen in setup instead.
+- **Users page (admin):** search, filter by account type, paging; create regular users or administrators; **rename any account** (including other administrators and yourself); reset passwords; enable/disable (the last active administrator cannot be disabled). Regular users can no longer change their own username.
+- **Audit log:** every sign-in (with IP address), failed attempt, manual sign-out, password change, account and settings change, backup and restore, plus time-reporting actions logged **opaquely** (no client names, action labels or report details; a username mistyped into the password field is never stored). Filter by date range, action type (or whole category) and user; choose 50 / 100 / 250 / 500 rows per page; paged. Shown in the viewer's language, in the application's timezone.
+- **Settings:** defaults for new accounts, sign-in throttling (attempts per username/IP, lock-out time) and **mail server** options (SMTP host, port, STARTTLS/SSL/none, login, sender, recipient list, enable switch, *Send test email*). The built-in SMTP client verifies certificates.
+- **System page:** component versions (Timetracker, schema, PHP and extensions, web server, OS, database server, PDO/mysqlnd, OpenSSL, zlib, libzip, PCRE), the PHP/file checks from setup, database checks (connection, character set, SQL mode, `max_allowed_packet`, storage engine, schema version), an on-demand privilege test and a **structure check** of every table, column type, index and foreign key against `database/schema.sql`.
+- **Backup & restore:** download a consistent snapshot as `.sql` or `.sql.gz` (optionally without the audit log), or restore from one. The upload is checked line by line before anything changes (only the statements a backup contains, for Timetracker's own tables, one statement per line, end marker present, not from a newer schema), a safety copy of the current data is written to `config/` when possible, older backups are migrated, and you are signed out afterwards. Plain `mysql < backup.sql` also works.
+- Database schema 10: `users.must_change_password`, `audit_log`, `settings`.
+
 ## 0.2.29 – 2026-10-08
 
 - Administrators can change their own username on the *Account & settings* page (same rules as when a user is created: 3–64 letters, digits, dot, dash or underscore, and not already taken). It takes effect immediately and stays signed in; the next sign-in uses the new name. A display name that was just the old username follows the new one. Other users cannot change their username, and the server ignores it if they try.

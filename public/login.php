@@ -8,8 +8,8 @@ use TimeTracker\View;
 
 $next = Auth::safeNext((string) ($_GET['next'] ?? $_POST['next'] ?? ''));
 
-if (Auth::user()) {
-    redirect($next);
+if ($u = Auth::user()) {
+    redirect($u['is_admin'] ? 'admin.php' : $next);
 }
 
 $error = null;
@@ -19,7 +19,7 @@ if (is_post()) {
     $username = input('username');
     $result = Auth::attempt($username, (string) ($_POST['password'] ?? ''));
     if ($result['ok']) {
-        redirect($next);
+        redirect(Auth::user()['is_admin'] ? 'admin.php' : $next);
     }
     $error = $result['error'];
 }

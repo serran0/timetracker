@@ -66,6 +66,7 @@ if (isset($_GET['download'])) {
         'currency'   => $user['currency'],
         'filters'    => implode('; ', $filterDesc),
     ];
+    TimeTracker\Audit::log('export.download', ['format' => strtoupper($opts['format'])]);
     match ($opts['format']) {
         'xlsx'  => XlsxExporter::send($entries, $opts, $meta),
         'txt'   => TextExporter::send($entries, $opts, $meta),

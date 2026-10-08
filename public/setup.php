@@ -90,7 +90,7 @@ if (is_post()) {
                     'currency'     => strtoupper($values['currency']),
                     'locale'       => $values['locale'],
                 ], $values['timezone']);
-                flash('success', t('Timetracker is installed. Sign in with the administrator account you just created.'));
+                flash('success', t('Timetracker is installed. Sign in with the administrator account you just created, then create the users who will report time in the admin panel.'));
                 redirect('login.php');
             } catch (Throwable $e) {
                 $errors[] = t('Installation failed: {error}', ['error' => $e->getMessage()]);

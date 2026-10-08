@@ -5,3 +5,5 @@
 *.log
 /node_modules/
 /tests/output/
+/config/*.sql
+/config/*.sql.gz

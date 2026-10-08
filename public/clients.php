@@ -42,6 +42,7 @@ if (is_post()) {
                         Actions::seedStandard($uid, $savedId);
                     }
                 }
+                TimeTracker\Audit::log($id ? 'client.update' : 'client.create');
                 flash('success', $id ? t('Client updated.') : t('Client created. Adjust its actions and rate multipliers on the Actions page.'));
                 redirect($id ? 'clients.php' : 'actions.php?client=' . $savedId);
             }
@@ -50,10 +51,12 @@ if (is_post()) {
         case 'archive':
         case 'unarchive':
             Clients::setArchived($uid, $id, $op === 'archive');
+            TimeTracker\Audit::log($op === 'archive' ? 'client.archive' : 'client.restore');
             flash('success', $op === 'archive' ? t('Client archived. Existing time reports are kept.') : t('Client restored.'));
             redirect('clients.php');
         case 'delete':
             if (Clients::delete($uid, $id)) {
+                TimeTracker\Audit::log('client.delete');
                 flash('success', t('Client deleted.'));
             } else {
                 flash('error', t('This client has time reports and cannot be deleted. Archive it instead.'));

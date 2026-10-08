@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 define('TT_ROOT', dirname(__DIR__));
 const TT_VERSION = 'test';
+preg_match('/const TT_SCHEMA = (\d+);/', (string) file_get_contents(TT_ROOT . '/src/bootstrap.php'), $schemaMatch);
+define('TT_SCHEMA', (int) $schemaMatch[1]);
 require TT_ROOT . '/src/helpers.php';
 spl_autoload_register(static function (string $c): void {
     $f = TT_ROOT . '/src/' . str_replace('\\', '/', substr($c, strlen('TimeTracker\\'))) . '.php';
@@ -115,6 +117,13 @@ foreach (ReportBuilder::FORMATS as $label) {
 }
 foreach (I18n::JS_KEYS as $label) {
     $dynamic[$label] = 'I18n::JS_KEYS';
+}
+foreach (\TimeTracker\Audit::EVENTS as [, $typeLabel, $template]) {
+    $dynamic[$typeLabel] = 'Audit::EVENTS';
+    $dynamic[$template] = 'Audit::EVENTS';
+}
+foreach (\TimeTracker\Audit::CATEGORIES as $label) {
+    $dynamic[$label] = 'Audit::CATEGORIES';
 }
 foreach (Actions::STANDARD as [$name]) {
     $dynamic['action:' . $name] = 'Actions::STANDARD';

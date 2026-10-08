@@ -39,6 +39,7 @@ if (is_post() && $client) {
             [$data, $errors] = Actions::validate($uid, (int) $client['id'], $_POST, $id);
             if (!$errors) {
                 Actions::save($uid, (int) $client['id'], $data, $id);
+                TimeTracker\Audit::log($id ? 'action.update' : 'action.create');
                 flash('success', $id ? t('Action updated.') : t('Action created.'));
                 redirect($here);
             }
@@ -47,10 +48,12 @@ if (is_post() && $client) {
         case 'archive':
         case 'unarchive':
             Actions::setArchived($uid, $id, $op === 'archive');
+            TimeTracker\Audit::log($op === 'archive' ? 'action.archive' : 'action.restore');
             flash('success', $op === 'archive' ? t('Action archived. Existing time reports are kept.') : t('Action restored.'));
             redirect($here);
         case 'delete':
             if (Actions::delete($uid, $id)) {
+                TimeTracker\Audit::log('action.delete');
                 flash('success', t('Action deleted.'));
             } else {
                 flash('error', t('This action is used by time reports and cannot be deleted. Archive it instead.'));
@@ -63,6 +66,7 @@ if (is_post() && $client) {
                     Actions::save($uid, (int) $client['id'], ['name' => $name, 'color' => $color, 'rate_multiplier' => $mult, 'is_billable' => $billable]);
                 }
             }
+            TimeTracker\Audit::log('action.bulk');
             flash('success', t('Standard actions added (existing ones were left alone).'));
             redirect($here);
         case 'copy':
@@ -71,6 +75,7 @@ if (is_post() && $client) {
                 flash('error', t('Choose another client to copy from.'));
             } else {
                 $n = Actions::copyFrom($uid, (int) $source['id'], (int) $client['id']);
+                TimeTracker\Audit::log('action.bulk');
                 flash('success', $n ? t('Copied {n} action(s) from {client}.', ['n' => $n, 'client' => $source['name']]) : t('Nothing to copy: this client already has all of those actions.'));
             }
             redirect($here);

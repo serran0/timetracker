@@ -12,7 +12,7 @@ use TimeTracker\Repository\Users;
  */
 final class Installer
 {
-    public const TABLES = ['free_days', 'time_entries', 'working_hours', 'actions', 'clients', 'login_attempts', 'sessions', 'users', 'app_meta'];
+    public const TABLES = ['free_days', 'time_entries', 'working_hours', 'actions', 'clients', 'login_attempts', 'sessions', 'audit_log', 'settings', 'users', 'app_meta'];
     private const REQUIRED_PRIVILEGES = ['CREATE', 'ALTER', 'INDEX', 'INSERT', 'SELECT', 'UPDATE', 'DELETE', 'DROP'];
 
     /**
@@ -275,7 +275,9 @@ final class Installer
             }
             $pdo->prepare('INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)')->execute(['schema_version', (string) TT_SCHEMA]);
 
-            Users::create($admin['username'], $admin['password'], $admin['display_name'], true, $timezone, $admin['currency'], $admin['locale'] ?? 'en', $pdo);
+            // The first account is an administrator: it manages Timetracker but reports no time itself.
+            $adminId = Users::create($admin['username'], $admin['password'], $admin['display_name'], true, $timezone, $admin['currency'], $admin['locale'] ?? 'en', $pdo);
+            Audit::log('system.install', [], ['id' => $adminId, 'username' => $admin['username']], $pdo);
 
             $php = Config::render($db, $timezone);
             $target = Config::path();

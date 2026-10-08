@@ -25,6 +25,12 @@ $user = Auth::user();
 if (!$user) {
     json_out(['ok' => false, 'errors' => [t('Your session has expired. Please sign in again.')]], 401);
 }
+if (!empty($user['must_change_password'])) {
+    json_out(['ok' => false, 'errors' => [t('Choose a new password first.')]], 403);
+}
+if ($user['is_admin']) {
+    json_out(['ok' => false, 'errors' => [t('Administrator access required.')]], 403);
+}
 if (!csrf_valid()) {
     json_out(['ok' => false, 'errors' => [t('Invalid security token. Reload the page and try again.')]], 419);
 }

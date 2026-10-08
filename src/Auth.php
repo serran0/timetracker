@@ -8,9 +8,6 @@ namespace TimeTracker;
  */
 final class Auth
 {
-    private const MAX_FAILURES_PER_USER = 5;
-    private const MAX_FAILURES_PER_IP = 20;
-    private const LOCK_MINUTES = 15;
     public const IDLE_SECONDS = 12 * 3600;
 
     private static ?array $user = null;
@@ -51,8 +48,24 @@ final class Auth
         return (int) (self::user()['id'] ?? 0);
     }
 
-    /** Redirect to the login page unless logged in. Returns the user row. */
+    /**
+     * Gate for the time-reporting pages: regular users only. Administrators have their own panel (admin.php) and are
+     * sent there; the two kinds of account never mix.
+     */
     public static function require(): array
+    {
+        $user = self::requireAny();
+        if ($user['is_admin']) {
+            redirect('admin.php');
+        }
+        return $user;
+    }
+
+    /**
+     * Redirect to the login page unless signed in; an account that must choose a new password is sent to password.php
+     * first (pass $allowForced = true on that page and on sign-out). Returns the user row, whatever the role.
+     */
+    public static function requireAny(bool $allowForced = false): array
     {
         $user = self::user();
         if (!$user) {
@@ -64,12 +77,16 @@ final class Auth
             }
             redirect('login.php');
         }
+        if (!$allowForced && !empty($user['must_change_password'])) {
+            redirect('password.php');
+        }
         return $user;
     }
 
-    public static function requireAdmin(): array
+    /** Gate for the admin panel. Regular users get a 403. */
+    public static function requireAdmin(bool $allowForced = false): array
     {
-        $user = self::require();
+        $user = self::requireAny($allowForced);
         if (!$user['is_admin']) {
             http_response_code(403);
             exit(t('Administrator access required.'));
@@ -92,7 +109,9 @@ final class Auth
         $username = substr($username, 0, 64);
 
         if (self::isLocked($username, $ip)) {
-            return ['ok' => false, 'error' => t('Too many failed attempts. Please wait {min} minutes and try again.', ['min' => self::LOCK_MINUTES])];
+            $known = Db::one('SELECT id, username FROM users WHERE username = ?', [$username]);
+            Audit::log('auth.locked', ['ip' => $ip], $known);
+            return ['ok' => false, 'error' => t('Too many failed attempts. Please wait {min} minutes and try again.', ['min' => max(1, Settings::int('login.lock_minutes'))])];
         }
 
         $user = Db::one('SELECT * FROM users WHERE username = ?', [$username]);
@@ -102,6 +121,9 @@ final class Auth
 
         if (!$valid) {
             Db::run('INSERT INTO login_attempts (username, ip) VALUES (?, ?)', [$username, $ip]);
+            // The log names the account only when it exists, so a password typed into the username box is never stored.
+            $user ? Audit::log('auth.login_failed', ['username' => $user['username'], 'ip' => $ip], $user)
+                  : Audit::log('auth.login_unknown', ['ip' => $ip], ['id' => null, 'username' => '']);
             // Housekeeping off the hot path: now and then, in small indexed batches (never on a successful login).
             if (random_int(1, 25) === 1) {
                 Db::run('DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 DAY) LIMIT 2000');
@@ -120,6 +142,7 @@ final class Auth
         }
         Db::run('UPDATE users SET last_login_at = NOW() WHERE id = ?', [$user['id']]);
         Db::run('DELETE FROM login_attempts WHERE username = ?', [$username]);
+        Audit::log('auth.login', ['ip' => $ip], $user);
         self::$loaded = false;
         self::$user = null;
         return ['ok' => true, 'error' => null];
@@ -127,10 +150,10 @@ final class Auth
 
     private static function isLocked(string $username, string $ip): bool
     {
-        $window = 'attempted_at > DATE_SUB(NOW(), INTERVAL ' . self::LOCK_MINUTES . ' MINUTE)';
+        $window = 'attempted_at > DATE_SUB(NOW(), INTERVAL ' . max(1, Settings::int('login.lock_minutes')) . ' MINUTE)';
         $byUser = (int) Db::value("SELECT COUNT(*) FROM login_attempts WHERE username = ? AND $window", [$username]);
         $byIp = (int) Db::value("SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND $window", [$ip]);
-        return $byUser >= self::MAX_FAILURES_PER_USER || $byIp >= self::MAX_FAILURES_PER_IP;
+        return $byUser >= max(1, Settings::int('login.max_per_user')) || $byIp >= max(1, Settings::int('login.max_per_ip'));
     }
 
     public static function logout(): void

@@ -6,13 +6,29 @@
 $active ??= '';
 $bodyClass ??= '';
 $scripts ??= [];
-$nav = [
-    'calendar' => ['calendar.php', t('Calendar')],
-    'clients'  => ['clients.php', t('Clients')],
-    'actions'  => ['actions.php', t('Actions')],
-    'hours'    => ['hours.php', t('Working hours')],
-    'export'   => ['export.php', t('Export')],
-];
+$isAdmin = !empty($user['is_admin']);
+$forced = !empty($user['must_change_password']); // must choose a new password first: no navigation yet
+if ($forced) {
+    $nav = [];
+} elseif ($isAdmin) {
+    // Administrators only see the admin panel: no calendar, clients, actions or any other time reporting.
+    $nav = [
+        'admin'          => ['admin.php', t('Overview')],
+        'admin_users'    => ['admin_users.php', t('Users')],
+        'admin_audit'    => ['admin_audit.php', t('Audit log')],
+        'admin_settings' => ['admin_settings.php', t('Settings')],
+        'admin_system'   => ['admin_system.php', t('System')],
+        'admin_backup'   => ['admin_backup.php', t('Backup')],
+    ];
+} else {
+    $nav = [
+        'calendar' => ['calendar.php', t('Calendar')],
+        'clients'  => ['clients.php', t('Clients')],
+        'actions'  => ['actions.php', t('Actions')],
+        'hours'    => ['hours.php', t('Working hours')],
+        'export'   => ['export.php', t('Export')],
+    ];
+}
 $initial = $user ? mb_strtoupper(mb_substr($user['display_name'] ?: $user['username'], 0, 1)) : '';
 ?>
 <!DOCTYPE html>
@@ -31,9 +47,9 @@ $initial = $user ? mb_strtoupper(mb_substr($user['display_name'] ?: $user['usern
 <?php if ($user): ?>
 <header class="topbar">
     <div class="topbar-inner">
-        <a class="brand" href="calendar.php?view=month">
+        <a class="brand" href="<?= $forced ? 'password.php' : ($isAdmin ? 'admin.php' : 'calendar.php?view=month') ?>">
             <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#4f46e5"/><path d="M12 6v6l4 2.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Timetracker</span>
+            <span>Timetracker</span><?php if ($isAdmin): ?><span class="role-badge"><?= te('Admin') ?></span><?php endif; ?>
         </a>
         <button class="nav-toggle" type="button" aria-label="<?= te('Menu') ?>" aria-expanded="false" data-nav-toggle>
             <span></span><span></span><span></span>
@@ -45,8 +61,7 @@ $initial = $user ? mb_strtoupper(mb_substr($user['display_name'] ?: $user['usern
             <details class="user-menu">
                 <summary><span class="avatar"><?= e($initial) ?></span><span class="user-name"><?= e($user['display_name'] ?: $user['username']) ?></span></summary>
                 <div class="menu">
-                    <a href="account.php"><?= te('Account & settings') ?></a>
-                    <?php if ($user['is_admin']): ?><a href="users.php"><?= te('Users') ?></a><?php endif; ?>
+                    <?php if (!$forced): ?><a href="<?= $isAdmin ? 'admin_account.php' : 'account.php' ?>"><?= te($isAdmin ? 'My account' : 'Account & settings') ?></a><?php endif; ?>
                     <form method="post" action="logout.php"><?= csrf_field() ?><button type="submit"><?= te('Sign out') ?></button></form>
                 </div>
             </details>

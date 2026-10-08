@@ -36,6 +36,7 @@ if (is_post()) {
     if (!$errors) {
         WorkingHours::save($uid, $parsed);
         Db::run('UPDATE users SET lunch_start = ?, lunch_end = ? WHERE id = ?', [$lunch[0], $lunch[1], $uid]);
+        TimeTracker\Audit::log('hours.save');
         flash('success', t('Working hours saved.'));
         redirect('hours.php');
     }
