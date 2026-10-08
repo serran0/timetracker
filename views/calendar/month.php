@@ -21,7 +21,7 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
     <div class="month-row month-headrow">
         <div class="wk-col"><?= te('Wk') ?></div>
         <?php for ($i = 1; $i <= 7; $i++): ?><div class="dow"><?= e(TimeTracker\I18n::dayName($i, true)) ?></div><?php endfor; ?>
-        <div class="wk-total"><?= te('Week') ?></div>
+        <div class="wk-total" title="<?= te('Hours per week') ?>"><?= te('Hrs') ?></div>
     </div>
     <?php foreach ($weeks as $days): ?>
         <?php

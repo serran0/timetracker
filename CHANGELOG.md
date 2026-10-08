@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6 – 2026-10-08
+
+- Month view: the right-hand column that showed the weekly total is now headed "Hrs" (Swedish: "Tim") instead of "Week", with a tooltip explaining it.
+
 ## 0.2.5 – 2026-10-08
 
 - **Swedish red days in every calendar view.** Public holidays plus the customary days off (Midsommarafton, Julafton, Nyårsafton) are tinted faded red with their name: in the month view under the date, in the week and day views on the whole row and in the row label, in the list view as a badge on the day heading, and next to the title in the day view. Names follow the user's language (Julafton / Christmas Eve).
