@@ -21,7 +21,7 @@ $size = static fn(int $b): string => $b >= 1048576 ? number_format($b / 1048576,
             <div class="alert alert-info"><?= te('A backup contains password hashes, the mail password and all time reports. Store it as carefully as the database itself.') ?></div>
             <div class="form-actions"><button class="btn btn-primary" type="submit"><?= te('Download backup') ?></button></div>
         </form>
-        <h3><?= te('What is in the database') ?></h3>
+        <h3 class="section-gap"><?= te('What is in the database') ?></h3>
         <div class="table-wrap">
         <table class="table table-compact">
             <thead><tr><th><?= te('Table') ?></th><th class="num"><?= te('Rows (approx.)') ?></th><th class="num"><?= te('Size') ?></th></tr></thead>

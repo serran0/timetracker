@@ -547,3 +547,5 @@ input[type=text][list]::-webkit-calendar-picker-indicator { display: none !impor
 .user-search select { width: auto; height: 40px; flex: 0 0 auto; padding-top: 0; padding-bottom: 0; }
 .user-search .btn { height: 40px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
 @media (max-width: 760px) { .user-search select { flex: 1 1 140px; } }
+
+.section-gap { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--border); }
