@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 – 2026-10-08
+
+- Admin overview: the summary boxes (*Regular users*, *Administrators*, …) no longer underline their text on hover; the box just gets an outline.
+- System page: *Database structure* now sits directly below *Component versions* (left column), with the PHP and database checks on the right, instead of leaving a gap above it.
+- Helper texts under fields (e.g. on the Users, Settings and Backup pages) are no longer indented; only the one under a checkbox on the account page lines up with the checkbox label.
+- (0.3.1 was not released separately.)
+
 ## 0.3.0 – 2026-10-08
 
 **Admin panel.** Administrators now have their own area and no longer do time reporting.

@@ -50,7 +50,7 @@
                 <input type="checkbox" name="show_holidays" value="1" <?= !empty($user['show_holidays']) ? 'checked' : '' ?>>
                 <?= te('Show Swedish public holidays in the calendar') ?>
             </label>
-            <p class="muted setting-help"><?= te('Red days such as Julafton and Midsommarafton are tinted red in every view and are left out of whole-week reports.') ?></p>
+            <p class="muted setting-help under-check"><?= te('Red days such as Julafton and Midsommarafton are tinted red in every view and are left out of whole-week reports.') ?></p>
             <div class="form-actions"><button class="btn btn-primary" type="submit"><?= te('Save') ?></button></div>
         </form>
     </section>

@@ -33,18 +33,38 @@ $size = static fn(int $b): string => $b >= 1048576 ? number_format($b / 1048576,
 </div>
 
 <div class="split">
-    <section class="card">
-        <h2><?= te('Component versions') ?></h2>
-        <div class="table-wrap">
-        <table class="table table-compact">
-            <tbody>
-            <?php foreach ($components as [$name, $version, $note]): ?>
-                <tr><td><?= e($name) ?></td><td><strong><?= e($version) ?></strong><?= $note !== '' ? ' <small class="muted">' . e($note) . '</small>' : '' ?></td></tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-        </div>
-    </section>
+    <div>
+        <section class="card">
+            <h2><?= te('Component versions') ?></h2>
+            <div class="table-wrap">
+            <table class="table table-compact">
+                <tbody>
+                <?php foreach ($components as [$name, $version, $note]): ?>
+                    <tr><td><?= e($name) ?></td><td><strong><?= e($version) ?></strong><?= $note !== '' ? ' <small class="muted">' . e($note) . '</small>' : '' ?></td></tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+        </section>
+        <section class="card">
+            <h2><?= te('Database structure') ?></h2>
+            <p class="muted"><?= te('Compared with database/schema.sql: tables, columns and their types, indexes and foreign keys.') ?></p>
+            <?php $render($structure); ?>
+            <?php if ($tables): ?>
+            <h3><?= te('Table sizes') ?></h3>
+            <div class="table-wrap">
+            <table class="table table-compact">
+                <thead><tr><th><?= te('Table') ?></th><th class="num"><?= te('Rows (approx.)') ?></th><th class="num"><?= te('Size') ?></th></tr></thead>
+                <tbody>
+                <?php foreach ($tables as $name => $s): ?>
+                    <tr><td><?= e($name) ?></td><td class="num"><?= number_format($s['rows'], 0, '', ' ') ?></td><td class="num"><?= e($size($s['bytes'])) ?></td></tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <?php endif; ?>
+        </section>
+    </div>
     <div>
         <section class="card">
             <h2><?= te('PHP and files') ?></h2>
@@ -64,22 +84,3 @@ $size = static fn(int $b): string => $b >= 1048576 ? number_format($b / 1048576,
         </section>
     </div>
 </div>
-
-<section class="card">
-    <h2><?= te('Database structure') ?></h2>
-    <p class="muted"><?= te('Compared with database/schema.sql: tables, columns and their types, indexes and foreign keys.') ?></p>
-    <?php $render($structure); ?>
-    <?php if ($tables): ?>
-    <h3><?= te('Table sizes') ?></h3>
-    <div class="table-wrap">
-    <table class="table table-compact">
-        <thead><tr><th><?= te('Table') ?></th><th class="num"><?= te('Rows (approx.)') ?></th><th class="num"><?= te('Size') ?></th></tr></thead>
-        <tbody>
-        <?php foreach ($tables as $name => $s): ?>
-            <tr><td><?= e($name) ?></td><td class="num"><?= number_format($s['rows'], 0, '', ' ') ?></td><td class="num"><?= e($size($s['bytes'])) ?></td></tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    </div>
-    <?php endif; ?>
-</section>
