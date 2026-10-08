@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2 – 2026-10-08
+
+- **Plain-text export respects the ticked columns.** Previously only Description and Amount were honoured; times, duration, client, action and the headings were always printed. Now each line contains only the ticked columns (start/end, duration, client, client reference, action, billable flag, rate, amount, description). Day headings are built from the ticked date / weekday / week columns (none ticked = a flat list without headings). "Add a totals row" switches day totals, summaries and grand totals on or off, and they only show figures for ticked columns (hours, amount, client, action).
+- No database changes.
+
 ## 0.2.1 – 2026-10-08
 
 - **Time actions are per client.** Each client has its own set of actions (name, colour, rate multiplier, billable), managed per client on the Actions page. New clients start from the standard set, a copy of another client's actions, or empty; "Add standard actions" and "Copy actions from…" are available later. The report dialog only offers the selected client's actions and remembers the last action used per client. The calendar and export action filters match by name across clients ("all Overtime"), and summaries group actions by name.

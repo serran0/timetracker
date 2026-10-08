@@ -2,7 +2,7 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month.
 
-**Version 0.2.1** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.2.2** · PHP 8.5 (runs on 8.2+) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
@@ -16,7 +16,7 @@ A light, modern PHP web app for consultants who bill clients by the hour. Track 
   - **Filters** for clients, actions, billable/non-billable and date period. A **summary** (total, billable, amount, per client, per action) is shown under every view.
 - **The New time report dialog creates one or several days at once**: pick client and action, then add days with **+ Day** (each with its own start, end and break). In the month view, right-click a **week number** and choose *Report whole working week* to get a pre-filled row for every working day.
 - **Time reports** have start/end time, client, action and a free-text description. Times accept `9`, `930`, `09:30`, `9.30`; `24:00` means midnight.
-- **Export** to CSV, Excel (.xlsx) or plain text, with chosen columns, decimal hours or h:mm, delimiter and decimal mark.
+- **Export** to CSV, Excel (.xlsx) or plain text (all three follow the ticked columns), with chosen columns, decimal hours or h:mm, delimiter and decimal mark.
 - **Security:** username/password, hashed passwords (`password_hash`), CSRF tokens, login throttling, strict Content-Security-Policy, prepared statements everywhere. Each user has a fully separate environment (clients, actions, hours, reports).
 
 ## Install

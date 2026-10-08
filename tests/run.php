@@ -18,6 +18,7 @@ spl_autoload_register(static function (string $c): void {
 
 use TimeTracker\Calendar;
 use TimeTracker\Export\ReportBuilder;
+use TimeTracker\Export\TextExporter;
 use TimeTracker\Repository\Entries;
 use TimeTracker\Repository\WorkingHours;
 
@@ -115,6 +116,52 @@ check('export totals unchecked', $o['totals'], false);
 check('export totals default on', ReportBuilder::options([])['totals'], true);
 check('export duration decimal comma', ReportBuilder::formatDuration(450, ['duration' => 'decimal', 'decimal' => ',']), '7,50');
 check('export duration h:mm', ReportBuilder::formatDuration(450, ['duration' => 'hm', 'decimal' => '.']), '7:30');
+
+// Plain-text export: output follows the ticked columns
+$mk = static fn(string $date, string $s, string $e, int $brk, string $client, string $action, string $desc, ?string $rate) => Entries::decorate([
+    'id' => 1, 'entry_date' => $date, 'start_time' => $s . ':00', 'end_time' => $e . ':00', 'break_minutes' => $brk,
+    'description' => $desc, 'client_id' => crc32($client), 'client_name' => $client, 'client_color' => '#000', 'hourly_rate' => $rate,
+    'client_reference' => $client === 'Acme AB' ? 'PO-77' : null, 'action_id' => crc32($action), 'action_name' => $action, 'action_color' => '#000',
+    'rate_multiplier' => '1.00', 'is_billable' => $action === 'Internal' ? 0 : 1,
+]);
+$ents = [
+    $mk('2026-10-05', '08:00', '17:00', 60, 'Acme AB', 'Normal working time', 'Architecture review', '100.00'),
+    $mk('2026-10-06', '09:00', '11:00', 0, 'Globex', 'Internal', 'Admin', null),
+];
+$meta = ['from' => '2026-10-01', 'to' => '2026-10-31', 'consultant' => 'Tester', 'currency' => 'SEK', 'filters' => ''];
+$txt = static fn(array $cols, bool $totals = true) => TextExporter::render($ents, ['cols' => $cols, 'duration' => 'decimal', 'decimal' => '.', 'totals' => $totals] + ['format' => 'txt', 'delimiter' => ','], $meta);
+
+$out = $txt(['date', 'hours', 'description']);
+check('text: date heading', str_contains($out, '2026-10-05'), true);
+check('text: hours shown', str_contains($out, '  8.00'), true);
+check('text: description shown', str_contains($out, 'Architecture review'), true);
+check('text: no client when unticked', str_contains($out, 'Acme AB') || str_contains($out, 'Globex'), false);
+check('text: no times when unticked', str_contains($out, '08:00') || str_contains($out, '17:00'), false);
+check('text: no action when unticked', str_contains($out, 'Normal working time'), false);
+check('text: no client summary when client unticked', str_contains($out, 'SUMMARY BY CLIENT'), false);
+check('text: no amount when unticked', str_contains($out, 'SEK'), false);
+check('text: total hours still shown', str_contains($out, 'TOTAL HOURS    : 10:00'), true);
+
+$out = $txt(['client', 'action']);
+check('text: client/action only', str_contains($out, 'Acme AB / Normal working time'), true);
+check('text: no dates without date columns', str_contains($out, '2026-10-05') || str_contains($out, 'Monday'), false);
+check('text: no hours without hours column', str_contains($out, 'HOURS') || str_contains($out, 'Day total'), false);
+check('text: no description when unticked', str_contains($out, 'Admin') || str_contains($out, 'Architecture'), false);
+check('text: client summary has names only when no figures ticked', str_contains($out, 'SUMMARY BY CLIENT'), false);
+
+$out = $txt(['weekday', 'week', 'start', 'end', 'reference', 'billable', 'rate', 'amount']);
+check('text: weekday and week heading', str_contains($out, 'Monday (week 41)'), true);
+check('text: time range', str_contains($out, '08:00-17:00'), true);
+check('text: reference without client', str_contains($out, 'PO-77'), true);
+check('text: billable flag', str_contains($out, '[non-billable]') && str_contains($out, '[billable]'), true);
+check('text: rate', str_contains($out, '@ 100.00 SEK/h'), true);
+check('text: amount', str_contains($out, '[800.00 SEK]'), true);
+check('text: ISO date hidden when only weekday ticked', str_contains($out, '2026-10-05'), false);
+
+$out = $txt(['date', 'hours', 'client'], false);
+check('text: totals off hides totals and summaries', str_contains($out, 'TOTAL') || str_contains($out, 'SUMMARY') || str_contains($out, 'Day total'), false);
+$out = $txt(['start'], true);
+check('text: only start time', str_contains($out, 'from 08:00'), true);
 
 echo $failures ? "\n$failures of $total checks FAILED\n" : "All $total checks passed\n";
 exit($failures ? 1 : 0);
