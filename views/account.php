@@ -33,6 +33,13 @@
                 </select>
                 <small class="muted"><?= te('Applies to menus, dates, reports and exports. Action names you have renamed are never translated.') ?></small>
             </label>
+            <label><?= te('Default calendar colouring') ?>
+                <select name="default_color">
+                    <option value="client" <?= ($user['default_color'] ?? 'client') === 'client' ? 'selected' : '' ?>><?= te('Colour by client') ?></option>
+                    <option value="action" <?= ($user['default_color'] ?? 'client') === 'action' ? 'selected' : '' ?>><?= te('Colour by action') ?></option>
+                </select>
+                <small class="muted"><?= te('Used when you open the calendar. You can still switch in the filter bar.') ?></small>
+            </label>
             <label class="check-label">
                 <input type="checkbox" name="show_holidays" value="1" <?= !empty($user['show_holidays']) ? 'checked' : '' ?>>
                 <?= te('Show Swedish public holidays in the calendar') ?>

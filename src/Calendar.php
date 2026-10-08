@@ -13,8 +13,8 @@ final class Calendar
     public const VIEWS = ['month' => 'Month', 'week' => 'Week', 'day' => 'Day', 'list' => 'List'];
     private const MAX_LIST_DAYS = 3660;
 
-    /** Parses the shared filter query params (clients[], actions[], billable, color). */
-    public static function filters(array $q): array
+    /** Parses the shared filter query params (clients[], actions[], billable, color); $defaultColor is the user's setting. */
+    public static function filters(array $q, string $defaultColor = 'client'): array
     {
         $ids = static fn($v): array => array_values(array_unique(array_filter(
             array_map('intval', is_array($v) ? $v : []),
@@ -27,7 +27,8 @@ final class Calendar
                 static fn(string $v): bool => $v !== '' && mb_strlen($v) <= 120
             ))),
             'billable' => in_array($q['billable'] ?? '', ['0', '1'], true) ? $q['billable'] : '',
-            'color'    => ($q['color'] ?? '') === 'action' ? 'action' : 'client',
+            'color'    => in_array($q['color'] ?? '', ['client', 'action'], true) ? $q['color'] : ($defaultColor === 'action' ? 'action' : 'client'),
+            'colorDefault' => $defaultColor === 'action' ? 'action' : 'client',
         ];
     }
 
@@ -38,7 +39,7 @@ final class Calendar
             'client'   => $f['clients'] ?: null,
             'action'   => $f['actions'] ?: null,
             'billable' => $f['billable'] !== '' ? $f['billable'] : null,
-            'color'    => $f['color'] === 'action' ? 'action' : null,
+            'color'    => $f['color'] !== $f['colorDefault'] ? $f['color'] : null, // only when it differs from the user's default
         ];
     }
 

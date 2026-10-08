@@ -25,6 +25,7 @@ if (is_post()) {
         $cur = strtoupper(input('currency'));
         $loc = input('locale');
         $holidays = !empty($_POST['show_holidays']) ? 1 : 0;
+        $colorBy = input('default_color') === 'action' ? 'action' : 'client';
         if (!in_array($tz, DateTimeZone::listIdentifiers(), true)) {
             $errors[] = t('Choose a valid timezone.');
         }
@@ -35,13 +36,13 @@ if (is_post()) {
             $errors[] = t('Currency should be a short code such as EUR, SEK or USD.');
         }
         if (!$errors) {
-            Db::run('UPDATE users SET display_name = ?, timezone = ?, currency = ?, locale = ?, show_holidays = ? WHERE id = ?', [$name !== '' ? $name : $user['username'], $tz, $cur, $loc, $holidays, $uid]);
+            Db::run('UPDATE users SET display_name = ?, timezone = ?, currency = ?, locale = ?, show_holidays = ?, default_color = ? WHERE id = ?', [$name !== '' ? $name : $user['username'], $tz, $cur, $loc, $holidays, $colorBy, $uid]);
             I18n::setLocale($loc); // the confirmation (and the next page) already use the new language
             set_lang_cookie($loc);
             flash('success', t('Settings saved.'));
             redirect('account.php');
         }
-        $user = array_merge($user, ['display_name' => $name, 'timezone' => $tz, 'currency' => $cur, 'locale' => I18n::isValid($loc) ? $loc : $user['locale'], 'show_holidays' => $holidays]);
+        $user = array_merge($user, ['display_name' => $name, 'timezone' => $tz, 'currency' => $cur, 'locale' => I18n::isValid($loc) ? $loc : $user['locale'], 'show_holidays' => $holidays, 'default_color' => $colorBy]);
     } elseif (input('op') === 'freeday_add') {
         $dayForm = ['from' => input('from'), 'to' => input('to'), 'name' => mb_substr(input('name'), 0, 120)];
         [$data, $dayErrors] = FreeDays::parse($dayForm);

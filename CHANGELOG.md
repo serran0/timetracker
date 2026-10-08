@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.14 – 2026-10-08
+
+- New setting under *Account & settings*: **Default calendar colouring** (by client or by action). The calendar opens with it, and the *Colour by* menu in the filter bar still overrides it for the current session of browsing. Existing users keep colouring by client. (Database schema 6: `users.default_color`; existing installs upgrade automatically.)
+
 ## 0.2.13 – 2026-10-08
 
 - Month view: each report chip now shows the reported (net) hours instead of the start time, e.g. "8 hrs Customer Name" ("7,5 tim" in Swedish). The tooltip still shows the start and end time.

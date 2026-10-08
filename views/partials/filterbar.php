@@ -91,7 +91,7 @@ $exportUrl = url('export.php', [
     <div class="fb-actions">
         <button class="btn btn-sm btn-primary" type="submit"><?= te('Apply') ?></button>
         <?php if ($hasFilter): ?>
-            <a class="btn btn-sm" href="<?= e(url('calendar.php', array_filter(['view' => $view, 'date' => $view === 'list' ? null : $range['date']->format('Y-m-d'), 'from' => $view === 'list' ? $range['from']->format('Y-m-d') : null, 'to' => $view === 'list' ? $range['to']->format('Y-m-d') : null, 'color' => $filters['color'] === 'action' ? 'action' : null]))) ?>"><?= te('Clear') ?></a>
+            <a class="btn btn-sm" href="<?= e(url('calendar.php', array_filter(['view' => $view, 'date' => $view === 'list' ? null : $range['date']->format('Y-m-d'), 'from' => $view === 'list' ? $range['from']->format('Y-m-d') : null, 'to' => $view === 'list' ? $range['to']->format('Y-m-d') : null, 'color' => $filters['color'] !== $filters['colorDefault'] ? $filters['color'] : null]))) ?>"><?= te('Clear') ?></a>
         <?php endif; ?>
         <a class="btn btn-sm" href="<?= e($exportUrl) ?>"><?= te('Export…') ?></a>
     </div>

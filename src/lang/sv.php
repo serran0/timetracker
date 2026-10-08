@@ -102,6 +102,8 @@ return [
     'clients: {list}' => 'kunder: {list}',
     'Close' => 'Stäng',
     'Colour' => 'Färg',
+    'Default calendar colouring' => 'Standardfärgläggning i kalendern',
+    'Used when you open the calendar. You can still switch in the filter bar.' => 'Används när du öppnar kalendern. Du kan fortfarande växla i filterraden.',
     'Colour by' => 'Färglägg efter',
     'Colour by action' => 'Färglägg efter aktivitet',
     'Colour by client' => 'Färglägg efter kund',

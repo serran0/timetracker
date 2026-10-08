@@ -22,7 +22,7 @@ if (!isset(Calendar::VIEWS[$view])) {
 $_SESSION['cal_view'] = $view;
 
 $range = Calendar::range($view, $_GET);
-$filters = Calendar::filters($_GET);
+$filters = Calendar::filters($_GET, (string) ($user['default_color'] ?? 'client'));
 $from = $range['from']->format('Y-m-d');
 $to = $range['to']->format('Y-m-d');
 

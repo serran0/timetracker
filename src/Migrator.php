@@ -9,7 +9,7 @@ use PDO;
  * Upgrades an existing database to the schema number the code expects (TT_SCHEMA).
  * Each step is idempotent, and a database lock stops two requests from migrating at once.
  *
- * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days).
+ * Schema numbers: 1 = 0.1, 2 = 0.2 (unpaid breaks), 3 = 0.2.1 (actions belong to a client), 4 = 0.2.3 (user language), 5 = 0.2.5 (holidays and own work-free days), 6 = 0.2.14 (default calendar colouring).
  */
 final class Migrator
 {
@@ -50,6 +50,14 @@ final class Migrator
         $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
         $q->execute([$table, $column]);
         return (bool) $q->fetchColumn();
+    }
+
+    /** 0.2.14: the user's default for colouring the calendar (by client or by action). */
+    private static function toSchema6(PDO $pdo): void
+    {
+        if (!self::columnExists($pdo, 'users', 'default_color')) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN default_color VARCHAR(6) NOT NULL DEFAULT 'client' COMMENT 'calendar colouring: client or action' AFTER show_holidays");
+        }
     }
 
     /**
