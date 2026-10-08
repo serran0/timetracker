@@ -143,6 +143,8 @@ check('audit: every event has category, label and template', array_filter(TimeTr
 $leaky = array_filter(TimeTracker\Audit::EVENTS, static fn($e, $code) => str_starts_with($code, 'client.') || str_starts_with($code, 'action.') || str_starts_with($code, 'entry.')
     ? (bool) preg_match('/\{(name|client|label|description|start|end|amount|date)\}/', $e[2]) : false, ARRAY_FILTER_USE_BOTH);
 check('audit: time-reporting events carry no client/report details', array_keys($leaky), []);
+$labels = array_column(array_values(TimeTracker\Audit::EVENTS), 1);
+check('audit: every event type has its own label (the filter drop-down must be unambiguous)', array_keys(array_filter(array_count_values($labels), static fn($n) => $n > 1)), []);
 check('audit: per-page choices', TimeTracker\Audit::PER_PAGE_CHOICES, [50, 100, 250, 500]);
 
 // Settings: recipient lists

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.5 – 2026-10-08
+
+- Audit log: the *Action type* drop-down listed three identical "Settings changed" entries (general, security and mail settings were separate event types that shared one label) and two "Username changed" entries. Every event type now has its own label: *General / Security / Mail settings changed*, *Own username changed* (an administrator renaming themselves) and *Username changed* (renaming another account). A test now fails if two event types ever share a label. Existing log entries pick up the new names automatically.
+
 ## 0.3.4 – 2026-10-08
 
 - Backup page: more space (and a thin divider) between the *Download backup* button and the *What is in the database* section below it.
