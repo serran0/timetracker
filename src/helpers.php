@@ -129,6 +129,14 @@ function fmt_dur(int|float $minutes): string
     return intdiv($m, 60) . ':' . sprintf('%02d', $m % 60);
 }
 
+/** Compact decimal hours without trailing zeros, e.g. 480 -> "8", 450 -> "7.5" ("7,5" in Swedish). */
+function fmt_hours_short(int|float $minutes): string
+{
+    $s = fmt_dec($minutes);
+    $mark = \TimeTracker\I18n::decimalMark();
+    return str_contains($s, $mark) ? rtrim(rtrim($s, '0'), $mark) : $s;
+}
+
 /** Duration as decimal hours, e.g. 450 -> "7.50" ("7,50" in Swedish). Pass $mark to force a decimal mark. */
 function fmt_dec(int|float $minutes, int $decimals = 2, ?string $mark = null): string
 {

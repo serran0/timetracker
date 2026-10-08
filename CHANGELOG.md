@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.13 – 2026-10-08
+
+- Month view: each report chip now shows the reported (net) hours instead of the start time, e.g. "8 hrs Customer Name" ("7,5 tim" in Swedish). The tooltip still shows the start and end time.
+
 ## 0.2.12 – 2026-10-08
 
 - The date picker is back in the calendar filter bar, with a variant per view:

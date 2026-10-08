@@ -64,7 +64,7 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
                             <button type="button" class="chip" style="<?= e(TimeTracker\Calendar::entryStyle($e, $colorBy)) ?>"
                                     data-entry="<?= e(TimeTracker\Calendar::entryPayload($e)) ?>"
                                     title="<?= e($e['start'] . '–' . $e['end'] . ' · ' . $e['client_name'] . ' · ' . $e['action_label'] . ($e['description'] ? "\n" . $e['description'] : '')) ?>">
-                                <span class="chip-time"><?= e($e['start']) ?></span>
+                                <span class="chip-time"><?= te('{h} hrs', ['h' => fmt_hours_short($e['minutes'])]) ?></span>
                                 <span class="chip-text"><?= e($e['client_name']) ?></span>
                             </button>
                         <?php endforeach; ?>

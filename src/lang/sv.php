@@ -209,6 +209,7 @@ return [
     'Hours per week' => 'Timmar per vecka',
     'Hours:minutes (7:30)' => 'Timmar:minuter (7:30)',
     'Hrs' => 'Tim',
+    '{h} hrs' => '{h} tim',
     'Include this day' => 'Ta med den här dagen',
     'Installation failed: {error}' => 'Installationen misslyckades: {error}',
     'Installation was not started because some checks failed. Fix the items marked below and try again.' => 'Installationen startades inte eftersom några kontroller misslyckades. Åtgärda det som är markerat nedan och försök igen.',
