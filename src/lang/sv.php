@@ -435,6 +435,7 @@ return [
     'No users match your search.' => 'Inga användare matchar sökningen.',
     'Pages' => 'Sidor',
     'Page {page} of {pages} · {total} users' => 'Sida {page} av {pages} · {total} användare',
+    'You sign in with this name. Changing it takes effect immediately.' => 'Du loggar in med det här namnet. Ändringen gäller direkt.',
     'Wk' => 'V.',
     'Moved to {from}–{to}' => 'Flyttad till {from}–{to}',
     'Wk {n}' => 'V. {n}',

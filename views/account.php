@@ -14,6 +14,12 @@
         <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
         <form method="post">
             <?= csrf_field() ?><input type="hidden" name="op" value="profile">
+            <?php if (!empty($user['is_admin'])): ?>
+            <label><?= te('Username') ?>
+                <input type="text" name="username" value="<?= e($user['username']) ?>" required pattern="[A-Za-z0-9._\-]{3,64}" maxlength="64" autocomplete="username">
+                <small class="muted"><?= te('You sign in with this name. Changing it takes effect immediately.') ?></small>
+            </label>
+            <?php endif; ?>
             <label><?= te('Display name') ?>
                 <input type="text" name="display_name" value="<?= e($user['display_name']) ?>" maxlength="120">
             </label>

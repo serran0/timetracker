@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.29 – 2026-10-08
+
+- Administrators can change their own username on the *Account & settings* page (same rules as when a user is created: 3–64 letters, digits, dot, dash or underscore, and not already taken). It takes effect immediately and stays signed in; the next sign-in uses the new name. A display name that was just the old username follows the new one. Other users cannot change their username, and the server ignores it if they try.
+
 ## 0.2.28 – 2026-10-08
 
 Scaling groundwork (for many users and several web servers):

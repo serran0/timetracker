@@ -21,6 +21,18 @@ if (is_post()) {
     require_csrf();
     if (input('op') === 'profile') {
         $name = mb_substr(input('display_name'), 0, 120);
+        // Only administrators may rename their own account (everybody else's username is fixed once created).
+        $newUsername = $user['username'];
+        if (!empty($user['is_admin'])) {
+            $newUsername = trim(input('username'));
+            if ($newUsername !== $user['username']) {
+                if ($e = Users::validateUsername($newUsername)) {
+                    $errors[] = $e;
+                } elseif (Users::usernameTaken($newUsername, $uid)) {
+                    $errors[] = t('That username is already taken.');
+                }
+            }
+        }
         $tz = input('timezone');
         $cur = strtoupper(input('currency'));
         $loc = input('locale');
@@ -36,13 +48,15 @@ if (is_post()) {
             $errors[] = t('Currency should be a short code such as EUR, SEK or USD.');
         }
         if (!$errors) {
-            Db::run('UPDATE users SET display_name = ?, timezone = ?, currency = ?, locale = ?, show_holidays = ?, default_color = ? WHERE id = ?', [$name !== '' ? $name : $user['username'], $tz, $cur, $loc, $holidays, $colorBy, $uid]);
+            // A display name that was just the old username (the default) follows the new username.
+            $display = ($name === '' || $name === $user['username']) ? $newUsername : $name;
+            Db::run('UPDATE users SET username = ?, display_name = ?, timezone = ?, currency = ?, locale = ?, show_holidays = ?, default_color = ? WHERE id = ?', [$newUsername, $display, $tz, $cur, $loc, $holidays, $colorBy, $uid]);
             I18n::setLocale($loc); // the confirmation (and the next page) already use the new language
             set_lang_cookie($loc);
             flash('success', t('Settings saved.'));
             redirect('account.php');
         }
-        $user = array_merge($user, ['display_name' => $name, 'timezone' => $tz, 'currency' => $cur, 'locale' => I18n::isValid($loc) ? $loc : $user['locale'], 'show_holidays' => $holidays, 'default_color' => $colorBy]);
+        $user = array_merge($user, ['username' => $newUsername, 'display_name' => $name, 'timezone' => $tz, 'currency' => $cur, 'locale' => I18n::isValid($loc) ? $loc : $user['locale'], 'show_holidays' => $holidays, 'default_color' => $colorBy]);
     } elseif (input('op') === 'freeday_add') {
         $dayForm = ['from' => input('from'), 'to' => input('to'), 'name' => mb_substr(input('name'), 0, 120)];
         [$data, $dayErrors] = FreeDays::parse($dayForm);
