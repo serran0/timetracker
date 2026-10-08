@@ -140,7 +140,7 @@ legend { font-weight: 600; font-size: .88rem; padding: 0; margin-bottom: 6px; }
 .card-sub { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
 .card-sub h3 { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
 .inline-form { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-.inline-form select { width: auto; padding: 5px 9px; }
+.inline-form select { width: auto; height: 32px; padding: 0 9px; box-sizing: border-box; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; flex: none; }
 .badge { display: inline-block; font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); vertical-align: middle; }
 .tag { display: inline-block; font-size: .78rem; font-weight: 500; padding: 1px 9px; border-radius: 999px; margin-left: 6px; color: var(--text);

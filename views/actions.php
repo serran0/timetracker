@@ -119,10 +119,10 @@ $editing = !empty($form['id']);
             <?php if ($others): ?>
             <form method="post" class="inline-form">
                 <?= csrf_field() ?><input type="hidden" name="client_id" value="<?= (int) $client['id'] ?>"><input type="hidden" name="op" value="copy">
+                <button class="btn btn-sm"><?= te('Copy actions from…') ?></button>
                 <select name="from" aria-label="<?= te('Copy actions from…') ?>">
                     <?php foreach ($others as $c): ?><option value="<?= (int) $c['id'] ?>"><?= e($c['name']) ?></option><?php endforeach; ?>
                 </select>
-                <button class="btn btn-sm"><?= te('Copy actions from…') ?></button>
             </form>
             <?php endif; ?>
         </div>
