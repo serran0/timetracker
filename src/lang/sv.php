@@ -129,6 +129,7 @@ return [
     'Copy to Tue–Fri' => 'Kopiera till tis–fre',
     'Could not delete.' => 'Det gick inte att ta bort.',
     'Could not save config/config.php.' => 'Det gick inte att spara config/config.php.',
+    'Saved' => 'Sparat',
     'Could not save.' => 'Det gick inte att spara.',
     'Could not write config/config.php. Check that the config/ directory is writable.' => 'Det gick inte att skriva config/config.php. Kontrollera att mappen config/ är skrivbar.',
     'Create user' => 'Skapa användare',

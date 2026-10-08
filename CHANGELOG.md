@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.24 – 2026-10-08
+
+- Export page: the format choices from 0.2.22 are now saved the moment you change them (file format, columns, duration format, delimiter, decimal mark, totals, VAT) — no need to press *Update preview* or *Download export* first. A quick "✓ Saved" appears next to the section hint; several quick changes are sent as one request. Pressing the buttons still saves too.
+
 ## 0.2.23 – 2026-10-08
 
 - Actions page: the *Client* drop-down now starts at a "— Select client —" placeholder (Swedish: "— Välj kund —"). No actions (and no add-action form) are shown until a client is chosen. Links that name a client, such as the one after creating a client, still open that client directly.

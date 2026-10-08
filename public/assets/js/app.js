@@ -264,3 +264,49 @@
         document.addEventListener('keydown', (e) => { if (pop && e.key === 'Escape') { close(); toggle.focus(); } });
     });
 })();
+
+// Export page: remember the format options as soon as one is changed (no need to press Update preview or Download).
+(() => {
+    'use strict';
+    const box = document.querySelector('[data-export-prefs]');
+    if (!box) return;
+    const state = box.querySelector('[data-save-state]');
+    const T = window.TT;
+    let timer = null;
+    let fade = null;
+    const collect = () => {
+        const val = (name) => (box.querySelector(`[name="${name}"]`) || {}).value;
+        const checked = box.querySelector('input[name=format]:checked');
+        return {
+            format: checked ? checked.value : '',
+            cols: Array.from(box.querySelectorAll('input[name="cols[]"]:checked')).map((i) => i.value),
+            duration: val('duration'),
+            delimiter: val('delimiter'),
+            decimal: val('decimal'),
+            totals: !!(box.querySelector('input[name=totals]') || {}).checked,
+            vat: !!(box.querySelector('input[name=vat]') || {}).checked,
+        };
+    };
+    const save = async () => {
+        try {
+            const res = await fetch('api/export_prefs.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': T.csrf() },
+                body: JSON.stringify(collect()),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error('save failed');
+            state.textContent = '✓ ' + T.t('Saved');
+            clearTimeout(fade);
+            fade = setTimeout(() => { state.textContent = ''; }, 2500);
+        } catch (e) {
+            state.textContent = '';
+            T.toast(T.t('Could not save.'));
+        }
+    };
+    box.addEventListener('change', () => {
+        clearTimeout(timer);
+        timer = setTimeout(save, 250); // several quick ticks become one request
+    });
+})();

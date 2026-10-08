@@ -70,9 +70,9 @@ $toStr = $to->format('Y-m-d');
             </label>
         </section>
 
-        <section class="card">
+        <section class="card" data-export-prefs>
             <h2><?= te('3 · Format & columns') ?></h2>
-            <p class="muted setting-help"><?= te('Your choices here are remembered for next time.') ?></p>
+            <p class="muted setting-help"><?= te('Your choices here are remembered for next time.') ?> <span class="save-state" data-save-state role="status" aria-live="polite"></span></p>
             <fieldset>
                 <legend><?= te('File format') ?></legend>
                 <div class="radio-row">
