@@ -330,6 +330,7 @@ body.is-moving, body.is-moving * { cursor: grabbing !important; user-select: non
 .breakdowns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .bd-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 0 4px; align-items: center; padding: 5px 0; font-size: .9rem; }
 .bd-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-client { color: var(--muted); }
 .bd-val { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
 .bd-bar { grid-column: 2 / -1; height: 5px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
 .bd-bar i { display: block; height: 100%; border-radius: 999px; }

@@ -86,7 +86,7 @@ final class Entries
     /** Totals over a list of decorated rows. */
     public static function summarize(array $rows): array
     {
-        $sum = ['minutes' => 0, 'billable_minutes' => 0, 'amount' => 0.0, 'amount_vat' => 0.0, 'count' => count($rows), 'by_client' => [], 'by_action' => []];
+        $sum = ['minutes' => 0, 'billable_minutes' => 0, 'amount' => 0.0, 'amount_vat' => 0.0, 'count' => count($rows), 'by_client' => [], 'by_action' => [], 'by_client_action' => []];
         foreach ($rows as $r) {
             $sum['minutes'] += $r['minutes'];
             if ($r['billable']) {
@@ -108,9 +108,18 @@ final class Entries
             $a['amount'] += (float) $r['amount'];
             $a['amount_vat'] += (float) $r['amount_vat'];
             unset($a);
+
+            // Actions belong to a client, so the on-screen summary lists them per client ("(Client) Action").
+            $ca = &$sum['by_client_action'][$r['action_id']];
+            $ca ??= ['name' => $r['action_name'], 'label' => $r['action_label'], 'client' => $r['client_name'], 'color' => $r['action_color'], 'minutes' => 0, 'amount' => 0.0, 'amount_vat' => 0.0];
+            $ca['minutes'] += $r['minutes'];
+            $ca['amount'] += (float) $r['amount'];
+            $ca['amount_vat'] += (float) $r['amount_vat'];
+            unset($ca);
         }
         uasort($sum['by_client'], static fn($x, $y) => $y['minutes'] <=> $x['minutes']);
         uasort($sum['by_action'], static fn($x, $y) => $y['minutes'] <=> $x['minutes']);
+        uasort($sum['by_client_action'], static fn($x, $y) => $y['minutes'] <=> $x['minutes']);
         return $sum;
     }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.20 – 2026-10-08
+
+- Summary at the bottom of every calendar view: the *Per action* list now shows the client in parentheses to the left of the action, e.g. `(Acme AB) Overtime`. Since actions belong to a client, the same action name is listed once per client instead of being merged. Exports are unchanged.
+
 ## 0.2.19 – 2026-10-08
 
 - Week and day views: drag an existing report sideways to move it within its day. It snaps to whole hours (the whole block shifts by the number of hours dragged, so its length and unpaid break stay the same), stays inside the day, shows the new time while dragging and is saved when you let go. Press Esc to cancel. A plain click still opens the report. Mouse and pen only; on touch screens tap the report and change its times in the dialog (a sideways swipe scrolls the timeline).

@@ -4,7 +4,7 @@
 /** @var array $user */
 $cur = $user['currency'];
 $totalMin = max(1, $summary['minutes']);
-$groups = [t('Per client') => $summary['by_client'], t('Per action') => $summary['by_action']];
+$groups = [t('Per client') => $summary['by_client'], t('Per action') => $summary['by_client_action']];
 ?>
 <section class="summary card" aria-label="<?= te('Summary') ?>">
     <div class="summary-head">
@@ -42,7 +42,7 @@ $groups = [t('Per client') => $summary['by_client'], t('Per action') => $summary
             <?php foreach ($rows as $r): ?>
                 <div class="bd-row">
                     <span class="dot" style="background:<?= e($r['color']) ?>"></span>
-                    <span class="bd-name"><?= e($r['label'] ?? $r['name']) ?></span>
+                    <span class="bd-name"><?php if (isset($r['client'])): ?><span class="bd-client">(<?= e($r['client']) ?>)</span> <?php endif; ?><?= e($r['label'] ?? $r['name']) ?></span>
                     <span class="bd-val"><?= e(fmt_dur($r['minutes'])) ?> <small class="muted">(<?= e(fmt_dec($r['minutes'])) ?> h)</small></span>
                     <span class="bd-bar"><i style="width:<?= round($r['minutes'] / $totalMin * 100, 1) ?>%;background:<?= e($r['color']) ?>"></i></span>
                 </div>
