@@ -32,10 +32,13 @@ $exportUrl = url('export.php', [
                 <?php endforeach; ?>
             </select>
         </label>
-    <?php else: ?>
+    <?php elseif ($view === 'day'): ?>
         <label class="fb-field"><?= te('Go to date') ?>
             <input type="date" name="date" value="<?= e($range['date']->format('Y-m-d')) ?>" data-autosubmit>
         </label>
+    <?php else: ?>
+        <?php /* month and week: no date control; keep the period when filters are applied */ ?>
+        <input type="hidden" name="date" value="<?= e($range['date']->format('Y-m-d')) ?>">
     <?php endif; ?>
 
     <details class="multi fb-field">

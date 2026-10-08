@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.11 – 2026-10-08
+
+- The "Go to date" picker is removed from the filter bar in the month and week views (navigate with the arrows, *Today* and the view tabs). The day view keeps it, and the list view keeps its From/To period. The current period is still kept when filters are applied.
+
 ## 0.2.10 – 2026-10-08
 
 - Calendar filter bar, properly this time: the date pickers carried a stray 5px top margin from the generic form styling (it outranked the filter bar's own rule), so they sat lower than the other controls. All controls now have identical size (34px) and identical position (11px above and below) in the bar.
