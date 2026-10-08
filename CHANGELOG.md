@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.16 – 2026-10-08
+
+- List view: the "Colour by…" control is removed from the filter bar, since the list has no colour choice to make. The other views keep it.
+
 ## 0.2.15 – 2026-10-08
 
 - Fix: the week numbers in the week picker were one too low for most of the year in time zones with daylight saving (the browser computed them from local-time differences that are an hour short in summer). They are now calculated in UTC and match the calendar's own ISO week numbers.

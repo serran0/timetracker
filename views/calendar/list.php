@@ -5,7 +5,6 @@
 /** @var array $filters */
 /** @var array $holidays */
 $embedded ??= false;
-$colorBy = $filters['color'];
 $cur = $user['currency'];
 $total = 0;
 ?>

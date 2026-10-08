@@ -81,12 +81,14 @@ $exportUrl = url('export.php', [
         </select>
     </label>
 
+    <?php if ($view !== 'list'): /* the list view has no colour coding to switch */ ?>
     <label class="fb-field">
         <select name="color" aria-label="<?= te('Colour by') ?>" data-autosubmit>
             <option value="client" <?= $filters['color'] === 'client' ? 'selected' : '' ?>><?= te('Colour by client') ?></option>
             <option value="action" <?= $filters['color'] === 'action' ? 'selected' : '' ?>><?= te('Colour by action') ?></option>
         </select>
     </label>
+    <?php endif; ?>
 
     <div class="fb-actions">
         <button class="btn btn-sm btn-primary" type="submit"><?= te('Apply') ?></button>
