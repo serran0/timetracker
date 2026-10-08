@@ -247,6 +247,9 @@ a.tl-label:hover { text-decoration: none; background: var(--primary-soft); }
     box-shadow: inset 0 -3px 0 var(--a), 0 1px 2px rgba(25, 30, 60, .08);
 }
 .te:hover { background: color-mix(in srgb, var(--c) 32%, #fff); z-index: 5; }
+.te-break { position: absolute; top: 0; bottom: 0; z-index: 0; pointer-events: none; border-left: 1px dashed color-mix(in srgb, var(--c) 70%, #fff); border-right: 1px dashed color-mix(in srgb, var(--c) 70%, #fff);
+            background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .85) 0 4px, rgba(255, 255, 255, .35) 4px 8px); }
+.te > span:not(.te-break) { position: relative; z-index: 1; }
 .te-time { font-weight: 600; font-variant-numeric: tabular-nums; flex: none; }
 .te-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .te-act { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
@@ -282,6 +285,13 @@ dialog.dialog form { padding: 20px 22px 18px; }
 .dialog-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .dialog-head h2 { margin: 0; font-size: 1.2rem; }
 .dialog-actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+.break-row { display: flex; align-items: flex-end; gap: 12px; }
+.break-row label { flex: 1; margin-bottom: 10px; }
+.break-row .btn { margin-bottom: 10px; }
+.wh-lunch { border-top: 1px solid var(--border); padding-top: 16px; margin: 6px 0 16px; max-width: 720px; }
+.lunch-grid { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.lunch-grid label { margin-bottom: 0; }
+.lunch-grid input { width: 110px; text-align: center; }
 .dialog-duration { margin: -6px 0 10px; font-size: .85rem; min-height: 1.2em; }
 .ctx { position: fixed; z-index: 2000; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 40px rgba(20, 24, 50, .22); padding: 6px; }
 .ctx-title { padding: 6px 10px 4px; font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }

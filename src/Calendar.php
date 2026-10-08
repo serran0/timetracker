@@ -181,6 +181,7 @@ final class Calendar
             'date'        => $e['entry_date'],
             'start'       => $e['start'],
             'end'         => $e['end'],
+            'break'       => (int) $e['break_minutes'],
             'client_id'   => (int) $e['client_id'],
             'action_id'   => (int) $e['action_id'],
             'description' => (string) ($e['description'] ?? ''),

@@ -53,7 +53,7 @@ if ($op !== 'save') {
     json_out(['ok' => false, 'errors' => ['Unknown operation.']], 400);
 }
 
-[$data, $errors] = Entries::validate($uid, $body, $existing);
+[$data, $errors] = Entries::validate($uid, $body, $existing, $user);
 if ($errors) {
     json_out(['ok' => false, 'errors' => $errors], 422);
 }

@@ -18,7 +18,11 @@ $options = static function (array $rows): string {
     return $out;
 };
 ?>
-<dialog id="entry-dialog" class="dialog" data-ready="<?= $hasData ? '1' : '0' ?>">
+<?php
+$lunchAttr = (!empty($user['lunch_start']) && !empty($user['lunch_end']))
+    ? time_to_minutes($user['lunch_start']) . '-' . time_to_minutes($user['lunch_end']) : '';
+?>
+<dialog id="entry-dialog" class="dialog" data-ready="<?= $hasData ? '1' : '0' ?>" data-lunch="<?= e($lunchAttr) ?>">
     <form method="dialog" id="entry-form" autocomplete="off">
         <div class="dialog-head">
             <h2 id="entry-title">New time report</h2>
@@ -44,6 +48,12 @@ $options = static function (array $rows): string {
             <label>End
                 <input type="text" name="end" inputmode="numeric" placeholder="17:00" maxlength="5" required list="time-options" pattern="^\d{1,2}[:.]?\d{0,2}$">
             </label>
+        </div>
+        <div class="break-row">
+            <label>Unpaid break (minutes)
+                <input type="number" name="break" min="0" max="1440" step="5" value="0" inputmode="numeric">
+            </label>
+            <button type="button" class="btn btn-sm btn-ghost" id="entry-use-lunch" <?= $lunchAttr === '' ? 'hidden' : '' ?>>Use lunch window</button>
         </div>
         <p class="muted dialog-duration" id="entry-duration"></p>
         <label>Description

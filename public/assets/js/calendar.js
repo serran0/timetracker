@@ -29,6 +29,28 @@
         return h * 60 + min;
     }
 
+    /** Lunch window [startMin, endMin] from the dialog's data attribute, or null. */
+    const lunch = (() => {
+        const m = (dialog.dataset.lunch || '').match(/^(\d+)-(\d+)$/);
+        return m ? [parseInt(m[1], 10), parseInt(m[2], 10)] : null;
+    })();
+    const overlap = (a1, a2, b1, b2) => Math.max(0, Math.min(a2, b2) - Math.max(a1, b1));
+    const lunchBreak = (s, e) => (lunch && s !== null && e !== null ? overlap(s, e, lunch[0], lunch[1]) : 0);
+
+    /**
+     * The "whole working day" report for a day's working intervals: first start to last end, with the time
+     * between intervals plus the lunch window (inside working time) taken off as unpaid break.
+     */
+    function wholeDay(wh) {
+        if (!wh.length) return null;
+        const start = Math.min(...wh.map((i) => i[0]));
+        const end = Math.max(...wh.map((i) => i[1]));
+        const net = wh.reduce((sum, [s, e]) => sum + (e - s) - lunchBreak(s, e), 0);
+        return { start, end, brk: Math.max(0, end - start - net) };
+    }
+
+    let breakDirty = false;
+
     const store = {
         get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
         set(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* ignore */ } },
@@ -49,8 +71,10 @@
     function updateDuration() {
         const s = parseTime(form.start.value);
         const e = parseTime(form.end.value);
-        if (s !== null && e !== null && e > s) {
-            durationEl.textContent = `Duration ${fmtDur(e - s)} (${((e - s) / 60).toFixed(2)} h)`;
+        const brk = parseInt(form.elements['break'].value, 10) || 0;
+        if (s !== null && e !== null && e > s && brk < e - s) {
+            const net = e - s - brk;
+            durationEl.textContent = `Net duration ${fmtDur(net)} (${(net / 60).toFixed(2)} h)` + (brk ? ` · ${fmtDur(e - s)} minus ${brk} min break` : '');
         } else {
             durationEl.textContent = '';
         }
@@ -79,16 +103,33 @@
         form.start.value = data.start;
         form.end.value = data.end;
         form.description.value = data.description || '';
+        // Break: stored value when known, otherwise derived from the lunch window until the user edits it.
+        if (typeof data.break === 'number') {
+            form.elements['break'].value = data.break;
+            breakDirty = true;
+        } else {
+            form.elements['break'].value = lunchBreak(parseTime(data.start), parseTime(data.end));
+            breakDirty = false;
+        }
         selectDefault(form.client_id, 'tt_client', data.client_id);
         selectDefault(form.action_id, 'tt_action', data.action_id);
         updateDuration();
         if (typeof dialog.showModal === 'function') dialog.showModal();
         else dialog.setAttribute('open', '');
-        (editing ? form.description : form.client_id).focus();
+        (data.focusSave ? saveBtn : editing ? form.description : form.client_id).focus();
     }
 
-    function openNew(date, startMin, endMin) {
-        openDialog({ date, start: toHHMM(startMin), end: toHHMM(endMin) });
+    function openNew(date, startMin, endMin, extra) {
+        openDialog({ date, start: toHHMM(startMin), end: toHHMM(endMin), ...(extra || {}) });
+    }
+
+    /** Opens the dialog for a full working day, ready to save with Enter (client/action = last used). */
+    function openWholeDay(date, day) {
+        openNew(date, day.start, day.end, { break: day.brk, focusSave: true });
+    }
+
+    function wholeDayLabel(day) {
+        return `Report whole working day ${toHHMM(day.start)}–${toHHMM(day.end)}` + (day.brk ? ` (−${day.brk} min break)` : '');
     }
 
     function closeDialog() {
@@ -119,6 +160,7 @@
         const en = parseTime(form.end.value);
         if (s === null || en === null) return showErrors(['Enter times as HH:MM (e.g. 08:30).']);
         if (en <= s) return showErrors(['End time must be after the start time.']);
+        if ((parseInt(form.elements['break'].value, 10) || 0) >= en - s) return showErrors(['The break must be shorter than the time span.']);
         saveBtn.disabled = true;
         const result = await post({
             op: 'save',
@@ -126,6 +168,7 @@
             date: form.date.value,
             start: toHHMM(s),
             end: toHHMM(en),
+            break: parseInt(form.elements['break'].value, 10) || 0,
             client_id: parseInt(form.client_id.value, 10) || 0,
             action_id: parseInt(form.action_id.value, 10) || 0,
             description: form.description.value,
@@ -151,11 +194,21 @@
     });
     $$('[data-dialog-close]', dialog).forEach((b) => b.addEventListener('click', closeDialog));
     dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+    form.elements['break'].addEventListener('input', () => { breakDirty = true; updateDuration(); });
+    document.getElementById('entry-use-lunch').addEventListener('click', () => {
+        form.elements['break'].value = lunchBreak(parseTime(form.start.value), parseTime(form.end.value));
+        breakDirty = false;
+        updateDuration();
+    });
     ['start', 'end'].forEach((name) => {
-        form[name].addEventListener('input', updateDuration);
+        form[name].addEventListener('input', () => {
+            if (!breakDirty) form.elements['break'].value = lunchBreak(parseTime(form.start.value), parseTime(form.end.value));
+            updateDuration();
+        });
         form[name].addEventListener('blur', () => {
             const m = parseTime(form[name].value);
             if (m !== null && (name === 'end' || m < 1440)) form[name].value = toHHMM(m);
+            if (!breakDirty) form.elements['break'].value = lunchBreak(parseTime(form.start.value), parseTime(form.end.value));
             updateDuration();
         });
     });
@@ -241,11 +294,14 @@
 
     function trackMenu(x, y, track, hour) {
         const date = track.dataset.date;
-        const items = [{ label: `New time report ${toHHMM(hour * 60)}–${toHHMM((hour + 1) * 60)}`, run: () => openNew(date, hour * 60, (hour + 1) * 60) }];
-        parseWh(track).forEach(([s, e]) => items.push({
-            label: `New report for working hours ${toHHMM(s)}–${toHHMM(e)}`,
-            run: () => openNew(date, s, e),
-        }));
+        const wh = parseWh(track);
+        const day = wholeDay(wh);
+        const items = [];
+        if (day) items.push({ label: wholeDayLabel(day), run: () => openWholeDay(date, day) });
+        items.push({ label: `New time report ${toHHMM(hour * 60)}–${toHHMM((hour + 1) * 60)}`, run: () => openNew(date, hour * 60, (hour + 1) * 60) });
+        if (wh.length > 1) {
+            wh.forEach(([s, e]) => items.push({ label: `New report ${toHHMM(s)}–${toHHMM(e)}`, run: () => openNew(date, s, e) }));
+        }
         if (view !== 'day') {
             items.push('-', { label: 'Open day', run: () => { window.location.href = dayUrl(date); } });
         }
@@ -332,11 +388,14 @@
 
     function dayMenu(x, y, day) {
         const date = day.dataset.date;
-        const items = parseWh(day).map(([s, e]) => ({
-            label: `New report for working hours ${toHHMM(s)}–${toHHMM(e)}`,
-            run: () => openNew(date, s, e),
-        }));
-        items.unshift({ label: 'New time report…', run: () => openNew(date, 9 * 60, 10 * 60) });
+        const wh = parseWh(day);
+        const whole = wholeDay(wh);
+        const items = [];
+        if (whole) items.push({ label: wholeDayLabel(whole), run: () => openWholeDay(date, whole) });
+        items.push({ label: 'New time report…', run: () => openNew(date, 9 * 60, 10 * 60) });
+        if (wh.length > 1) {
+            wh.forEach(([s, e]) => items.push({ label: `New report ${toHHMM(s)}–${toHHMM(e)}`, run: () => openNew(date, s, e) }));
+        }
         items.push('-',
             { label: 'Open day', run: () => { window.location.href = day.dataset.dayUrl; } },
             { label: 'Open week', run: () => { window.location.href = day.dataset.weekUrl; } });

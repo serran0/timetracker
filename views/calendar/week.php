@@ -21,6 +21,7 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
     $days[] = $d;
 }
 $weekMinTotal = 0;
+$lunch = (!empty($user['lunch_start']) && !empty($user['lunch_end'])) ? [time_to_minutes($user['lunch_start']), time_to_minutes($user['lunch_end'])] : null;
 $firstStart = 480;
 foreach ($days as $d) {
     foreach ($hours[(int) $d->format('N')] as [$ws]) {
@@ -64,9 +65,23 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
                 <?php endforeach; ?>
                 <?php if ($ds === $todayStr): ?><div class="tl-now" style="left:<?= $pct($nowMin) ?>%" title="Now"></div><?php endif; ?>
                 <?php foreach ($list as $e): ?>
+                    <?php
+                    // Hatched stripe marking where the unpaid break sits inside the block.
+                    $stripe = null;
+                    if ($lunch && $e['break_minutes'] > 0 && $e['gross_minutes'] > 0) {
+                        $os = max($e['start_min'], $lunch[0]);
+                        $oe = min($e['end_min'], $lunch[1]);
+                        if ($oe > $os) {
+                            $stripe = [round(($os - $e['start_min']) / $e['gross_minutes'] * 100, 3), round(($oe - $os) / $e['gross_minutes'] * 100, 3)];
+                        }
+                    }
+                    $tip = $e['start'] . '–' . $e['end'] . ($e['break_minutes'] ? ' (−' . fmt_dur($e['break_minutes']) . ' break)' : '')
+                        . ' · ' . $e['client_name'] . ' · ' . $e['action_name'] . ($e['description'] ? "\n" . $e['description'] : '');
+                    ?>
                     <button type="button" class="te" data-entry="<?= e(Calendar::entryPayload($e)) ?>"
-                            style="left:<?= $pct($e['start_min']) ?>%;width:<?= $pct($e['minutes']) ?>%;top:<?= $lanePad + $e['lane'] * $laneH ?>px;height:<?= $laneH - 3 ?>px;<?= e(Calendar::entryStyle($e, $colorBy)) ?>"
-                            title="<?= e($e['start'] . '–' . $e['end'] . ' · ' . $e['client_name'] . ' · ' . $e['action_name'] . ($e['description'] ? "\n" . $e['description'] : '')) ?>">
+                            style="left:<?= $pct($e['start_min']) ?>%;width:<?= $pct($e['gross_minutes']) ?>%;top:<?= $lanePad + $e['lane'] * $laneH ?>px;height:<?= $laneH - 3 ?>px;<?= e(Calendar::entryStyle($e, $colorBy)) ?>"
+                            title="<?= e($tip) ?>">
+                        <?php if ($stripe): ?><span class="te-break" style="left:<?= $stripe[0] ?>%;width:<?= $stripe[1] ?>%"></span><?php endif; ?>
                         <span class="te-time"><?= e($e['start'] . '–' . $e['end']) ?></span>
                         <span class="te-name"><?= e($e['client_name']) ?></span>
                         <span class="te-act"><?= e($e['action_name']) ?></span>

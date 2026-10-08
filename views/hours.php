@@ -21,6 +21,10 @@ $row = static function (int $day, int $i, ?array $iv): string {
     </div>
 </div>
 
+<?php
+// Stored values are TIME strings (12:00:00); after a validation error show exactly what was typed.
+$lunchVal = static fn($v): string => ($v === null || $v === '') ? '' : (preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $v) ? substr((string) $v, 0, 5) : (string) $v);
+?>
 <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
 
 <form method="post" class="card" data-wh-form>
@@ -40,6 +44,18 @@ $row = static function (int $day, int $i, ?array $iv): string {
             <button type="button" class="btn btn-sm btn-ghost" data-wh-add>+ Add interval</button>
         </div>
     <?php endforeach; ?>
+    </div>
+    <div class="wh-lunch">
+        <h2>Lunch window</h2>
+        <p class="muted">Your usual unpaid break. When you create a time report, the part of it that overlaps this window is pre-filled as an unpaid break and deducted from the hours, so a report 08:00–17:00 counts as 8:00 h. You can change the break on every report. Leave empty if you do not deduct a break by default.</p>
+        <div class="lunch-grid">
+            <label>From
+                <input type="text" name="lunch_start" value="<?= e($lunchVal($user['lunch_start'] ?? null)) ?>" placeholder="12:00" inputmode="numeric" maxlength="5" list="time-options">
+            </label>
+            <label>To
+                <input type="text" name="lunch_end" value="<?= e($lunchVal($user['lunch_end'] ?? null)) ?>" placeholder="13:00" inputmode="numeric" maxlength="5" list="time-options">
+            </label>
+        </div>
     </div>
     <p class="muted">Weekly total: <strong><?= e(fmt_dur(WorkingHours::weeklyMinutes($intervals))) ?> h</strong></p>
     <datalist id="time-options">

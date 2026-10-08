@@ -7,7 +7,9 @@ declare(strict_types=1);
  */
 
 define('TT_ROOT', dirname(__DIR__));
-const TT_VERSION = '0.1.0';
+const TT_VERSION = '0.2.0';
+/** Database schema number; bump together with a new step in src/Migrator.php. */
+const TT_SCHEMA = 2;
 
 require_once __DIR__ . '/helpers.php';
 
@@ -71,4 +73,15 @@ session_start();
 // Not installed yet? Everything except the setup page goes to the installer.
 if (!Config::isInstalled() && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'setup.php') {
     redirect('setup.php');
+}
+
+// Bring an existing database up to the schema this code expects (no-op when already current).
+if (Config::isInstalled() && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'setup.php') {
+    try {
+        \TimeTracker\Migrator::run();
+    } catch (Throwable $e) {
+        error_log('Timetracker migration failed: ' . $e->getMessage());
+        http_response_code(500);
+        exit('Timetracker could not upgrade the database: ' . e($e->getMessage()) . ' (the database user needs ALTER privileges).');
+    }
 }

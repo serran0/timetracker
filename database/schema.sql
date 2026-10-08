@@ -1,4 +1,4 @@
--- Timetracker 0.1 schema (MySQL 5.7+/8.x, MariaDB 10.3+)
+-- Timetracker 0.2 schema (schema number 2; see src/Migrator.php for upgrades from older installs) (MySQL 5.7+/8.x, MariaDB 10.3+)
 -- Every user-owned table carries user_id: each user has an isolated environment.
 -- Statements are separated by a semicolon at the end of a line.
 
@@ -13,6 +13,8 @@ CREATE TABLE users (
     currency      VARCHAR(8)   NOT NULL DEFAULT 'EUR',
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at DATETIME     NULL,
+    lunch_start   TIME         NULL COMMENT 'default unpaid break window',
+    lunch_end     TIME         NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_users_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -66,6 +68,7 @@ CREATE TABLE time_entries (
     entry_date  DATE NOT NULL,
     start_time  TIME NOT NULL,
     end_time    TIME NOT NULL COMMENT 'may be 24:00:00 for "until midnight"',
+    break_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'unpaid break deducted from the time span',
     description TEXT NULL,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

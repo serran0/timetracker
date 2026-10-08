@@ -116,6 +116,12 @@ function minutes_to_hhmm(int $m): string
     return sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
 }
 
+/** Minutes two ranges [a1,a2) and [b1,b2) have in common. */
+function interval_overlap(int $a1, int $a2, int $b1, int $b2): int
+{
+    return max(0, min($a2, $b2) - max($a1, $b1));
+}
+
 /** Duration as h:mm, e.g. 450 -> "7:30". */
 function fmt_dur(int|float $minutes): string
 {

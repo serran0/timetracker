@@ -60,6 +60,7 @@ final class Users
         foreach (self::DEFAULT_ACTIONS as $i => [$name, $color, $mult, $billable]) {
             $a->execute([$userId, $name, $color, $mult, $billable, $i]);
         }
+        $pdo->prepare('UPDATE users SET lunch_start = ?, lunch_end = ? WHERE id = ?')->execute(['12:00:00', '13:00:00', $userId]);
         $w = $pdo->prepare('INSERT INTO working_hours (user_id, weekday, start_time, end_time) VALUES (?,?,?,?)');
         for ($d = 1; $d <= 5; $d++) {
             $w->execute([$userId, $d, '08:00:00', '17:00:00']);

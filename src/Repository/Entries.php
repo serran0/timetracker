@@ -13,7 +13,7 @@ final class Entries
      */
     public static function search(int $uid, string $from, string $to, array $filter = []): array
     {
-        $sql = 'SELECT e.id, e.entry_date, e.start_time, e.end_time, e.description,
+        $sql = 'SELECT e.id, e.entry_date, e.start_time, e.end_time, e.break_minutes, e.description,
                        e.client_id, c.name AS client_name, c.color AS client_color, c.hourly_rate, c.reference AS client_reference,
                        e.action_id, a.name AS action_name, a.color AS action_color, a.rate_multiplier, a.is_billable
                 FROM time_entries e
@@ -49,7 +49,9 @@ final class Entries
     {
         $s = time_to_minutes($r['start_time']);
         $e = time_to_minutes($r['end_time']);
-        $minutes = max(0, $e - $s);
+        $break = (int) ($r['break_minutes'] ?? 0);
+        $gross = max(0, $e - $s);
+        $minutes = max(0, $gross - $break); // net time: this is what is summed, billed and exported
         $rate = $r['hourly_rate'] !== null ? (float) $r['hourly_rate'] : null;
         $billable = (bool) $r['is_billable'];
         $r['start_min'] = $s;
@@ -57,6 +59,8 @@ final class Entries
         $r['start'] = minutes_to_hhmm($s);
         $r['end'] = minutes_to_hhmm($e);
         $r['minutes'] = $minutes;
+        $r['gross_minutes'] = $gross;
+        $r['break_minutes'] = $break;
         $r['billable'] = $billable;
         $r['effective_rate'] = ($rate !== null && $billable) ? round($rate * (float) $r['rate_multiplier'], 2) : null;
         $r['amount'] = $r['effective_rate'] !== null ? round($minutes / 60 * $r['effective_rate'], 2) : null;
@@ -95,7 +99,18 @@ final class Entries
      * Validates posted entry data. Ownership of client/action is verified against the user.
      * @return array{0: array, 1: string[]}
      */
-    public static function validate(int $uid, array $in, ?array $existing = null): array
+    /**
+     * Default unpaid break for a time span: the part of it that falls inside the user's lunch window.
+     */
+    public static function defaultBreak(?array $user, ?int $startMin, ?int $endMin): int
+    {
+        if (!$user || empty($user['lunch_start']) || empty($user['lunch_end']) || $startMin === null || $endMin === null) {
+            return 0;
+        }
+        return interval_overlap($startMin, $endMin, time_to_minutes($user['lunch_start']), time_to_minutes($user['lunch_end']));
+    }
+
+    public static function validate(int $uid, array $in, ?array $existing = null, ?array $user = null): array
     {
         $errors = [];
 
@@ -114,6 +129,21 @@ final class Entries
         }
         if ($start !== null && $end !== null && $end <= $start) {
             $errors[] = 'End time must be after the start time.';
+        }
+
+        // Break: explicit value wins; if not sent, keep the stored one (edit) or derive it from the lunch window (new).
+        if (!array_key_exists('break', $in) || $in['break'] === null) {
+            $break = $existing ? (int) $existing['break_minutes'] : self::defaultBreak($user, $start, $end);
+        } elseif (preg_match('/^\d{1,4}$/', trim((string) $in['break']))) {
+            $break = (int) trim((string) $in['break']);
+        } elseif (trim((string) $in['break']) === '') {
+            $break = 0;
+        } else {
+            $break = 0;
+            $errors[] = 'Break must be a whole number of minutes.';
+        }
+        if ($start !== null && $end !== null && $end > $start && $break >= $end - $start) {
+            $errors[] = 'The break must be shorter than the time span.';
         }
 
         $clientId = (int) ($in['client_id'] ?? 0);
@@ -143,6 +173,7 @@ final class Entries
             'entry_date'  => $date?->format('Y-m-d'),
             'start_time'  => $start !== null ? minutes_to_hhmm($start) . ':00' : null,
             'end_time'    => $end !== null ? minutes_to_hhmm($end) . ':00' : null,
+            'break_minutes' => $break,
             'description' => $desc !== '' ? $desc : null,
         ];
         return [$data, $errors];
@@ -151,16 +182,16 @@ final class Entries
     public static function create(int $uid, array $d): int
     {
         return Db::insert(
-            'INSERT INTO time_entries (user_id, client_id, action_id, entry_date, start_time, end_time, description) VALUES (?,?,?,?,?,?,?)',
-            [$uid, $d['client_id'], $d['action_id'], $d['entry_date'], $d['start_time'], $d['end_time'], $d['description']]
+            'INSERT INTO time_entries (user_id, client_id, action_id, entry_date, start_time, end_time, break_minutes, description) VALUES (?,?,?,?,?,?,?,?)',
+            [$uid, $d['client_id'], $d['action_id'], $d['entry_date'], $d['start_time'], $d['end_time'], $d['break_minutes'], $d['description']]
         );
     }
 
     public static function update(int $uid, int $id, array $d): void
     {
         Db::run(
-            'UPDATE time_entries SET client_id=?, action_id=?, entry_date=?, start_time=?, end_time=?, description=? WHERE id=? AND user_id=?',
-            [$d['client_id'], $d['action_id'], $d['entry_date'], $d['start_time'], $d['end_time'], $d['description'], $id, $uid]
+            'UPDATE time_entries SET client_id=?, action_id=?, entry_date=?, start_time=?, end_time=?, break_minutes=?, description=? WHERE id=? AND user_id=?',
+            [$d['client_id'], $d['action_id'], $d['entry_date'], $d['start_time'], $d['end_time'], $d['break_minutes'], $d['description'], $id, $uid]
         );
     }
 

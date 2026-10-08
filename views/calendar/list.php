@@ -34,7 +34,8 @@ $total = 0;
             <tr class="entry-row" data-entry="<?= e(TimeTracker\Calendar::entryPayload($e)) ?>" tabindex="0">
                 <td class="nowrap"><?= e($d->format('D j M')) ?></td>
                 <td class="nowrap"><?= e($e['start'] . '–' . $e['end']) ?></td>
-                <td class="num"><?= e(fmt_dur($e['minutes'])) ?> <small class="muted"><?= e(fmt_dec($e['minutes'])) ?></small></td>
+                <td class="num"><?= e(fmt_dur($e['minutes'])) ?> <small class="muted"><?= e(fmt_dec($e['minutes'])) ?></small>
+                    <?php if ($e['break_minutes']): ?><br><small class="muted" title="Unpaid break deducted">−<?= e(fmt_dur($e['break_minutes'])) ?> break</small><?php endif; ?></td>
                 <td>
                     <span class="dot" style="background:<?= e($e['client_color']) ?>"></span><strong><?= e($e['client_name']) ?></strong>
                     <span class="tag" style="--c:<?= e($e['action_color']) ?>"><?= e($e['action_name']) ?></span>

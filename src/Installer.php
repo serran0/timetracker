@@ -270,7 +270,7 @@ final class Installer
             foreach (self::splitStatements((string) file_get_contents(TT_ROOT . '/database/schema.sql')) as $sql) {
                 $pdo->exec($sql);
             }
-            $pdo->prepare('INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)')->execute(['schema_version', TT_VERSION]);
+            $pdo->prepare('INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?)')->execute(['schema_version', (string) TT_SCHEMA]);
 
             Users::create($admin['username'], $admin['password'], $admin['display_name'], true, $timezone, $admin['currency'], $pdo);
 

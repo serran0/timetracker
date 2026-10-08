@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 – 2026-10-08
+
+Unpaid breaks (e.g. lunch).
+
+- **Lunch window** (Working hours page): your usual unpaid break, e.g. 12:00–13:00.
+- **Break on every report:** a new "Unpaid break (minutes)" field. When you create a report it is pre-filled with the part of the report that overlaps the lunch window (08:00–17:00 → 60 min, 08:00–11:00 → 0), and you can change it. The break is stored on the report, so later changes to your settings never alter old reports. "Use lunch window" resets the field.
+- **Net hours everywhere:** calendar totals, summaries, amounts and all exports use time minus break. Exports contain net hours only (no break column). Week/day blocks keep their full 08–17 span with a hatched stripe where the break is.
+- **Report whole working day:** new first entry in the right-click menu of a day (week, day and month views). It opens the dialog with your working day and break filled in and the Save button focused, so with your usual client and action pre-selected it is right-click, then Enter.
+- **Automatic upgrade:** installs from 0.1 are upgraded on the first request (`src/Migrator.php`; needs ALTER privilege). Existing reports keep a 0-minute break. Set your lunch window once on the Working hours page. New installs and new users get 12:00–13:00 by default.
+
+
 ## 0.1.0 – 2026-10-08
 
 First release.

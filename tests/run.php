@@ -18,6 +18,7 @@ spl_autoload_register(static function (string $c): void {
 
 use TimeTracker\Calendar;
 use TimeTracker\Export\ReportBuilder;
+use TimeTracker\Repository\Entries;
 use TimeTracker\Repository\WorkingHours;
 
 $failures = 0;
@@ -85,6 +86,24 @@ check('wh weekly minutes', WorkingHours::weeklyMinutes($wh), 510);
 check('wh overlap detected', count($err), 1);
 [, $err] = WorkingHours::parse([3 => [['start' => '12:00', 'end' => '08:00']]]);
 check('wh end before start', count($err), 1);
+
+// Unpaid breaks
+check('overlap partial', interval_overlap(480, 1020, 720, 780), 60);
+check('overlap none', interval_overlap(480, 700, 720, 780), 0);
+check('overlap clipped', interval_overlap(700, 750, 720, 780), 30);
+$u = ['lunch_start' => '12:00:00', 'lunch_end' => '13:00:00'];
+check('default break whole day', Entries::defaultBreak($u, 480, 1020), 60);
+check('default break morning only', Entries::defaultBreak($u, 480, 720), 0);
+check('default break half in window', Entries::defaultBreak($u, 690, 750), 30);
+check('default break without window', Entries::defaultBreak(['lunch_start' => null, 'lunch_end' => null], 480, 1020), 0);
+check('default break without user', Entries::defaultBreak(null, 480, 1020), 0);
+$row = Entries::decorate(['entry_date' => '2026-10-05', 'start_time' => '08:00:00', 'end_time' => '17:00:00', 'break_minutes' => 60,
+    'hourly_rate' => '100.00', 'rate_multiplier' => '1.50', 'is_billable' => 1, 'description' => null]);
+check('net minutes', $row['minutes'], 480);
+check('gross minutes', $row['gross_minutes'], 540);
+check('amount uses net hours', $row['amount'], 1200.0);
+$s = Entries::summarize([$row + ['client_id' => 1, 'client_name' => 'A', 'client_color' => '#000', 'action_id' => 1, 'action_name' => 'N', 'action_color' => '#000']]);
+check('summary uses net hours', $s['minutes'], 480);
 
 // Export options
 $o = ReportBuilder::options(['cols' => ['client', 'date', 'bogus'], 'format' => 'evil', 'delimiter' => ';', 'submitted' => '1']);
