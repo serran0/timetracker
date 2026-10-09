@@ -483,12 +483,13 @@
             return;
         }
         if (e.button !== 0) return;
+        const hadMenu = !!menu; // a click that only dismisses an open menu must not also start a report
         hideMenu();
         const h = hourAt(track, e.clientX);
         const sel = document.createElement('div');
         sel.className = 'tl-sel';
         track.appendChild(sel);
-        drag = { track, from: h, to: h, sel, pointerId: e.pointerId };
+        drag = { track, from: h, to: h, sel, pointerId: e.pointerId, hadMenu };
         paintSel();
         try { track.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
         e.preventDefault();
@@ -523,6 +524,7 @@
         const a = Math.min(d.from, d.to);
         const b = Math.max(d.from, d.to);
         if (a !== b) openNew(d.track.dataset.date, a * 60, (b + 1) * 60); // drag across several hours
+        else if (!d.hadMenu) openNew(d.track.dataset.date, a * 60, (a + 1) * 60); // a single click: that one hour
     });
     document.addEventListener('pointercancel', () => {
         if (drag && drag.sel) drag.sel.remove();
@@ -530,22 +532,17 @@
     });
 
     document.addEventListener('dblclick', (e) => {
-        // Double-click-to-create is a mouse shortcut; on touch screens it would fire after menu taps.
+        // Double-click-to-create in the month view is a mouse shortcut; on touch screens it would fire after menu taps.
         if (window.matchMedia('(pointer: coarse)').matches || Date.now() - menuOpenedAt < 1000 || e.target.closest('.ctx')) return;
-        const track = e.target.closest('.tl-track');
-        if (track && !e.target.closest('.te')) {
-            const h = hourAt(track, e.clientX);
-            openNew(track.dataset.date, h * 60, (h + 1) * 60);
-            return;
-        }
         const day = e.target.closest('.mv-day');
         if (day && !e.target.closest('a, button')) openNew(day.dataset.date, 9 * 60, 10 * 60);
     });
 
-    /* ------------------------------------------- move a report within its day */
+    /* ------------------------------------- move a report to other hours and days */
 
-    // Drag a report block sideways to shift it by whole hours (its length and break stay as they are).
-    // Mouse and pen only: on touch screens a sideways swipe scrolls the timeline, so tap the report to edit its times.
+    // Drag a report block to shift it by whole hours (its length and break stay as they are) and, in the week view, onto
+    // another day's row to change its date. Mouse and pen only: on touch screens a swipe scrolls the timeline, so tap the
+    // report to edit its date and times in the dialog.
     let mv = null;
     let suppressEntryClick = false;
     document.addEventListener('pointerdown', (e) => {
@@ -556,7 +553,7 @@
         const start = parseTime(p.start);
         const end = parseTime(p.end);
         if (start === null || end === null) return;
-        mv = { el, track, p, start, end, x: e.clientX, delta: 0, active: false, left: el.style.left, label: $('.te-time', el), labelText: ($('.te-time', el) || {}).textContent, pointerId: e.pointerId };
+        mv = { el, track, target: track, p, start, end, x: e.clientX, y: e.clientY, delta: 0, active: false, left: el.style.left, top: el.style.top, label: $('.te-time', el), labelText: ($('.te-time', el) || {}).textContent, pointerId: e.pointerId };
     });
 
     function paintMove() {
@@ -566,13 +563,26 @@
         if (mv.label) mv.label.textContent = `${toHHMM(s)}–${toHHMM(e)}`;
     }
 
+    /** Puts the dragged block into another day's row (or back) and highlights that row. */
+    function retarget(track) {
+        mv.target = track;
+        track.appendChild(mv.el);
+        mv.el.style.top = track === mv.track ? mv.top : '5px';
+        $$('.tl-row.drop-target').forEach((r) => r.classList.remove('drop-target'));
+        if (track !== mv.track) track.closest('.tl-row').classList.add('drop-target');
+    }
+
     function endMove(restore) {
         const m = mv;
         mv = null;
         document.body.classList.remove('is-moving');
         m.el.classList.remove('moving');
-        try { m.el.releasePointerCapture(m.pointerId); } catch (err) { /* ignore */ }
+        m.el.style.pointerEvents = '';
+        $$('.tl-row.drop-target').forEach((r) => r.classList.remove('drop-target'));
+        try { document.body.releasePointerCapture(m.pointerId); } catch (err) { /* ignore */ }
         if (restore) {
+            if (m.el.parentNode !== m.track) m.track.appendChild(m.el);
+            m.el.style.top = m.top;
             m.el.style.left = m.left;
             if (m.label) m.label.textContent = m.labelText;
         }
@@ -582,13 +592,17 @@
     document.addEventListener('pointermove', (e) => {
         if (!mv) return;
         if (!mv.active) {
-            if (Math.abs(e.clientX - mv.x) < 5) return; // below the threshold it is still a click
+            if (Math.hypot(e.clientX - mv.x, e.clientY - mv.y) < 5) return; // below the threshold it is still a click
             mv.active = true;
             hideMenu();
             mv.el.classList.add('moving');
+            mv.el.style.pointerEvents = 'none'; // so the row under the pointer can be found
             document.body.classList.add('is-moving');
-            try { mv.el.setPointerCapture(mv.pointerId); } catch (err) { /* ignore */ }
+            try { document.body.setPointerCapture(mv.pointerId); } catch (err) { /* ignore */ }
         }
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const t = under && under.closest ? under.closest('.tl-track') : null;
+        if (t && t !== mv.target) retarget(t);
         const perHour = mv.track.getBoundingClientRect().width / 24;
         let delta = Math.round((e.clientX - mv.x) / perHour);
         delta = Math.max(Math.ceil(-mv.start / 60), Math.min(Math.floor((1440 - mv.end) / 60), delta)); // stay inside the day
@@ -600,17 +614,23 @@
         if (!mv.active) { mv = null; return; }
         suppressEntryClick = true;
         setTimeout(() => { suppressEntryClick = false; }, 0);
-        if (mv.delta === 0) { endMove(true); return; }
+        const newDate = mv.target.dataset.date;
+        if (mv.delta === 0 && mv.target === mv.track) { endMove(true); return; }
         const m = endMove(false);
         const start = toHHMM(m.start + m.delta * 60);
         const end = toHHMM(m.end + m.delta * 60);
         m.el.classList.add('saving');
-        const result = await post({ op: 'save', ...m.p, start, end });
+        const result = await post({ op: 'save', ...m.p, date: newDate, start, end });
         if (result.ok) {
-            try { sessionStorage.setItem('tt_toast', tr('Moved to {from}–{to}', { from: start, to: end })); } catch (err) { /* ignore */ }
+            const msg = m.target === m.track
+                ? tr('Moved to {from}–{to}', { from: start, to: end })
+                : tr('Moved to {date}, {from}–{to}', { date: m.target.dataset.label || newDate, from: start, to: end });
+            try { sessionStorage.setItem('tt_toast', msg); } catch (err) { /* ignore */ }
             window.location.reload();
         } else {
             m.el.classList.remove('saving');
+            if (m.el.parentNode !== m.track) m.track.appendChild(m.el);
+            m.el.style.top = m.top;
             m.el.style.left = m.left;
             if (m.label) m.label.textContent = m.labelText;
             window.TT.toast((result.errors || [tr('Could not save.')])[0]);

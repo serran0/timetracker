@@ -556,3 +556,6 @@ input[type=text][list]::-webkit-calendar-picker-indicator { display: none !impor
 .mv-day .chip.saving { opacity: .5; pointer-events: none; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; margin: 0; opacity: .95; cursor: grabbing; box-shadow: 0 8px 20px rgba(25, 30, 60, .28); transform: rotate(-1.5deg); }
 .mv-day.drop-target { background: var(--primary-soft); outline: 2px solid var(--primary); outline-offset: -2px; }
+
+/* week view: the day row a dragged report would land on */
+.tl-row.drop-target .tl-track { box-shadow: inset 0 0 0 2px var(--primary); background: var(--primary-soft); }

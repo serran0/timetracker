@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.8 – 2026-10-09
+
+- **Week view: drag a report between days as well as hours.** Drag a block onto another day's row to change its date; it still snaps to whole hours horizontally. The row it would land on is outlined, the block shows its new time live, Esc cancels, and nothing changes if you drop it where it started. The toast says where it went (e.g. "Moved to Fri 16 Oct, 10:00–14:00"). Mouse and pen only, as before.
+- **Fix: a single click on an hour slot now opens the New time report dialog** with that hour (e.g. 14:00–15:00), in the week and day views. Dragging across several hours still creates a longer report. The double-click shortcut on the timeline is gone because it clashed with this; a click that only dismisses an open right-click menu does not start a report. The hint under the view says so.
+
 ## 0.3.7 – 2026-10-09
 
 - Month view: drag a report onto another day to move it there. The chip follows the pointer, the day under it is highlighted, and on release the report keeps its times, break, client, action and description and only changes date. Esc cancels, dropping on the same day does nothing, and a plain click still opens the report. Works for greyed-out days of the neighbouring months too. Mouse and pen only (on touch screens, open the report and change its date). The change is recorded in the audit log like any other edit of a report, without details.

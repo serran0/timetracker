@@ -97,7 +97,7 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
     <?php endforeach; ?>
 </div>
 </div>
-<p class="hint"><?= te('Drag across hours to create a time report, or right-click an hour. Drag a report sideways to move it to other hours. On touch screens, tap an hour. Shaded areas are your working hours.') ?></p>
+<p class="hint"><?= te('Click an hour to create a one-hour time report, drag across hours for a longer one, or right-click an hour. Drag a report to move it to other hours or days. On touch screens, tap an hour. Shaded areas are your working hours.') ?></p>
 
 <?php if ($view === 'day'): ?>
     <section class="card day-list">
