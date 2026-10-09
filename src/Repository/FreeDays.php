@@ -23,8 +23,8 @@ final class FreeDays
     public static function parse(array $in): array
     {
         $errors = [];
-        $from = valid_date(trim((string) ($in['from'] ?? '')));
-        $toRaw = trim((string) ($in['to'] ?? ''));
+        $from = valid_date(trim(to_str($in['from'] ?? '')));
+        $toRaw = trim(to_str($in['to'] ?? ''));
         $to = $toRaw === '' ? $from : valid_date($toRaw);
         if (!$from) {
             $errors[] = t('Choose a start date.');
@@ -35,7 +35,7 @@ final class FreeDays
         } elseif ($from->diff($to)->days >= self::MAX_SPAN_DAYS) {
             $errors[] = t('A work-free period can be at most {n} days.', ['n' => self::MAX_SPAN_DAYS]);
         }
-        $name = trim((string) ($in['name'] ?? ''));
+        $name = trim(to_str($in['name'] ?? ''));
         if (mb_strlen($name) > 120) {
             $errors[] = t('The name is too long (max 120 characters).');
         }

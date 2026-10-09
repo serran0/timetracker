@@ -20,8 +20,8 @@ $uid = (int) $user['id'];
 // Default period: the current month.
 $presets = Calendar::presets();
 [$defFrom, $defTo] = $presets['This month'];
-$from = valid_date((string) ($_GET['from'] ?? '')) ?? new DateTimeImmutable($defFrom);
-$to = valid_date((string) ($_GET['to'] ?? '')) ?? new DateTimeImmutable($defTo);
+$from = valid_date(to_str($_GET['from'] ?? '')) ?? new DateTimeImmutable($defFrom);
+$to = valid_date(to_str($_GET['to'] ?? '')) ?? new DateTimeImmutable($defTo);
 if ($to < $from) {
     [$from, $to] = [$to, $from];
 }

@@ -6,7 +6,7 @@ require __DIR__ . '/../src/bootstrap.php';
 use TimeTracker\Auth;
 use TimeTracker\View;
 
-$next = Auth::safeNext((string) ($_GET['next'] ?? $_POST['next'] ?? ''));
+$next = Auth::safeNext(to_str($_GET['next'] ?? $_POST['next'] ?? ''));
 
 if ($u = Auth::user()) {
     redirect($u['is_admin'] ? 'admin.php' : $next);
@@ -17,7 +17,7 @@ $username = '';
 if (is_post()) {
     require_csrf();
     $username = input('username');
-    $result = Auth::attempt($username, (string) ($_POST['password'] ?? ''));
+    $result = Auth::attempt($username, to_str($_POST['password'] ?? ''));
     if ($result['ok']) {
         redirect(Auth::user()['is_admin'] ? 'admin.php' : $next);
     }

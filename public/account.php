@@ -62,19 +62,20 @@ if (is_post()) {
         flash('success', t('Day off removed.'));
         redirect('account.php#free-days');
     } elseif (input('op') === 'password') {
-        $current = (string) ($_POST['current_password'] ?? '');
-        $new = (string) ($_POST['new_password'] ?? '');
-        if (!password_verify($current, $user['password_hash'])) {
+        $current = to_str($_POST['current_password'] ?? '');
+        $new = to_str($_POST['new_password'] ?? '');
+        if (!Auth::confirmPassword($user, $current)) {
             $pwErrors[] = t('Your current password is not correct.');
         }
         if ($e = Users::validatePassword($new)) {
             $pwErrors[] = $e;
         }
-        if ($new !== (string) ($_POST['new_password2'] ?? '')) {
+        if ($new !== to_str($_POST['new_password2'] ?? '')) {
             $pwErrors[] = t('The new passwords do not match.');
         }
         if (!$pwErrors) {
             Users::setPassword($uid, $new);
+            Auth::rememberPassword($uid);
             Audit::log('auth.password_changed');
             session_regenerate_id(true);
             flash('success', t('Password changed.'));

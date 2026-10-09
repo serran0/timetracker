@@ -34,8 +34,17 @@ final class Auth
             self::$loaded = true;
             return null;
         }
+        // A changed or reset password ends every other session of that account.
+        $fp = self::fingerprint((string) $user['password_hash']);
+        if (!isset($_SESSION['pwh'])) {
+            $_SESSION['pwh'] = $fp; // session from before this check existed
+        } elseif (!hash_equals($_SESSION['pwh'], $fp)) {
+            self::logout();
+            self::$loaded = true;
+            return null;
+        }
         $_SESSION['last_activity'] = time();
-        \TimeTracker\I18n::setLocale((string) ($user['locale'] ?? 'en'));
+        \TimeTracker\I18n::setLocale(to_str($user['locale'] ?? 'en'));
         // Each user works in their own timezone ("today", "now" markers).
         if (in_array($user['timezone'], \DateTimeZone::listIdentifiers(), true)) {
             date_default_timezone_set($user['timezone']);
@@ -109,18 +118,25 @@ final class Auth
         $username = substr($username, 0, 64);
 
         if (self::isLocked($username, $ip)) {
-            $known = Db::one('SELECT id, username FROM users WHERE username = ?', [$username]);
-            Audit::log('auth.locked', ['ip' => $ip], $known);
             return ['ok' => false, 'error' => t('Too many failed attempts. Please wait {min} minutes and try again.', ['min' => max(1, Settings::int('login.lock_minutes'))])];
         }
 
         $user = Db::one('SELECT * FROM users WHERE username = ?', [$username]);
-        // Always run a hash verification so response time does not reveal valid usernames.
-        $hash = $user['password_hash'] ?? '$2y$10$usesomesillystringforsaltuQ3F1mQ0Jz0y0gk8pXxO3wYkq0qk0e';
-        $valid = password_verify($password, $hash) && $user && $user['is_active'];
+        if ($user) {
+            $valid = password_verify($password, $user['password_hash']) && $user['is_active'];
+        } else {
+            // Spend the same time as a real check (a hash costs what a verify costs), so the response time does not
+            // reveal which usernames exist.
+            password_hash($password, PASSWORD_DEFAULT);
+            $valid = false;
+        }
 
         if (!$valid) {
             Db::run('INSERT INTO login_attempts (username, ip) VALUES (?, ?)', [$username, $ip]);
+            if (self::isLocked($username, $ip)) {
+                // Logged once, when the limit is reached; the blocked attempts that follow do not add rows (log flooding).
+                Audit::log('auth.locked', ['ip' => $ip], $user ?: ['id' => null, 'username' => '']);
+            }
             // The log names the account only when it exists, so a password typed into the username box is never stored.
             $user ? Audit::log('auth.login_failed', ['username' => $user['username'], 'ip' => $ip], $user)
                   : Audit::log('auth.login_unknown', ['ip' => $ip], ['id' => null, 'username' => '']);
@@ -132,8 +148,9 @@ final class Auth
         }
 
         session_regenerate_id(true);
-        set_lang_cookie(\TimeTracker\I18n::isValid((string) ($user['locale'] ?? '')) ? $user['locale'] : 'en');
+        set_lang_cookie(\TimeTracker\I18n::isValid(to_str($user['locale'] ?? '')) ? $user['locale'] : 'en');
         $_SESSION['uid'] = (int) $user['id'];
+        $_SESSION['pwh'] = self::fingerprint($user['password_hash']);
         $_SESSION['last_activity'] = time();
         unset($_SESSION['_csrf']);
 
@@ -168,6 +185,37 @@ final class Auth
         }
         self::$user = null;
         self::$loaded = false;
+    }
+
+    /**
+     * Checks the signed-in user's current password for a sensitive action (changing the password, restoring a backup).
+     * Failures are counted like failed sign-ins, so a stolen session cannot be used to guess the password.
+     */
+    public static function confirmPassword(array $user, string $password): bool
+    {
+        $key = '#pw' . (int) $user['id']; // shares the login_attempts table, but can never collide with a username
+        $window = 'attempted_at > DATE_SUB(NOW(), INTERVAL ' . max(1, Settings::int('login.lock_minutes')) . ' MINUTE)';
+        if ((int) Db::value("SELECT COUNT(*) FROM login_attempts WHERE username = ? AND $window", [$key]) >= max(1, Settings::int('login.max_per_user'))) {
+            return false;
+        }
+        if (password_verify($password, (string) $user['password_hash'])) {
+            Db::run('DELETE FROM login_attempts WHERE username = ?', [$key]);
+            return true;
+        }
+        Db::run('INSERT INTO login_attempts (username, ip) VALUES (?, ?)', [$key, substr(client_ip(), 0, 45)]);
+        return false;
+    }
+
+    /** Short fingerprint of the stored password hash, kept in the session to notice password changes. */
+    private static function fingerprint(string $passwordHash): string
+    {
+        return substr(hash('sha256', $passwordHash), 0, 32);
+    }
+
+    /** After the signed-in user changed their own password: keep this session, end the others. */
+    public static function rememberPassword(int $uid): void
+    {
+        $_SESSION['pwh'] = self::fingerprint((string) Db::value('SELECT password_hash FROM users WHERE id = ?', [$uid]));
     }
 
     public static function hash(string $password): string

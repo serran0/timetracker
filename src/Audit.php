@@ -89,7 +89,7 @@ final class Audit
             $row = [
                 (new \DateTimeImmutable('now', new \DateTimeZone((string) Config::get('app.timezone', 'UTC'))))->format('Y-m-d H:i:s'), // one timezone for every actor
                 $actor['id'] ?? null,
-                mb_substr((string) ($actor['username'] ?? ''), 0, 64),
+                mb_substr(to_str($actor['username'] ?? ''), 0, 64),
                 $code,
                 $params ? json_encode($params, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) : null,
             ];
@@ -155,7 +155,7 @@ final class Audit
             $where[] = $codes ? 'action IN (' . Db::placeholders($codes) . ')' : '0 = 1';
             array_push($params, ...$codes);
         }
-        if (trim((string) ($f['user'] ?? '')) !== '') {
+        if (trim(to_str($f['user'] ?? '')) !== '') {
             $where[] = 'username LIKE ?'; // prefix match, so the (username, created_at) index can be used
             $params[] = \TimeTracker\Repository\Users::likeEscape(trim($f['user'])) . '%';
         }

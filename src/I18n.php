@@ -106,7 +106,7 @@ final class I18n
         if (is_string($cookie) && self::isValid($cookie)) {
             return $cookie;
         }
-        foreach (explode(',', (string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')) as $part) {
+        foreach (explode(',', to_str($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')) as $part) {
             $tag = strtolower(trim(explode(';', $part)[0]));
             $lang = substr($tag, 0, 2);
             if (self::isValid($lang)) {

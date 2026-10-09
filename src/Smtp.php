@@ -50,7 +50,7 @@ final class Smtp
         stream_set_timeout($fp, $timeout);
         $this->fp = $fp;
         $this->expect([220]);
-        $domain = preg_replace('/[^A-Za-z0-9.\-]/', '', (string) ($_SERVER['SERVER_NAME'] ?? 'localhost')) ?: 'localhost';
+        $domain = preg_replace('/[^A-Za-z0-9.\-]/', '', to_str($_SERVER['SERVER_NAME'] ?? 'localhost')) ?: 'localhost';
         $this->command('EHLO ' . $domain, [250]);
         if ($enc === 'tls') {
             $this->command('STARTTLS', [220]);

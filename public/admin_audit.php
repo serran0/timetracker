@@ -14,10 +14,10 @@ $date = static function (string $v): string {
     return $d ? $d->format('Y-m-d') : '';
 };
 $filters = [
-    'from'   => $date((string) ($_GET['from'] ?? '')),
-    'to'     => $date((string) ($_GET['to'] ?? '')),
-    'action' => (string) ($_GET['action'] ?? ''),
-    'user'   => mb_substr(trim((string) ($_GET['user'] ?? '')), 0, 64),
+    'from'   => $date(to_str($_GET['from'] ?? '')),
+    'to'     => $date(to_str($_GET['to'] ?? '')),
+    'action' => to_str($_GET['action'] ?? ''),
+    'user'   => mb_substr(trim(to_str($_GET['user'] ?? '')), 0, 64),
 ];
 if ($filters['from'] !== '' && $filters['to'] !== '' && $filters['to'] < $filters['from']) {
     [$filters['from'], $filters['to']] = [$filters['to'], $filters['from']];

@@ -65,13 +65,13 @@ if (is_post()) {
         $values['mail.port'] = trim(input('mail_port'));
         $values['mail.encryption'] = in_array(input('mail_encryption'), ['tls', 'ssl', 'none'], true) ? input('mail_encryption') : 'tls';
         $values['mail.username'] = trim(input('mail_username'));
-        $newPass = (string) ($_POST['mail_password'] ?? '');
+        $newPass = to_str($_POST['mail_password'] ?? '');
         if ($newPass !== '' || !empty($_POST['mail_clear_password'])) {
             $values['mail.password'] = !empty($_POST['mail_clear_password']) ? '' : $newPass; // blank keeps the saved one
         }
         $values['mail.from_email'] = trim(input('mail_from_email'));
         $values['mail.from_name'] = mb_substr(trim(input('mail_from_name')), 0, 100);
-        $raw = (string) ($_POST['mail_recipients'] ?? '');
+        $raw = to_str($_POST['mail_recipients'] ?? '');
         $tokens = preg_split('/[\s,;]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         $valid = Settings::recipients($raw);
         foreach ($tokens as $tok) {

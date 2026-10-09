@@ -23,13 +23,18 @@ final class Db
     /** Open a connection. $withDatabase=false connects to the server only (used by the installer). */
     public static function connect(array $db, bool $withDatabase = true): PDO
     {
+        // Defence in depth: the values end up in a DSN string, so odd characters are refused here too.
+        $shape = ['host' => $db['host'] ?? 'localhost', 'port' => (int) ($db['port'] ?? 3306), 'name' => $withDatabase ? ($db['name'] ?? '') : 'x', 'user' => 'x'];
+        if (Installer::validateDbInput($shape)) {
+            throw new \RuntimeException('Invalid database connection details.');
+        }
         $dsn = sprintf(
             'mysql:host=%s;port=%d;%scharset=utf8mb4',
             $db['host'] ?? 'localhost',
             (int) ($db['port'] ?? 3306),
             $withDatabase ? 'dbname=' . ($db['name'] ?? '') . ';' : ''
         );
-        return new PDO($dsn, (string) ($db['user'] ?? ''), (string) ($db['pass'] ?? ''), [
+        return new PDO($dsn, to_str($db['user'] ?? ''), to_str($db['pass'] ?? ''), [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,

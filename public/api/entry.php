@@ -40,7 +40,7 @@ if (!is_array($body)) {
 }
 
 $uid = (int) $user['id'];
-$op = (string) ($body['op'] ?? 'save');
+$op = to_str($body['op'] ?? 'save');
 $id = (int) ($body['id'] ?? 0) ?: null;
 $existing = $id ? Entries::find($uid, $id) : null;
 if ($id && !$existing) {
@@ -82,7 +82,7 @@ if ($op === 'save_many') {
         }
         [$data, $rowErrors] = Entries::validate($uid, $in, null, $user);
         foreach ($rowErrors as $err) {
-            $label = (string) ($row['date'] ?? '') !== '' ? (string) $row['date'] : t('Row {n}', ['n' => $i + 1]);
+            $label = to_str($row['date'] ?? '') !== '' ? (string) $row['date'] : t('Row {n}', ['n' => $i + 1]);
             $errors[] = count($rows) > 1 ? $label . ': ' . $err : $err;
         }
         $all[] = $data;

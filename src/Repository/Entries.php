@@ -70,7 +70,7 @@ final class Entries
         $r['start'] = minutes_to_hhmm($s);
         $r['end'] = minutes_to_hhmm($e);
         $r['minutes'] = $minutes;
-        $r['action_label'] = \TimeTracker\I18n::actionLabel((string) ($r['action_name'] ?? ''));
+        $r['action_label'] = \TimeTracker\I18n::actionLabel(to_str($r['action_name'] ?? ''));
         $r['gross_minutes'] = $gross;
         $r['break_minutes'] = $break;
         $r['billable'] = $billable;
@@ -133,13 +133,13 @@ final class Entries
     {
         $errors = [];
 
-        $date = valid_date((string) ($in['date'] ?? ''));
+        $date = valid_date(to_str($in['date'] ?? ''));
         if (!$date) {
             $errors[] = t('Date is not valid.');
         }
 
-        $start = parse_time_minutes((string) ($in['start'] ?? ''));
-        $end = parse_time_minutes((string) ($in['end'] ?? ''));
+        $start = parse_time_minutes(to_str($in['start'] ?? ''));
+        $end = parse_time_minutes(to_str($in['end'] ?? ''));
         if ($start === null || $start >= 1440) {
             $errors[] = t('Start time is not valid (use HH:MM).');
         }
@@ -183,7 +183,7 @@ final class Entries
             $errors[] = t('That action is archived.');
         }
 
-        $desc = trim((string) ($in['description'] ?? ''));
+        $desc = trim(to_str($in['description'] ?? ''));
         if (mb_strlen($desc) > 5000) {
             $errors[] = t('Description is too long (max 5000 characters).');
         }

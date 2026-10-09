@@ -39,13 +39,13 @@ final class Clients
     public static function validate(int $uid, array $in, ?int $id = null): array
     {
         $errors = [];
-        $name = trim((string) ($in['name'] ?? ''));
+        $name = trim(to_str($in['name'] ?? ''));
         if ($name === '' || mb_strlen($name) > 160) {
             $errors[] = t('Name is required (max 160 characters).');
         } elseif (Db::value('SELECT 1 FROM clients WHERE user_id = ? AND name = ? AND id <> ?', [$uid, $name, $id ?? 0])) {
             $errors[] = t('You already have a client with that name.');
         }
-        $rate = trim((string) ($in['hourly_rate'] ?? ''));
+        $rate = trim(to_str($in['hourly_rate'] ?? ''));
         $rate = str_replace(',', '.', $rate);
         if ($rate === '') {
             $rate = null;
@@ -55,7 +55,7 @@ final class Clients
         } else {
             $rate = round((float) $rate, 2);
         }
-        $vat = str_replace(',', '.', trim((string) ($in['vat_percent'] ?? '')));
+        $vat = str_replace(',', '.', trim(to_str($in['vat_percent'] ?? '')));
         if ($vat === '') {
             $vat = 0.0;
         } elseif (!is_numeric($vat) || (float) $vat < 0 || (float) $vat > 100) {
@@ -64,14 +64,17 @@ final class Clients
         } else {
             $vat = round((float) $vat, 2);
         }
-        $ref = trim((string) ($in['reference'] ?? ''));
+        if (mb_strlen(to_str($in['notes'] ?? '')) > 5000) {
+            $errors[] = t('Notes are too long (max 5000 characters).');
+        }
+        $ref = trim(to_str($in['reference'] ?? ''));
         $data = [
             'name'        => $name,
             'reference'   => $ref !== '' ? mb_substr($ref, 0, 160) : null,
-            'color'       => valid_color((string) ($in['color'] ?? '')),
+            'color'       => valid_color(to_str($in['color'] ?? '')),
             'hourly_rate' => $rate,
             'vat_percent' => $vat,
-            'notes'       => trim((string) ($in['notes'] ?? '')) ?: null,
+            'notes'       => trim(to_str($in['notes'] ?? '')) ?: null,
         ];
         return [$data, $errors];
     }

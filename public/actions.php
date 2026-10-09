@@ -35,7 +35,7 @@ if (is_post() && $client) {
 
     switch ($op) {
         case 'save':
-            $_POST['name'] = Actions::nameToStore($existing, (string) ($_POST['name'] ?? ''));
+            $_POST['name'] = Actions::nameToStore($existing, to_str($_POST['name'] ?? ''));
             [$data, $errors] = Actions::validate($uid, (int) $client['id'], $_POST, $id);
             if (!$errors) {
                 Actions::save($uid, (int) $client['id'], $data, $id);

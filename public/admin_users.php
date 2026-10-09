@@ -33,7 +33,7 @@ if (is_post()) {
             'locale'       => I18n::isValid(input('locale')) ? input('locale') : 'en',
             'force'        => !empty($_POST['force']) ? 1 : 0,
         ];
-        $password = (string) ($_POST['password'] ?? '');
+        $password = to_str($_POST['password'] ?? '');
         if ($e = Users::usernameError($form['username'])) {
             $errors[] = $e;
         }
@@ -69,7 +69,7 @@ if (is_post()) {
         }
         redirect(url('admin_users.php', ['q' => input('q'), 'role' => input('role'), 'page' => input('page')]));
     } elseif ($op === 'reset' && $target) {
-        $new = (string) ($_POST['new_password'] ?? '');
+        $new = to_str($_POST['new_password'] ?? '');
         if ($e = Users::validatePassword($new)) {
             flash('error', $e);
         } else {
@@ -92,7 +92,7 @@ if (is_post()) {
     }
 }
 
-$search = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 64);
+$search = mb_substr(trim(to_str($_GET['q'] ?? '')), 0, 64);
 $role = in_array($_GET['role'] ?? '', ['user', 'admin'], true) ? $_GET['role'] : '';
 $result = Users::page($search, (int) ($_GET['page'] ?? 1), Users::PER_PAGE, $role);
 

@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 
 define('TT_ROOT', dirname(__DIR__));
-const TT_VERSION = '0.3.10';
+const TT_VERSION = '0.3.11';
 /** Database schema number; bump together with a new step in src/Migrator.php. */
 const TT_SCHEMA = 10;
 
@@ -47,10 +47,17 @@ set_exception_handler(static function (Throwable $e): void {
     exit;
 });
 
+header_remove('X-Powered-By');
 // Security headers (no inline scripts are used anywhere, so script-src can stay strict).
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
+header('Cross-Origin-Opener-Policy: same-origin');
+header('X-Permitted-Cross-Domain-Policies: none');
+// Pages hold personal and business data: keep them out of browser and proxy caches (the back button after sign-out).
+header('Cache-Control: no-store, max-age=0');
+header('Pragma: no-cache');
 header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
     . "script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'");
 if (is_https()) {
@@ -99,6 +106,9 @@ if (Config::isInstalled() && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'setup.
     } catch (Throwable $e) {
         error_log('Timetracker migration failed: ' . $e->getMessage());
         http_response_code(500);
-        exit(e(t('Timetracker could not upgrade the database: {error} (the database user needs ALTER privileges).', ['error' => $e->getMessage()])));
+        // Details go to the error log (and to the page only in debug mode); a visitor learns nothing about the database.
+        exit(Config::get('app.debug', false)
+            ? e(t('Timetracker could not upgrade the database: {error} (the database user needs ALTER privileges).', ['error' => $e->getMessage()]))
+            : e(t('Timetracker could not upgrade the database. Check the server error log (the database user needs ALTER privileges).')));
     }
 }

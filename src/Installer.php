@@ -33,6 +33,32 @@ final class Installer
         return false;
     }
 
+    /**
+     * Shape check for the connection details typed into the setup form. They end up in a DSN string and in
+     * CREATE/DROP DATABASE statements, so only plain host names, ports and identifiers are accepted.
+     * @return string[] error messages
+     */
+    public static function validateDbInput(array $db): array
+    {
+        $errors = [];
+        $host = to_str($db['host'] ?? '');
+        if (!preg_match('/^(?:[A-Za-z0-9]([A-Za-z0-9.\-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:.]{2,45}\])$/D', $host)) {
+            $errors[] = t('The database host is not valid (use a host name or an IP address).');
+        }
+        $port = $db['port'] ?? 3306;
+        if (!is_int($port) || $port < 1 || $port > 65535) {
+            $errors[] = t('The database port must be a number between 1 and 65535.');
+        }
+        if (!preg_match('/^[A-Za-z0-9_$]{1,64}$/D', to_str($db['name'] ?? ''))) {
+            $errors[] = t('The database name may only contain letters, digits, underscore and $ (max. 64 characters).');
+        }
+        $user = to_str($db['user'] ?? '');
+        if ($user === '' || mb_strlen($user) > 80 || preg_match('/[\x00-\x1F\x7F]/', $user)) {
+            $errors[] = t('The database user is not valid.');
+        }
+        return $errors;
+    }
+
     /** PHP version, extensions and file permissions. */
     public static function environmentChecks(): array
     {
@@ -73,6 +99,9 @@ final class Installer
      */
     public static function databaseChecks(array $db): array
     {
+        if ($bad = self::validateDbInput($db)) {
+            return ['checks' => array_map(static fn($m) => self::check(t('Database connection details'), 'fail', $m), $bad), 'pdo' => null, 'db_exists' => false];
+        }
         $checks = [];
         $pdo = null;
         $exists = false;
@@ -243,6 +272,9 @@ final class Installer
      */
     public static function install(array $db, array $admin, string $timezone): void
     {
+        if ($bad = self::validateDbInput($db)) {
+            throw new \RuntimeException($bad[0]);
+        }
         $createdDatabase = false;
         $touchedTables = false;
         $server = null;

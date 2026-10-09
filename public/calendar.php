@@ -15,14 +15,14 @@ use TimeTracker\View;
 $user = Auth::require();
 $uid = (int) $user['id'];
 
-$view = (string) ($_GET['view'] ?? $_SESSION['cal_view'] ?? 'month');
+$view = to_str($_GET['view'] ?? $_SESSION['cal_view'] ?? 'month');
 if (!isset(Calendar::VIEWS[$view])) {
     $view = 'month';
 }
 $_SESSION['cal_view'] = $view;
 
 $range = Calendar::range($view, $_GET);
-$filters = Calendar::filters($_GET, (string) ($user['default_color'] ?? 'client'));
+$filters = Calendar::filters($_GET, to_str($user['default_color'] ?? 'client'));
 $from = $range['from']->format('Y-m-d');
 $to = $range['to']->format('Y-m-d');
 

@@ -57,6 +57,7 @@ if (is_post()) {
     ];
 
     if (!Installer::hasFailure($checks)) {
+        // databaseChecks() validates the shape of host, port, name and user before it opens a connection
         $dbResult = Installer::databaseChecks($db);
         $dbChecks = $dbResult['checks'];
     }

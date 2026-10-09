@@ -43,18 +43,19 @@ if (is_post()) {
         }
         $user = array_merge($user, ['username' => $username, 'display_name' => $display, 'locale' => I18n::isValid($loc) ? $loc : $user['locale']]);
     } elseif (input('op') === 'password') {
-        $new = (string) ($_POST['new_password'] ?? '');
-        if (!password_verify((string) ($_POST['current_password'] ?? ''), $user['password_hash'])) {
+        $new = to_str($_POST['new_password'] ?? '');
+        if (!Auth::confirmPassword($user, to_str($_POST['current_password'] ?? ''))) {
             $pwErrors[] = t('Your current password is not correct.');
         }
         if ($e = Users::validatePassword($new)) {
             $pwErrors[] = $e;
         }
-        if ($new !== (string) ($_POST['new_password2'] ?? '')) {
+        if ($new !== to_str($_POST['new_password2'] ?? '')) {
             $pwErrors[] = t('The new passwords do not match.');
         }
         if (!$pwErrors) {
             Users::setPassword($uid, $new);
+            Auth::rememberPassword($uid);
             session_regenerate_id(true);
             Audit::log('auth.password_changed', [], $user);
             flash('success', t('Password changed.'));

@@ -50,7 +50,7 @@ function ip_in_range(string $ip, string $cidr): bool
  */
 function client_ip_from(array $server, array $trusted): string
 {
-    $remote = (string) ($server['REMOTE_ADDR'] ?? '');
+    $remote = to_str($server['REMOTE_ADDR'] ?? '');
     $isTrusted = static function (string $ip) use ($trusted): bool {
         foreach ($trusted as $range) {
             if (is_string($range) && ip_in_range($ip, $range)) {
@@ -62,7 +62,7 @@ function client_ip_from(array $server, array $trusted): string
     if ($remote === '' || !$trusted || !$isTrusted($remote)) {
         return $remote !== '' ? $remote : '0.0.0.0';
     }
-    $chain = array_reverse(array_map('trim', explode(',', (string) ($server['HTTP_X_FORWARDED_FOR'] ?? ''))));
+    $chain = array_reverse(array_map('trim', explode(',', to_str($server['HTTP_X_FORWARDED_FOR'] ?? ''))));
     foreach ($chain as $ip) {
         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
             break; // garbage in the chain: stop trusting anything further left
@@ -224,8 +224,18 @@ function valid_color(string $c, string $fallback = '#4f46e5'): string
     return preg_match('/^#[0-9a-fA-F]{6}$/', $c) ? strtolower($c) : $fallback;
 }
 
+/** A request value as a string: arrays, nulls and objects (from ?x[]=1 style input) become the default instead of "Array". */
+function to_str(mixed $v, string $default = ''): string
+{
+    return is_string($v) ? $v : ((is_int($v) || is_float($v)) ? (string) $v : $default);
+}
+
 function valid_date(string $d): ?DateTimeImmutable
 {
+    // Strict shape first: createFromFormat() throws on NUL bytes and is lenient about odd input.
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $d)) {
+        return null;
+    }
     $dt = DateTimeImmutable::createFromFormat('!Y-m-d', $d);
     return ($dt && $dt->format('Y-m-d') === $d) ? $dt : null;
 }

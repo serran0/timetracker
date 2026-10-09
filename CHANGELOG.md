@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.11 – 2026-10-09
+
+**Security review and hardening.** Every input (query string, form fields, JSON bodies, cookies, headers, uploads) was traced to its sinks and attacked live: about 8,400 hostile requests (SQL injection strings, script/markup, NUL bytes, CR/LF header injection, path traversal, array-typed and oversized values, forged/missing CSRF tokens) against every page and API as a regular user, an administrator and an anonymous visitor, plus a cross-user test with two accounts.
+
+What held up: all SQL is parameterised (no injection anywhere; the few dynamic fragments are whitelisted or integers), all output is HTML-escaped (no reflected or stored XSS, including from client/action/note/free-day names), CSRF is enforced on every state-changing request, a user can read or change nothing that belongs to another user (clients, actions, reports, free days, exports, filters), a regular user gets 403 on every admin page and action, spreadsheet exports neutralise formulas, redirects (`next`) only ever go to local pages, and no private files are served.
+
+Fixed:
+- **Setup form:** the database host, port, name and user typed into the setup page went unchecked into the connection string and `CREATE/DROP DATABASE` statements. They are now validated (host name/IP, port range, plain identifier), also again inside `Db::connect`.
+- **Username oracle:** a failed sign-in for an unknown username did less work than one for a real account. It now costs the same.
+- **Stale sessions:** changing or resetting a password now ends the account's other sessions (the changing session stays).
+- **Password confirmation** (change password, restore backup) is throttled like sign-in, so a stolen session cannot be used to guess the password.
+- **Log flooding:** a blocked sign-in no longer writes an audit row for every attempt; the lock is logged once.
+- **NUL byte or array in a parameter** could return HTTP 500 or fill the log with warnings (dates, filters, form fields). Inputs of the wrong type are now treated as empty; dates are shape-checked before parsing.
+- **Passwords longer than 72 bytes** are refused (bcrypt would silently cut them off).
+- Client notes are limited to 5,000 characters.
+- Pages are sent with `Cache-Control: no-store` (nothing is kept for the back button after sign-out) and `Permissions-Policy`, `Cross-Origin-Opener-Policy`; the PHP version header is removed; a failed upgrade no longer shows database error text to visitors (details go to the error log unless `app.debug` is on).
+
+Known and accepted: the content security policy still allows inline *styles* (colours are set that way); locking a username after repeated failures lets someone deliberately lock a known account for the lock-out time (the usual trade-off); anyone who can reach an uninstalled instance can run setup, so finish setup before exposing the site.
+
 ## 0.3.10 – 2026-10-09
 
 - Actions page: the *Client* label now sits next to the client drop-down instead of above it (the colour dot and the *Add action* button stay on the same row; on phones the button wraps below).

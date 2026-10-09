@@ -45,8 +45,8 @@ final class WorkingHours
             }
             $list = [];
             foreach ($rows as $row) {
-                $s = trim((string) ($row['start'] ?? ''));
-                $e = trim((string) ($row['end'] ?? ''));
+                $s = trim(to_str($row['start'] ?? ''));
+                $e = trim(to_str($row['end'] ?? ''));
                 if ($s === '' && $e === '') {
                     continue;
                 }

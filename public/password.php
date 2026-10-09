@@ -19,11 +19,11 @@ if (empty($user['must_change_password'])) {
 $errors = [];
 if (is_post()) {
     require_csrf();
-    $new = (string) ($_POST['new_password'] ?? '');
+    $new = to_str($_POST['new_password'] ?? '');
     if ($e = Users::validatePassword($new)) {
         $errors[] = $e;
     }
-    if ($new !== (string) ($_POST['new_password2'] ?? '')) {
+    if ($new !== to_str($_POST['new_password2'] ?? '')) {
         $errors[] = t('The new passwords do not match.');
     }
     if (password_verify($new, $user['password_hash'])) {
@@ -31,6 +31,7 @@ if (is_post()) {
     }
     if (!$errors) {
         Users::setPassword((int) $user['id'], $new, false);
+        Auth::rememberPassword((int) $user['id']);
         session_regenerate_id(true);
         Audit::log('auth.password_changed', [], $user);
         flash('success', t('Password changed.'));

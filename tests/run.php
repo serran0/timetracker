@@ -135,6 +135,18 @@ check('client ip: garbage header falls back', client_ip_from(['REMOTE_ADDR' => '
 check('client ip: missing REMOTE_ADDR', client_ip_from([], []), '0.0.0.0');
 check('users search escapes wildcards', TimeTracker\Repository\Users::likeEscape('a_b%c\\d'), 'a\\_b\\%c\\\\d');
 
+// Input hardening
+check('valid_date: NUL bytes and odd shapes are refused instead of throwing', [valid_date("2026-10-0\0"), valid_date("\0"), valid_date(' 2026-10-09'), valid_date('2026-10-09 '), valid_date('2026-1-9'), valid_date('2026-02-31'), valid_date('2026-10-09') !== null], [null, null, null, null, null, null, true]);
+check('to_str: arrays and nulls become the default, numbers become strings', [to_str(['a']), to_str(null, 'd'), to_str(12), to_str('x'), to_str(new stdClass(), 'o')], ['', 'd', '12', 'x', 'o']);
+$okDb = ['host' => 'db.example.com', 'port' => 3306, 'name' => 'timetracker', 'user' => 'tt'];
+check('db input: normal values pass', TimeTracker\Installer::validateDbInput($okDb), []);
+check('db input: injection attempts are refused', array_map(static fn($c) => count(TimeTracker\Installer::validateDbInput($c)) > 0, [
+    ['name' => 'x`; DROP DATABASE y; --'] + $okDb, ['name' => 'a;host=evil'] + $okDb, ['host' => 'h;port=1'] + $okDb, ['host' => 'a b'] + $okDb,
+    ['port' => 0] + $okDb, ['port' => 70000] + $okDb, ['name' => ''] + $okDb, ['user' => "a\nb"] + $okDb, ['host' => '../x'] + $okDb,
+]), [true, true, true, true, true, true, true, true, true]);
+check('db input: IPv6 literal and underscore/dollar names are fine', [TimeTracker\Installer::validateDbInput(['host' => '[::1]'] + $okDb), TimeTracker\Installer::validateDbInput(['name' => 'my_db$1'] + $okDb)], [[], []]);
+check('password: more than 72 bytes is refused (bcrypt would cut it off)', [TimeTracker\Repository\Users::validatePassword(str_repeat('a', 73)) !== null, TimeTracker\Repository\Users::validatePassword(str_repeat('a', 72)), TimeTracker\Repository\Users::validatePassword('short')  !== null], [true, null, true]);
+
 // Audit log: descriptions are built from templates, and every event has a label and category
 check('audit: description is filled from stored params', TimeTracker\Audit::describe(['action' => 'auth.login', 'params' => '{"ip":"203.0.113.9"}']), 'Signed in from 203.0.113.9');
 check('audit: opaque time-reporting description', TimeTracker\Audit::describe(['action' => 'entry.delete', 'params' => null]), 'Deleted a time report');

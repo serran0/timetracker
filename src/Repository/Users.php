@@ -63,6 +63,9 @@ final class Users
         if (mb_strlen($p) < 10) {
             return t('Password must be at least 10 characters.');
         }
+        if (strlen($p) > 72) {
+            return t('Password must be at most 72 bytes long (a longer one would be silently cut off when stored).');
+        }
         return null;
     }
 

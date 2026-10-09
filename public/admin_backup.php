@@ -49,7 +49,7 @@ if (is_post()) {
 
     if ($op === 'restore') {
         $file = $_FILES['dump'] ?? null;
-        if (!password_verify((string) ($_POST['password'] ?? ''), $user['password_hash'])) {
+        if (!Auth::confirmPassword($user, to_str($_POST['password'] ?? ''))) {
             $errors[] = t('Your password is not correct.');
         }
         if (empty($_POST['confirm'])) {

@@ -68,13 +68,13 @@ final class Actions
     public static function validate(int $uid, int $clientId, array $in, ?int $id = null): array
     {
         $errors = [];
-        $name = trim((string) ($in['name'] ?? ''));
+        $name = trim(to_str($in['name'] ?? ''));
         if ($name === '' || mb_strlen($name) > 120) {
             $errors[] = t('Name is required (max 120 characters).');
         } elseif (Db::value('SELECT 1 FROM actions WHERE client_id = ? AND name = ? AND id <> ?', [$clientId, $name, $id ?? 0])) {
             $errors[] = t('This client already has an action with that name.');
         }
-        $mult = str_replace(',', '.', trim((string) ($in['rate_multiplier'] ?? '1')));
+        $mult = str_replace(',', '.', trim(to_str($in['rate_multiplier'] ?? '1')));
         if ($mult === '') {
             $mult = '1';
         }
@@ -84,7 +84,7 @@ final class Actions
         }
         $data = [
             'name'            => $name,
-            'color'           => valid_color((string) ($in['color'] ?? ''), '#10b981'),
+            'color'           => valid_color(to_str($in['color'] ?? ''), '#10b981'),
             'rate_multiplier' => round((float) $mult, 2),
             'is_billable'     => !empty($in['is_billable']) ? 1 : 0,
         ];

@@ -54,7 +54,7 @@ final class ReportBuilder
         // Keep the canonical column order regardless of the order posted.
         $cols = array_values(array_intersect(array_keys(self::COLUMNS), $cols ?: self::DEFAULT_COLUMNS));
 
-        $format = (string) ($q['format'] ?? 'csv');
+        $format = to_str($q['format'] ?? 'csv');
         return [
             'format'    => isset(self::FORMATS[$format]) ? $format : 'csv',
             'cols'      => $cols,
@@ -115,13 +115,13 @@ final class ReportBuilder
                 'end'         => $e['end'],
                 'hours'       => $e['minutes'],
                 'client'      => $e['client_name'],
-                'reference'   => (string) ($e['client_reference'] ?? ''),
+                'reference'   => to_str($e['client_reference'] ?? ''),
                 'action'      => $e['action_label'],
                 'billable'    => $e['billable'] ? t('Yes') : t('No'),
                 'rate'        => $e['effective_rate'],
                 'amount'      => $e['amount'],
                 'amount_vat'  => $e['amount_vat'],
-                'description' => (string) ($e['description'] ?? ''),
+                'description' => to_str($e['description'] ?? ''),
             ];
             $rows[] = array_map(static fn($k) => $all[$k], $keys);
         }

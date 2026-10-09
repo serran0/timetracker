@@ -50,7 +50,7 @@ final class Calendar
     public static function range(string $view, array $q): array
     {
         $today = new DateTimeImmutable('today');
-        $date = valid_date((string) ($q['date'] ?? '')) ?? $today;
+        $date = valid_date(to_str($q['date'] ?? '')) ?? $today;
 
         switch ($view) {
             case 'month':
@@ -89,8 +89,8 @@ final class Calendar
                     'next'     => ['date' => $date->modify('+1 day')->format('Y-m-d')],
                 ];
             default: // list
-                $from = valid_date((string) ($q['from'] ?? '')) ?? $today->modify('first day of this month');
-                $to = valid_date((string) ($q['to'] ?? '')) ?? $from->modify('last day of this month');
+                $from = valid_date(to_str($q['from'] ?? '')) ?? $today->modify('first day of this month');
+                $to = valid_date(to_str($q['to'] ?? '')) ?? $from->modify('last day of this month');
                 if ($to < $from) {
                     [$from, $to] = [$to, $from];
                 }
@@ -188,7 +188,7 @@ final class Calendar
             'break'       => (int) $e['break_minutes'],
             'client_id'   => (int) $e['client_id'],
             'action_id'   => (int) $e['action_id'],
-            'description' => (string) ($e['description'] ?? ''),
+            'description' => to_str($e['description'] ?? ''),
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 
