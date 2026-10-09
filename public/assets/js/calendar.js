@@ -245,6 +245,7 @@
      * Opens the dialog.
      * data: {id?} for editing a report, plus either a single day (date/start/end/break) or `rows: [...]`.
      */
+    let dialogOpenedAt = 0;
     function openDialog(data) {
         if (dialog.dataset.ready !== '1') {
             window.TT.toast(tr('Add a client with at least one action first.'));
@@ -263,6 +264,7 @@
         selectClient(data.client_id);
         refreshActions(data.action_id);
         updateTotals();
+        dialogOpenedAt = Date.now();
         if (typeof dialog.showModal === 'function') dialog.showModal();
         else dialog.setAttribute('open', '');
         (data.focusSave ? saveBtn : editing ? form.description : form.client_id).focus();
@@ -368,7 +370,10 @@
         if (form.id.value && window.confirm(tr('Delete this time report?'))) deleteEntry(parseInt(form.id.value, 10));
     });
     $$('[data-dialog-close]', dialog).forEach((b) => b.addEventListener('click', closeDialog));
-    dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+    // The second click of a double-click that opened the dialog lands on the backdrop or the form: it must neither
+    // close the dialog nor select text in it.
+    dialog.addEventListener('mousedown', (e) => { if (Date.now() - dialogOpenedAt < 500) e.preventDefault(); });
+    dialog.addEventListener('click', (e) => { if (e.target === dialog && Date.now() - dialogOpenedAt > 500) closeDialog(); });
 
     /* ----------------------------------------------------------- context menu */
 

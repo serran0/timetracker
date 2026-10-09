@@ -564,3 +564,6 @@ input[type=text][list]::-webkit-calendar-picker-indicator { display: none !impor
 /* actions page: the add button sits at the right of the client picker */
 .client-picker .picker-add { margin-left: auto; }
 @media (max-width: 760px) { .client-picker { flex-wrap: wrap; } .client-picker label { flex: 1 1 0; } .client-picker label select { flex: 1; width: auto; } .client-picker .picker-add { margin-left: 0; width: 100%; } }
+
+/* the calendar grids are click / double-click / drag surfaces: a double-click must not select the text underneath */
+.month, .tl { user-select: none; -webkit-user-select: none; }

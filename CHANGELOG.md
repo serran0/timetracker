@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.12 – 2026-10-09
+
+- Double-clicking a day in the month view (or an hour in the week/day views) no longer selects text on the page behind the new-report dialog: the calendar grids are no longer text-selectable. The second click of that double-click also can no longer close the freshly opened dialog by hitting its backdrop, or select text inside it.
+
 ## 0.3.11 – 2026-10-09
 
 **Security review and hardening.** Every input (query string, form fields, JSON bodies, cookies, headers, uploads) was traced to its sinks and attacked live: about 8,400 hostile requests (SQL injection strings, script/markup, NUL bytes, CR/LF header injection, path traversal, array-typed and oversized values, forged/missing CSRF tokens) against every page and API as a regular user, an administrator and an anonymous visitor, plus a cross-user test with two accounts.
