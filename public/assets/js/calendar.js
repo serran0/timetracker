@@ -621,12 +621,86 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mv && mv.active) { endMove(true); suppressEntryClick = true; setTimeout(() => { suppressEntryClick = false; }, 0); } });
     // A drag ends with a click on the block: do not open the edit dialog for that
     document.addEventListener('click', (e) => {
-        if (suppressEntryClick && e.target.closest('.tl-track .te')) { e.preventDefault(); e.stopImmediatePropagation(); }
+        if (suppressEntryClick && e.target.closest('.tl-track .te, .mv-day .chip')) { e.preventDefault(); e.stopImmediatePropagation(); }
     }, true);
     try {
         const msg = sessionStorage.getItem('tt_toast');
         if (msg) { sessionStorage.removeItem('tt_toast'); window.TT.toast(msg); }
     } catch (err) { /* ignore */ }
+
+    /* ------------------------------------- move a report to another day (month view) */
+
+    // Drag a report chip onto another day cell to move it there (same times, client, action and break).
+    // Mouse and pen only: on touch screens a drag would fight with scrolling, so open the report and change its date.
+    let dd = null;
+    const dayAt = (x, y) => {
+        const el = document.elementFromPoint(x, y);
+        return el ? el.closest('.mv-day') : null;
+    };
+    function endDayDrag() {
+        const d = dd;
+        dd = null;
+        document.body.classList.remove('is-moving');
+        if (d.ghost) d.ghost.remove();
+        d.chip.classList.remove('dragging');
+        if (d.over) d.over.classList.remove('drop-target');
+        return d;
+    }
+    document.addEventListener('pointerdown', (e) => {
+        const chip = e.target.closest('.mv-day .chip[data-entry]');
+        if (!chip || e.pointerType === 'touch' || e.button !== 0 || dd) return;
+        const from = chip.closest('.mv-day');
+        dd = { chip, from, p: payloadOf(chip), x: e.clientX, y: e.clientY, active: false, ghost: null, over: null };
+    });
+    document.addEventListener('pointermove', (e) => {
+        if (!dd) return;
+        if (!dd.active) {
+            if (Math.hypot(e.clientX - dd.x, e.clientY - dd.y) < 6) return; // below the threshold it is still a click
+            dd.active = true;
+            hideMenu();
+            const r = dd.chip.getBoundingClientRect();
+            dd.ghost = dd.chip.cloneNode(true);
+            dd.ghost.className = dd.chip.className + ' drag-ghost';
+            dd.ghost.removeAttribute('data-entry');
+            dd.ghost.style.width = r.width + 'px';
+            dd.dx = dd.x - r.left;
+            dd.dy = dd.y - r.top;
+            document.body.appendChild(dd.ghost);
+            dd.chip.classList.add('dragging');
+            document.body.classList.add('is-moving');
+        }
+        dd.ghost.style.left = (e.clientX - dd.dx) + 'px';
+        dd.ghost.style.top = (e.clientY - dd.dy) + 'px';
+        const over = dayAt(e.clientX, e.clientY);
+        if (over !== dd.over) {
+            if (dd.over) dd.over.classList.remove('drop-target');
+            dd.over = over && over !== dd.from ? over : null;
+            if (dd.over) dd.over.classList.add('drop-target');
+        }
+    });
+    document.addEventListener('pointerup', async (e) => {
+        if (!dd) return;
+        if (!dd.active) { dd = null; return; }
+        suppressEntryClick = true;
+        setTimeout(() => { suppressEntryClick = false; }, 0);
+        const target = dayAt(e.clientX, e.clientY);
+        const d = endDayDrag();
+        if (!target || target === d.from) return;
+        const date = target.dataset.date;
+        d.chip.classList.add('saving');
+        const result = await post({ op: 'save', ...d.p, date });
+        if (result.ok) {
+            try { sessionStorage.setItem('tt_toast', tr('Moved to {date}', { date: target.dataset.label || date })); } catch (err) { /* ignore */ }
+            window.location.reload();
+        } else {
+            d.chip.classList.remove('saving');
+            window.TT.toast((result.errors || [tr('Could not save.')])[0]);
+        }
+    });
+    document.addEventListener('pointercancel', () => { if (dd && dd.active) endDayDrag(); dd = null; });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dd && dd.active) { endDayDrag(); suppressEntryClick = true; setTimeout(() => { suppressEntryClick = false; }, 0); }
+    });
 
     /* ----------------------------------------------------------- month view */
 

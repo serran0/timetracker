@@ -83,4 +83,4 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
         </div>
     <?php endforeach; ?>
 </div>
-<p class="hint"><?= te('Right-click a day to create a time report, or right-click a week number to report a whole working week. On touch screens, press and hold.') ?></p>
+<p class="hint"><?= te('Right-click a day to create a time report, or right-click a week number to report a whole working week. Drag a report to another day to move it. On touch screens, press and hold.') ?></p>

@@ -75,6 +75,7 @@ final class I18n
         'Next',
         'Today',
         'Moved to {from}–{to}',
+        'Moved to {date}',
         'Saved',
     ];
 

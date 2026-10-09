@@ -549,3 +549,10 @@ input[type=text][list]::-webkit-calendar-picker-indicator { display: none !impor
 @media (max-width: 760px) { .user-search select { flex: 1 1 140px; } }
 
 .section-gap { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--border); }
+
+/* month view: drag a report chip to another day */
+.mv-day .chip { cursor: grab; user-select: none; -webkit-user-select: none; }
+.mv-day .chip.dragging { opacity: .35; }
+.mv-day .chip.saving { opacity: .5; pointer-events: none; }
+.drag-ghost { position: fixed; z-index: 1000; pointer-events: none; margin: 0; opacity: .95; cursor: grabbing; box-shadow: 0 8px 20px rgba(25, 30, 60, .28); transform: rotate(-1.5deg); }
+.mv-day.drop-target { background: var(--primary-soft); outline: 2px solid var(--primary); outline-offset: -2px; }

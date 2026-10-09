@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.7 – 2026-10-09
+
+- Month view: drag a report onto another day to move it there. The chip follows the pointer, the day under it is highlighted, and on release the report keeps its times, break, client, action and description and only changes date. Esc cancels, dropping on the same day does nothing, and a plain click still opens the report. Works for greyed-out days of the neighbouring months too. Mouse and pen only (on touch screens, open the report and change its date). The change is recorded in the audit log like any other edit of a report, without details.
+
 ## 0.3.6 – 2026-10-08
 
 - Audit log: the *Date and time* column can be sorted. Click the header to switch between newest first (default, ▼) and oldest first (▲). The other columns are not sortable. The order is kept when paging, filtering and changing the page size, and remembered for the session.
