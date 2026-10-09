@@ -107,4 +107,5 @@ View::render('clients', [
     'form'    => $form,
     'errors'  => $errors,
     'palette' => Clients::PALETTE,
+    'nextColor' => Clients::nextColor($uid),
 ]);

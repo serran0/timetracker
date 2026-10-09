@@ -559,3 +559,7 @@ input[type=text][list]::-webkit-calendar-picker-indicator { display: none !impor
 
 /* week view: the day row a dragged report would land on */
 .tl-row.drop-target .tl-track { box-shadow: inset 0 0 0 2px var(--primary); background: var(--primary-soft); }
+
+/* actions page: the add button sits at the right of the client picker */
+.client-picker .picker-add { margin-left: auto; }
+@media (max-width: 760px) { .client-picker { flex-wrap: wrap; } .client-picker .picker-add { margin-left: 0; width: 100%; } }

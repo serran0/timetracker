@@ -4,6 +4,7 @@
 /** @var string[] $errors */
 /** @var string[] $palette */
 /** @var array $user */
+/** @var string $nextColor */
 $editing = !empty($form['id']);
 ?>
 <div class="page-head">
@@ -11,10 +12,10 @@ $editing = !empty($form['id']);
         <h1><?= te('Clients') ?></h1>
         <p class="muted"><?= te('The customers you bill. Each client gets a colour that is used in the calendar views.') ?></p>
     </div>
+    <button type="button" class="btn btn-primary" data-modal-new="client-dialog">+ <?= te('Add client') ?></button>
 </div>
 
-<div class="split">
-    <section class="card">
+<section class="card">
         <?php if (!$clients): ?>
             <div class="empty"><?= te('No clients yet. Add your first client to start tracking time.') ?></div>
         <?php else: ?>
@@ -45,7 +46,8 @@ $editing = !empty($form['id']);
                     <td class="num"><a href="actions.php?client=<?= (int) $c['id'] ?>"><?= (int) $c['action_count'] ?></a></td>
                     <td class="num"><?= (int) $c['entry_count'] ?></td>
                     <td class="row-actions">
-                        <a class="btn btn-sm" href="clients.php?edit=<?= (int) $c['id'] ?>"><?= te('Edit') ?></a>
+                        <?php $editData = ['id' => (int) $c['id'], 'name' => $c['name'], 'reference' => (string) ($c['reference'] ?? ''), 'color' => $c['color'], 'hourly_rate' => $c['hourly_rate'] !== null ? (string) $c['hourly_rate'] : '', 'vat_percent' => (float) $c['vat_percent'] > 0 ? (string) (float) $c['vat_percent'] : '', 'notes' => (string) ($c['notes'] ?? '')]; ?>
+                        <a class="btn btn-sm" href="clients.php?edit=<?= (int) $c['id'] ?>" data-modal-edit="client-dialog" data-values="<?= e(json_encode($editData, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)) ?>"><?= te('Edit') ?></a>
                         <form method="post" class="inline">
                             <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int) $c['id'] ?>">
                             <button class="btn btn-sm" name="op" value="<?= $c['is_archived'] ? 'unarchive' : 'archive' ?>"><?= te($c['is_archived'] ? 'Restore' : 'Archive') ?></button>
@@ -60,56 +62,61 @@ $editing = !empty($form['id']);
         </table>
         </div>
         <?php endif; ?>
-    </section>
+</section>
 
-    <section class="card">
-        <h2><?= te($editing ? 'Edit client' : 'New client') ?></h2>
+<?php /* Add / edit client: a modal. It opens by itself when the server has something to show (a validation error, or ?edit=ID). */ ?>
+<dialog id="client-dialog" class="dialog" data-form-dialog
+        data-defaults="<?= e(json_encode(['name' => '', 'reference' => '', 'color' => $nextColor, 'hourly_rate' => '', 'vat_percent' => '', 'notes' => '', 'seed' => 'standard'])) ?>"
+        data-open="<?= ($editing || $errors) ? '1' : '0' ?>"
+        data-title-new="<?= te('New client') ?>" data-title-edit="<?= te('Edit client') ?>"
+        data-submit-new="<?= te('Add client') ?>" data-submit-edit="<?= te('Save changes') ?>">
+    <form method="post" autocomplete="off">
+        <div class="dialog-head">
+            <h2 data-dialog-title><?= te($editing ? 'Edit client' : 'New client') ?></h2>
+            <button type="button" class="icon-btn" data-dialog-close aria-label="<?= te('Close') ?>">×</button>
+        </div>
         <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
-        <form method="post">
-            <?= csrf_field() ?>
-            <input type="hidden" name="op" value="save">
-            <input type="hidden" name="id" value="<?= (int) ($form['id'] ?? 0) ?>">
-            <label><?= te('Name') ?>
-                <input type="text" name="name" value="<?= e($form['name']) ?>" required maxlength="160">
-            </label>
-            <label><?= te('Reference') ?> <span class="muted"><?= te('(PO number, customer id… optional)') ?></span>
-                <input type="text" name="reference" value="<?= e($form['reference'] ?? '') ?>" maxlength="160">
-            </label>
-            <div class="grid-2">
-                <label><?= te('Colour') ?>
-                    <span class="color-row">
-                        <input type="color" name="color" value="<?= e($form['color']) ?>" data-swatch-target>
-                        <span class="swatches">
-                            <?php foreach ($palette as $p): ?><button type="button" class="swatch<?= strtolower($p) === strtolower($form['color']) ? ' is-active' : '' ?>" style="background:<?= e($p) ?>" data-color="<?= e($p) ?>" aria-label="<?= e($p) ?>"></button><?php endforeach; ?>
-                        </span>
+        <?= csrf_field() ?>
+        <input type="hidden" name="op" value="save">
+        <input type="hidden" name="id" value="<?= (int) ($form['id'] ?? 0) ?>">
+        <label><?= te('Name') ?>
+            <input type="text" name="name" value="<?= e($form['name']) ?>" required maxlength="160">
+        </label>
+        <label><?= te('Reference') ?> <span class="muted"><?= te('(PO number, customer id… optional)') ?></span>
+            <input type="text" name="reference" value="<?= e($form['reference'] ?? '') ?>" maxlength="160">
+        </label>
+        <div class="grid-2">
+            <label><?= te('Colour') ?>
+                <span class="color-row">
+                    <input type="color" name="color" value="<?= e($form['color']) ?>" data-swatch-target>
+                    <span class="swatches">
+                        <?php foreach ($palette as $p): ?><button type="button" class="swatch<?= strtolower($p) === strtolower($form['color']) ? ' is-active' : '' ?>" style="background:<?= e($p) ?>" data-color="<?= e($p) ?>" aria-label="<?= e($p) ?>"></button><?php endforeach; ?>
                     </span>
-                </label>
-                <label><?= te('Hourly rate ({currency})', ['currency' => $user['currency']]) ?>
-                    <input type="text" inputmode="decimal" name="hourly_rate" value="<?= $form['hourly_rate'] !== null ? e((string) $form['hourly_rate']) : '' ?>" placeholder="<?= te('e.g. 95') ?>">
-                </label>
-                <label><?= te('VAT (%)') ?>
-                    <input type="text" inputmode="decimal" name="vat_percent" value="<?= (float) ($form['vat_percent'] ?? 0) > 0 ? e((string) (float) $form['vat_percent']) : '' ?>" placeholder="<?= te('e.g. 25') ?>">
-                    <small class="muted"><?= te('Amounts for this client are also shown including VAT, in parentheses. Leave empty for none.') ?></small>
-                </label>
-            </div>
-            <label><?= te('Notes') ?>
-                <textarea name="notes" rows="3"><?= e($form['notes'] ?? '') ?></textarea>
+                </span>
             </label>
-            <?php if (!$editing): ?>
-            <label><?= te('Time actions for this client') ?>
-                <select name="seed">
-                    <option value="standard"><?= te('Standard set (normal, overtime, emergency, travel, non-billable)') ?></option>
-                    <?php foreach ($clients as $c): if (!$c['is_archived'] && $c['action_count'] > 0): ?>
-                        <option value="copy:<?= (int) $c['id'] ?>"><?= te('Copy from {client}', ['client' => $c['name']]) ?></option>
-                    <?php endif; endforeach; ?>
-                    <option value="none"><?= te('None – I will add them myself') ?></option>
-                </select>
+            <label><?= te('Hourly rate ({currency})', ['currency' => $user['currency']]) ?>
+                <input type="text" inputmode="decimal" name="hourly_rate" value="<?= $form['hourly_rate'] !== null ? e((string) $form['hourly_rate']) : '' ?>" placeholder="<?= te('e.g. 95') ?>">
             </label>
-            <?php endif; ?>
-            <div class="form-actions">
-                <button class="btn btn-primary" type="submit"><?= te($editing ? 'Save changes' : 'Add client') ?></button>
-                <?php if ($editing): ?><a class="btn" href="clients.php"><?= te('Cancel') ?></a><?php endif; ?>
-            </div>
-        </form>
-    </section>
-</div>
+            <label><?= te('VAT (%)') ?>
+                <input type="text" inputmode="decimal" name="vat_percent" value="<?= (float) ($form['vat_percent'] ?? 0) > 0 ? e((string) (float) $form['vat_percent']) : '' ?>" placeholder="<?= te('e.g. 25') ?>">
+                <small class="muted"><?= te('Amounts for this client are also shown including VAT, in parentheses. Leave empty for none.') ?></small>
+            </label>
+        </div>
+        <label><?= te('Notes') ?>
+            <textarea name="notes" rows="3"><?= e($form['notes'] ?? '') ?></textarea>
+        </label>
+        <label data-new-only <?= $editing ? 'hidden' : '' ?>><?= te('Time actions for this client') ?>
+            <select name="seed">
+                <option value="standard"><?= te('Standard set (normal, overtime, emergency, travel, non-billable)') ?></option>
+                <?php foreach ($clients as $c): if (!$c['is_archived'] && $c['action_count'] > 0): ?>
+                    <option value="copy:<?= (int) $c['id'] ?>"><?= te('Copy from {client}', ['client' => $c['name']]) ?></option>
+                <?php endif; endforeach; ?>
+                <option value="none"><?= te('None – I will add them myself') ?></option>
+            </select>
+        </label>
+        <div class="dialog-actions">
+            <button class="btn btn-primary" type="submit" data-dialog-submit><?= te($editing ? 'Save changes' : 'Add client') ?></button>
+            <button class="btn" type="button" data-dialog-close><?= te('Cancel') ?></button>
+        </div>
+    </form>
+</dialog>

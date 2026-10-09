@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.9 – 2026-10-09
+
+- **Actions and Clients pages: adding and editing happens in a modal.** The side panel with the *New/Edit action* (and *New/Edit client*) form is gone, so the table now spans the full width. A **+ Add action** button (right of the client picker) and a **+ Add client** button (top right) open the modal; *Edit* on a row opens the same modal filled in. On the Clients page the "Time actions for this client" choice only appears when adding. The modal closes with Esc, the × button, *Cancel* or a click on the backdrop; a validation error reopens it with your input and the message, and an `?edit=ID` link still opens it directly. The *Quick setup* tools (standard actions, copy from another client) moved under the actions table.
+
 ## 0.3.8 – 2026-10-09
 
 - **Week view: drag a report between days as well as hours.** Drag a block onto another day's row to change its date; it still snaps to whole hours horizontally. The row it would land on is outlined, the block shows its new time live, Esc cancels, and nothing changes if you drop it where it started. The toast says where it went (e.g. "Moved to Fri 16 Oct, 10:00–14:00"). Mouse and pen only, as before.

@@ -310,3 +310,43 @@
         timer = setTimeout(save, 250); // several quick ticks become one request
     });
 })();
+
+// Add / edit modals (Actions and Clients pages): <dialog data-form-dialog data-defaults='{...}'> with its own form.
+// Buttons: [data-modal-new="dialog-id"] opens it with the defaults, [data-modal-edit="dialog-id" data-values='{...}'] fills it.
+// The server opens it by itself (data-open="1") for a validation error or an ?edit=ID link.
+(() => {
+    'use strict';
+    document.querySelectorAll('dialog[data-form-dialog]').forEach((dlg) => {
+        const form = dlg.querySelector('form');
+        const defaults = JSON.parse(dlg.dataset.defaults || '{}');
+        const fill = (values) => {
+            const editing = !!(values.id && Number(values.id));
+            Array.from(form.elements).forEach((el) => {
+                if (!el.name || !(el.name in values)) return;
+                const v = values[el.name];
+                if (el.type === 'checkbox') el.checked = !!Number(v);
+                else el.value = v === null || v === undefined ? '' : String(v);
+            });
+            form.querySelectorAll('input[type=color]').forEach((c) => c.dispatchEvent(new Event('input', { bubbles: true }))); // ring the matching swatch
+            form.querySelectorAll('[data-new-only]').forEach((n) => { n.hidden = editing; });
+            dlg.querySelectorAll('.alert-error').forEach((a) => a.remove());
+            dlg.querySelector('[data-dialog-title]').textContent = dlg.dataset[editing ? 'titleEdit' : 'titleNew'];
+            dlg.querySelector('[data-dialog-submit]').textContent = dlg.dataset[editing ? 'submitEdit' : 'submitNew'];
+        };
+        const open = () => { if (!dlg.open) dlg.showModal(); const n = form.elements.name; if (n) { n.focus(); n.select(); } };
+        const close = () => {
+            if (dlg.open) dlg.close();
+            // a deep link such as ?edit=7 should not reopen the dialog on reload
+            if (/[?&]edit=/.test(location.search)) history.replaceState(null, '', location.pathname + location.search.replace(/([?&])edit=\d+&?/, '$1').replace(/[?&]$/, ''));
+        };
+        document.addEventListener('click', (e) => {
+            const add = e.target.closest('[data-modal-new]');
+            if (add && add.dataset.modalNew === dlg.id) { fill({ id: 0, ...defaults }); open(); return; }
+            const edit = e.target.closest('[data-modal-edit]');
+            if (edit && edit.dataset.modalEdit === dlg.id) { e.preventDefault(); fill(JSON.parse(edit.dataset.values)); open(); return; }
+            if (e.target.closest('[data-dialog-close]') && e.target.closest('dialog') === dlg) close();
+        });
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); }); // click on the backdrop
+        if (dlg.dataset.open === '1') open();
+    });
+})();
