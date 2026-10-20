@@ -66,6 +66,7 @@ for ($d = $range['from']; $d <= $range['to']; $d = $d->modify('+1 day')) {
                                     title="<?= e($e['start'] . '–' . $e['end'] . ' · ' . $e['client_name'] . ' · ' . $e['action_label'] . ($e['description'] ? "\n" . $e['description'] : '')) ?>">
                                 <span class="chip-time"><?= te('{h} hrs', ['h' => fmt_hours_short($e['minutes'])]) ?></span>
                                 <span class="chip-text"><?= e($e['client_name']) ?></span>
+                                <?php if (trim((string) ($e['description'] ?? '')) !== ''): ?><span class="note-mark" title="<?= te('Has notes') ?>" aria-label="<?= te('Has notes') ?>">✎</span><?php endif; ?>
                             </button>
                         <?php endforeach; ?>
                         <?php if (count($list) > $maxChips): ?>

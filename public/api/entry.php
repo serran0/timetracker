@@ -57,7 +57,7 @@ if ($op === 'delete') {
 }
 
 if ($op === 'save_many') {
-    // One client/action/description, several days: validate everything first, then insert all-or-nothing.
+    // One client, several reports (each with its own day, action and notes): validate everything first, then insert all-or-nothing.
     $rows = $body['entries'] ?? null;
     if (!is_array($rows) || !$rows || count($rows) > 62) {
         json_out(['ok' => false, 'errors' => [t('Add between 1 and 62 days.')]], 400);
@@ -74,8 +74,8 @@ if ($op === 'save_many') {
             'start'       => $row['start'] ?? '',
             'end'         => $row['end'] ?? '',
             'client_id'   => $body['client_id'] ?? 0,
-            'action_id'   => $body['action_id'] ?? 0,
-            'description' => $body['description'] ?? '',
+            'action_id'   => $row['action_id'] ?? $body['action_id'] ?? 0,
+            'description' => $row['description'] ?? $body['description'] ?? '',
         ];
         if (array_key_exists('break', $row)) {
             $in['break'] = $row['break'];

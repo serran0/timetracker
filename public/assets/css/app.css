@@ -367,6 +367,17 @@ dialog.dialog-wide { width: min(760px, calc(100% - 24px)); }
 .dlg-row.off > :not(.col-inc):not([data-remove]):not(.row-note) { opacity: .45; }
 .row-note { grid-column: 2 / -1; font-size: .78rem; color: var(--warn); margin-top: -2px; }
 .row-note:empty { display: none; }
+/* New report: action + notes per row. Editing keeps client + action on top and a Description box instead. */
+#entry-form:not(.mode-edit) .edit-only, #entry-form.mode-edit .row-extra { display: none; }
+#entry-form:not(.mode-edit) .top-grid { grid-template-columns: 1fr; }
+.row-extra { grid-column: 2 / -1; display: grid; grid-template-columns: minmax(140px, 1.4fr) auto minmax(0, 2fr); gap: 8px; align-items: center; }
+.row-extra select { padding: 6px 8px; font-size: .9rem; background: var(--surface); min-width: 0; }
+.btn-notes .notes-icon { opacity: .7; }
+.btn-notes.has-note { border-color: var(--primary); color: var(--primary); font-weight: 600; }
+.btn-notes.has-note .notes-icon { opacity: 1; }
+.note-preview { font-size: .8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+#note-dialog textarea { width: 100%; min-height: 140px; resize: vertical; }
+.note-mark { flex: none; font-size: .8em; opacity: .75; margin-left: 2px; }
 .days-foot { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
 .days-total { margin-left: auto; font-size: .85rem; }
 .break-row { display: flex; align-items: flex-end; gap: 12px; }
@@ -481,6 +492,9 @@ body.auth .container > .alert { width: 100%; max-width: 400px; }
     .dlg-row [data-f="break"] { grid-area: brk; }
     .dlg-row .col-net { grid-area: net; }
     .row-note { grid-column: 1 / -1; }
+    .row-extra { grid-column: 1 / -1; grid-template-columns: 1fr auto; }
+    .note-preview { grid-column: 1 / -1; }
+    .note-preview:empty { display: none; }
 }
 @media (max-width: 420px) {
     .segmented a { padding: 6px 10px; }

@@ -61,7 +61,7 @@
     const rowsBox = document.getElementById('entry-rows');
     const rowTpl = document.getElementById('entry-row-tpl');
     const daysBox = document.getElementById('entry-days');
-    const addDayBtn = document.getElementById('entry-add-day');
+    const addActionBtn = document.getElementById('entry-add-action');
     const noActions = document.getElementById('entry-no-actions');
     const DOW = window.TT.i18n.dow; // localized, index = JS getDay()
 
@@ -84,10 +84,9 @@
 
     /* --- client -> actions (actions are per client) --- */
 
-    function refreshActions(preferredActionId) {
-        const clientId = form.client_id.value;
+    /** Fills an action <select> with the client's actions; returns false when the client has none. */
+    function fillActions(select, clientId, preferredActionId) {
         const list = allActions.filter((a) => String(a.client_id) === String(clientId));
-        const select = form.action_id;
         select.innerHTML = '';
         const add = (a, parent) => {
             const o = document.createElement('option');
@@ -103,19 +102,26 @@
             keepArchived.forEach((a) => add(a, g));
             select.appendChild(g);
         }
-        const none = !select.options.length;
-        noActions.hidden = !none;
-        if (none) {
+        if (!select.options.length) {
             const o = document.createElement('option');
             o.value = '';
             o.textContent = tr('— no actions —');
             select.appendChild(o);
-            document.getElementById('entry-no-actions-link').href = 'actions.php?client=' + encodeURIComponent(clientId);
-            return;
+            return false;
         }
         const wanted = preferredActionId || store.get('tt_action_' + clientId);
         const match = Array.from(select.options).find((o) => o.value === String(wanted));
         select.value = (match || select.options[0]).value;
+        return true;
+    }
+
+    /** Re-fills the top action select (editing) and the action select of every row (new reports). */
+    function refreshActions(preferredActionId) {
+        const clientId = form.client_id.value;
+        const hasAny = fillActions(form.action_id, clientId, preferredActionId);
+        $$('[data-f="action"]', rowsBox).forEach((sel) => fillActions(sel, clientId, sel.dataset.wanted || preferredActionId));
+        noActions.hidden = hasAny;
+        if (!hasAny) document.getElementById('entry-no-actions-link').href = 'actions.php?client=' + encodeURIComponent(clientId);
     }
 
     function selectClient(preferred) {
@@ -126,7 +132,10 @@
         form.client_id.value = (match || firstActive || options[0] || {}).value || '';
     }
 
-    form.client_id.addEventListener('change', () => refreshActions(null));
+    form.client_id.addEventListener('change', () => {
+        $$('[data-f="action"]', rowsBox).forEach((sel) => { delete sel.dataset.wanted; }); // another client: its own actions
+        refreshActions(null);
+    });
 
     /* --- day rows --- */
 
@@ -136,7 +145,7 @@
         const s = parseTime(rowField(row, 'start').value);
         const e = parseTime(rowField(row, 'end').value);
         const brk = parseInt(rowField(row, 'break').value, 10) || 0;
-        return { s, e, brk, date: rowField(row, 'date').value, include: rowField(row, 'include').checked };
+        return { s, e, brk, date: rowField(row, 'date').value, include: rowField(row, 'include').checked, action: rowField(row, 'action').value, description: rowField(row, 'description').value };
     }
 
     function refreshRow(row) {
@@ -173,7 +182,7 @@
         durationEl.textContent = n ? `${tr(n === 1 ? '{n} report' : '{n} reports', { n })} · ${tr('{h} h net', { h: fmtDur(net) })} (${window.TT.dec(net / 60)} h)` : '';
     }
 
-    /** Adds a day row. `v`: {date, start, end, break?, include?, note?}. A numeric break is kept as typed. */
+    /** Adds a report row. `v`: {date, start, end, break?, include?, note?, action_id?, description?}. A numeric break is kept as typed. */
     function addRow(v) {
         const row = rowTpl.content.firstElementChild.cloneNode(true);
         rowField(row, 'date').value = v.date || '';
@@ -181,6 +190,10 @@
         rowField(row, 'end').value = v.end || '';
         rowField(row, 'include').checked = v.include !== false;
         rowField(row, 'note').textContent = v.note || '';
+        rowField(row, 'action').dataset.wanted = v.action_id || '';
+        rowField(row, 'description').value = v.description || '';
+        $('[data-notes]', row).dataset.title0 = $('[data-notes]', row).title;
+        updateNoteUi(row);
         if (typeof v.break === 'number') {
             rowField(row, 'break').value = v.break;
             row.dataset.dirty = '1';
@@ -191,6 +204,43 @@
         updateTotals();
         return row;
     }
+
+    /** Shows whether a row has notes: highlighted button, first line as preview, full text as tooltip. */
+    function updateNoteUi(row) {
+        const text = rowField(row, 'description').value.trim();
+        const btn = $('[data-notes]', row);
+        btn.classList.toggle('has-note', text !== '');
+        btn.title = text !== '' ? text.slice(0, 400) : (btn.dataset.title0 || '');
+        rowField(row, 'preview').textContent = text !== '' ? text.split(/\r?\n/)[0] : '';
+    }
+
+    /* --- notes modal: the text of one row; it is saved as that report's description --- */
+    const noteDlg = document.getElementById('note-dialog');
+    const noteText = document.getElementById('note-text');
+    let noteRow = null;
+    function closeNotes() { if (noteDlg.open) noteDlg.close(); noteRow = null; }
+    rowsBox.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-notes]');
+        if (!btn) return;
+        noteRow = btn.closest('.dlg-row');
+        const v = rowValues(noteRow);
+        document.getElementById('note-context').textContent = [v.date, v.s !== null && v.e !== null ? `${toHHMM(v.s)}–${toHHMM(v.e)}` : ''].filter(Boolean).join(' · ');
+        noteText.value = v.description;
+        noteDlg.showModal();
+        noteText.focus();
+        noteText.setSelectionRange(noteText.value.length, noteText.value.length);
+    });
+    document.getElementById('note-form').addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        if (noteRow) {
+            rowField(noteRow, 'description').value = noteText.value.trim();
+            updateNoteUi(noteRow);
+        }
+        closeNotes();
+    });
+    document.getElementById('note-clear').addEventListener('click', () => { noteText.value = ''; noteText.focus(); });
+    $$('[data-note-close]', noteDlg).forEach((b) => b.addEventListener('click', closeNotes));
+    noteDlg.addEventListener('click', (ev) => { if (ev.target === noteDlg) closeNotes(); });
 
     /** Re-derive a row's break from the lunch window unless the user typed one. */
     function autoBreak(row) {
@@ -223,17 +273,20 @@
         updateTotals();
     });
 
-    addDayBtn.addEventListener('click', () => {
+    // "Add action": another row for the same day, starting where the last one ends (change the action, times or day as needed).
+    addActionBtn.addEventListener('click', () => {
         const last = rowsBox.lastElementChild;
-        const lastDate = last ? parseDate(rowField(last, 'date').value) : null;
-        const next = lastDate ? new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate() + 1) : new Date();
+        const lv = last ? rowValues(last) : null;
+        let start = lv && lv.e !== null ? lv.e : 9 * 60;
+        if (start >= 1440) start = lv && lv.s !== null ? lv.s : 9 * 60;
         const row = addRow({
-            date: fmtDate(next),
-            start: last ? rowField(last, 'start').value : '08:00',
-            end: last ? rowField(last, 'end').value : '17:00',
-            break: last && last.dataset.dirty === '1' ? (parseInt(rowField(last, 'break').value, 10) || 0) : undefined,
+            date: lv && lv.date ? lv.date : fmtDate(new Date()),
+            start: toHHMM(start),
+            end: toHHMM(Math.min(1440, start + 60)),
+            action_id: last ? rowField(last, 'action').value : '',
         });
-        rowField(row, 'date').focus();
+        fillActions(rowField(row, 'action'), form.client_id.value, rowField(row, 'action').dataset.wanted);
+        rowField(row, 'action').focus();
     });
 
     document.getElementById('entry-use-lunch').addEventListener('click', () => {
@@ -255,11 +308,15 @@
         const editing = !!data.id;
         deleteBtn.hidden = !editing;
         form.id.value = editing ? data.id : '';
-        form.description.value = data.description || '';
-        addDayBtn.hidden = editing;
+        // Editing keeps the familiar layout (client + action on top, one row, a Description box). A new report picks the
+        // action and the notes per row; both are stored on the report, so Notes and Description are the same text.
+        form.description.value = editing ? (data.description || '') : '';
+        form.classList.toggle('mode-edit', editing);
+        form.action_id.required = editing; // hidden (and unused) while creating: each row has its own
+        addActionBtn.hidden = editing;
         daysBox.classList.toggle('editing', editing);
         rowsBox.innerHTML = '';
-        const rows = data.rows && data.rows.length ? data.rows : [{ date: data.date, start: data.start, end: data.end, break: data.break }];
+        const rows = data.rows && data.rows.length ? data.rows : [{ date: data.date, start: data.start, end: data.end, break: data.break, action_id: data.action_id, description: editing ? '' : (data.description || '') }];
         rows.forEach(addRow);
         selectClient(data.client_id);
         refreshActions(data.action_id);
@@ -330,30 +387,28 @@
         Array.from(rowsBox.children).forEach((row, i) => {
             const v = rowValues(row);
             if (!v.include) return;
-            const label = multi ? (v.date || tr('Day {n}', { n: i + 1 })) + ': ' : '';
+            const label = multi ? `${v.date || tr('Day {n}', { n: i + 1 })} ${rowField(row, 'start').value}`.trim() + ': ' : '';
             if (!parseDate(v.date)) errors.push(label + tr('Choose a date.'));
             else if (v.s === null || v.e === null) errors.push(label + tr('Enter times as HH:MM (e.g. 08:30).'));
             else if (v.e <= v.s) errors.push(label + tr('End time must be after the start time.'));
             else if (v.brk >= v.e - v.s) errors.push(label + tr('The break must be shorter than the time span.'));
-            else entries.push({ date: v.date, start: toHHMM(v.s), end: toHHMM(v.e), break: v.brk });
+            else if (!editing && !v.action) errors.push(label + tr('Choose an action.'));
+            else entries.push({ date: v.date, start: toHHMM(v.s), end: toHHMM(v.e), break: v.brk, action_id: parseInt(v.action, 10) || 0, description: v.description });
         });
         if (!errors.length && !entries.length) errors.push(tr('Tick at least one day.'));
-        if (!form.action_id.value) errors.push(tr('This client has no actions yet – add some on the Actions page.'));
+        if (editing && !form.action_id.value) errors.push(tr('This client has no actions yet – add some on the Actions page.'));
         if (errors.length) return showErrors(errors);
 
         saveBtn.disabled = true;
-        const common = {
-            client_id: parseInt(form.client_id.value, 10) || 0,
-            action_id: parseInt(form.action_id.value, 10) || 0,
-            description: form.description.value,
-        };
+        const clientId = parseInt(form.client_id.value, 10) || 0;
         const result = editing
-            ? await post({ op: 'save', id: parseInt(form.id.value, 10), ...entries[0], ...common })
-            : await post({ op: 'save_many', entries, ...common });
+            ? await post({ op: 'save', id: parseInt(form.id.value, 10), ...entries[0], client_id: clientId, action_id: parseInt(form.action_id.value, 10) || 0, description: form.description.value })
+            : await post({ op: 'save_many', client_id: clientId, entries });
         saveBtn.disabled = false;
         if (result.ok) {
             store.set('tt_client', form.client_id.value);
-            store.set('tt_action_' + form.client_id.value, form.action_id.value);
+            const lastAction = editing ? form.action_id.value : String(entries[entries.length - 1].action_id);
+            store.set('tt_action_' + form.client_id.value, lastAction);
             window.location.reload();
         } else {
             showErrors(result.errors || [tr('Could not save.')]);

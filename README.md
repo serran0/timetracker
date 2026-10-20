@@ -2,7 +2,7 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month. Administrators manage users, settings, backups and the audit log in a separate admin panel.
 
-**Version 0.3.12** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.4.0** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
@@ -15,7 +15,7 @@ A light, modern PHP web app for consultants who bill clients by the hour. Track 
   - **Move reports by dragging:** in the week view drag a block to other hours (it snaps to whole hours) and onto other days; in the day view to other hours; in the month view drag a chip onto another day. Esc cancels. (Mouse and pen; on touch screens open the report and change its date and times.)
   - Click a report to edit it; right-click it to edit, duplicate or delete.
   - **Filters** for clients, actions, billable/non-billable and period. A **summary** (total, billable, amount, per client, per action) is shown under every view.
-- **The New time report dialog creates one or several days at once:** pick client and action, then add days with **+ Day** (each with its own start, end and break). In the month view, right-click a **week number** and choose *Report whole working week* to get a pre-filled row for every working day.
+- **The New time report dialog creates several reports at once:** pick the client, then give every row its own day, times, break, **action** and **Notes**. **Add action** appends another row (same day, starting where the previous one ends). **Notes** opens a text box for that row; rows with notes have a highlighted button and the note is marked with ✎ in the calendar. Editing an existing report keeps the single-report layout, with a *Description* box (the same field as Notes). In the month view, right-click a **week number** and choose *Report whole working week* to get a pre-filled row for every working day.
 - **Time reports** have start/end time, client, action and a free-text description. Times accept `9`, `930`, `09:30`, `9.30`; `24:00` means midnight.
 - **Clients** with a colour, optional hourly rate, **VAT percentage** and reference (PO number etc.). The client table can be sorted by name, rate, actions and reports. Adding and editing happen in a modal.
 - **Time actions per client:** normal working time, overtime, emergency… each with a colour, a rate multiplier (e.g. overtime ×1.5) and a billable flag. New clients start from a standard set or a copy of another client's actions. Adding and editing happen in a modal.

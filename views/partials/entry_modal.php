@@ -37,11 +37,12 @@ $lunchAttr = (!empty($user['lunch_start']) && !empty($user['lunch_end']))
         <div class="alert alert-error" id="entry-errors" hidden></div>
         <input type="hidden" name="id" value="">
 
-        <div class="grid-2">
+        <div class="grid-2 top-grid">
             <label><?= te('Client') ?>
                 <select name="client_id" required><?= $clientOptions ?></select>
             </label>
-            <label><?= te('Action') ?>
+            <?php /* Editing a report: client and action up here, as always. A new report picks the action per row instead. */ ?>
+            <label class="edit-only"><?= te('Action') ?>
                 <select name="action_id" required></select>
             </label>
         </div>
@@ -53,13 +54,14 @@ $lunchAttr = (!empty($user['lunch_start']) && !empty($user['lunch_end']))
             </div>
             <div class="days-rows" id="entry-rows"></div>
             <div class="days-foot">
-                <button type="button" class="btn btn-sm" id="entry-add-day"><?= te('+ Day') ?></button>
+                <button type="button" class="btn btn-sm" id="entry-add-action">+ <?= te('Add action') ?></button>
                 <button type="button" class="btn btn-sm btn-ghost" id="entry-use-lunch" <?= $lunchAttr === '' ? 'hidden' : '' ?> title="<?= te('Set every break to the part of the report that falls inside your lunch window') ?>"><?= te('Reset breaks to lunch window') ?></button>
                 <span class="muted days-total" id="entry-duration"></span>
             </div>
         </div>
 
-        <label><?= te('Description') ?> <span class="muted"><?= te('(applies to all days)') ?></span>
+        <?php /* The same text a new report enters per row under "Notes": it is the report's description. */ ?>
+        <label class="edit-only"><?= te('Description') ?> <span class="muted"><?= te('(applies to all days)') ?></span>
             <textarea name="description" rows="3" maxlength="5000" placeholder="<?= te('What did you work on? (optional)') ?>"></textarea>
         </label>
 
@@ -84,6 +86,29 @@ $lunchAttr = (!empty($user['lunch_start']) && !empty($user['lunch_end']))
             <span class="col-net" data-f="net"></span>
             <button type="button" class="icon-btn" data-remove aria-label="<?= te('Remove this day') ?>" title="<?= te('Remove day') ?>">×</button>
             <span class="row-note" data-f="note"></span>
+            <div class="row-extra">
+                <select data-f="action" aria-label="<?= te('Action') ?>"></select>
+                <input type="hidden" data-f="description">
+                <button type="button" class="btn btn-sm btn-notes" data-notes title="<?= te('Add notes to this report') ?>"><span class="notes-icon" aria-hidden="true">✎</span> <?= te('Notes') ?></button>
+                <span class="note-preview" data-f="preview"></span>
+            </div>
         </div>
     </template>
+</dialog>
+
+<?php /* Notes for one report row. Outside the report form so its text is never submitted with it. */ ?>
+<dialog id="note-dialog" class="dialog">
+    <form method="dialog" id="note-form" autocomplete="off">
+        <div class="dialog-head">
+            <h2><?= te('Notes') ?> <small class="muted" id="note-context"></small></h2>
+            <button type="button" class="icon-btn" data-note-close aria-label="<?= te('Close') ?>">×</button>
+        </div>
+        <textarea id="note-text" rows="6" maxlength="5000" placeholder="<?= te('What did you work on? (optional)') ?>" aria-label="<?= te('Notes') ?>"></textarea>
+        <div class="dialog-actions">
+            <button type="button" class="btn" id="note-clear"><?= te('Clear') ?></button>
+            <span class="spacer"></span>
+            <button type="button" class="btn" data-note-close><?= te('Cancel') ?></button>
+            <button type="submit" class="btn btn-primary" id="note-save"><?= te('Save') ?></button>
+        </div>
+    </form>
 </dialog>

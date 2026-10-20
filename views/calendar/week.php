@@ -89,6 +89,7 @@ $whAttr = static fn(array $wh): string => implode(',', array_map(static fn($iv) 
                         <span class="te-time"><?= e($e['start'] . '–' . $e['end']) ?></span>
                         <span class="te-name"><?= e($e['client_name']) ?></span>
                         <span class="te-act"><?= e($e['action_label']) ?></span>
+                        <?php if (trim((string) ($e['description'] ?? '')) !== ''): ?><span class="note-mark" title="<?= te('Has notes') ?>" aria-label="<?= te('Has notes') ?>">✎</span><?php endif; ?>
                     </button>
                 <?php endforeach; ?>
             </div>

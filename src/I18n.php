@@ -76,6 +76,7 @@ final class I18n
         'Today',
         'Moved to {from}–{to}',
         'Moved to {date}',
+        'Choose an action.',
         'Moved to {date}, {from}–{to}',
         'Saved',
     ];
