@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 – 2026-10-20
+
+- The Client drop-down in the New report dialog is compact again instead of stretching across the whole dialog.
+
 ## 0.4.1 – 2026-10-20
 
 - The New report dialog is wider on large screens, so each row's action and Notes button sit on the same line as day, times and break (smaller screens keep the stacked layout). The edit dialog keeps its size.

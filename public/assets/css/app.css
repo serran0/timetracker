@@ -369,7 +369,7 @@ dialog.dialog-wide { width: min(760px, calc(100% - 24px)); }
 .row-note:empty { display: none; }
 /* New report: action + notes per row. Editing keeps client + action on top and a Description box instead. */
 #entry-form:not(.mode-edit) .edit-only, #entry-form.mode-edit .row-extra { display: none; }
-#entry-form:not(.mode-edit) .top-grid { grid-template-columns: 1fr; }
+#entry-form:not(.mode-edit) .top-grid { grid-template-columns: minmax(0, 340px); }
 .row-extra { grid-column: 2 / -1; display: grid; grid-template-columns: minmax(140px, 1.4fr) auto minmax(0, 2fr); gap: 8px; align-items: center; }
 .row-extra select { padding: 6px 8px; font-size: .9rem; background: var(--surface); min-width: 0; }
 .btn-notes .notes-icon { opacity: .7; }
