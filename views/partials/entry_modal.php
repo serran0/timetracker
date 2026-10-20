@@ -50,7 +50,7 @@ $lunchAttr = (!empty($user['lunch_start']) && !empty($user['lunch_end']))
 
         <div class="days" id="entry-days">
             <div class="days-head">
-                <span class="col-inc"></span><span><?= te('Date') ?></span><span><?= te('Start') ?></span><span><?= te('End') ?></span><span><?= te('Break (min)') ?></span><span class="col-net"><?= te('Net') ?></span><span></span>
+                <span class="col-inc"></span><span><?= te('Date') ?></span><span><?= te('Start') ?></span><span><?= te('End') ?></span><span><?= te('Break (min)') ?></span><span class="new-only"><?= te('Action') ?></span><span class="new-only"></span><span class="col-net"><?= te('Net') ?></span><span></span>
             </div>
             <div class="days-rows" id="entry-rows"></div>
             <div class="days-foot">

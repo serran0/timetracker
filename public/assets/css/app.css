@@ -376,6 +376,21 @@ dialog.dialog-wide { width: min(760px, calc(100% - 24px)); }
 .btn-notes.has-note { border-color: var(--primary); color: var(--primary); font-weight: 600; }
 .btn-notes.has-note .notes-icon { opacity: 1; }
 .note-preview { font-size: .8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+#entry-form.mode-edit .new-only, .days-head .new-only { display: none; }
+.note-preview:empty { display: none; }
+/* Wide screens: the new-report dialog grows so action and notes sit on the same line as day, times and break. */
+@media (min-width: 900px) {
+    #entry-dialog:has(#entry-form:not(.mode-edit)) { width: min(1100px, calc(100% - 24px)); }
+    #entry-form:not(.mode-edit) .days-head .new-only { display: block; }
+    #entry-form:not(.mode-edit) .days-head, #entry-form:not(.mode-edit) .dlg-row { grid-template-columns: 28px minmax(160px, 1.5fr) 74px 74px 78px minmax(140px, 1.4fr) auto 62px 28px; }
+    #entry-form:not(.mode-edit) .row-extra { display: contents; }
+    #entry-form:not(.mode-edit) .dlg-row .col-net, #entry-form:not(.mode-edit) .days-head .col-net { grid-column: 8; grid-row: 1; }
+    #entry-form:not(.mode-edit) .dlg-row [data-remove] { grid-column: 9; grid-row: 1; }
+    #entry-form:not(.mode-edit) .dlg-row [data-f="action"] { grid-column: 6; grid-row: 1; }
+    #entry-form:not(.mode-edit) .dlg-row [data-notes] { grid-column: 7; grid-row: 1; }
+    #entry-form:not(.mode-edit) .dlg-row .note-preview { grid-column: 2 / -1; margin-top: -2px; }
+    #entry-form:not(.mode-edit) .dlg-row.off .row-extra > * { opacity: .45; }
+}
 #note-dialog textarea { width: 100%; min-height: 140px; resize: vertical; }
 .note-mark { flex: none; font-size: .8em; opacity: .75; margin-left: 2px; }
 .days-foot { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }

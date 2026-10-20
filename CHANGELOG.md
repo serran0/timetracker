@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 – 2026-10-20
+
+- The New report dialog is wider on large screens, so each row's action and Notes button sit on the same line as day, times and break (smaller screens keep the stacked layout). The edit dialog keeps its size.
+
 ## 0.4.0 – 2026-10-20
 
 - **New report dialog:** the action is now chosen per row instead of once at the top, so several different actions can be saved in one go. **+ Day** is replaced by **Add action**, which adds a row for the same day starting where the previous one ends. The general Description box is replaced by a **Notes** button on each row that opens a text dialog for that report; rows with notes are highlighted.
