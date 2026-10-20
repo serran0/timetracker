@@ -5,6 +5,7 @@
 - **New report dialog:** the action is now chosen per row instead of once at the top, so several different actions can be saved in one go. **+ Day** is replaced by **Add action**, which adds a row for the same day starting where the previous one ends. The general Description box is replaced by a **Notes** button on each row that opens a text dialog for that report; rows with notes are highlighted.
 - Reports that have notes show a ✎ mark in the week/day timeline and on the month chips.
 - Editing an existing report is unchanged (client and action on top, one row, Description). Notes and Description are the same field.
+- The edit dialog's Description label no longer says "(applies to all days)" (it is a single report).
 - The `save_many` API takes `action_id` and `description` per entry (the top-level values remain as a fallback).
 
 ## 0.3.12 – 2026-10-09

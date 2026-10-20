@@ -7,7 +7,6 @@ declare(strict_types=1);
  * Check completeness with: php tests/i18n.php
  */
 return [
-    '(applies to all days)' => '(gäller alla dagar)',
     '(archived)' => '(arkiverad)',
     '(for hourly rates)' => '(för timpriser)',
     '(min. 10 characters)' => '(minst 10 tecken)',

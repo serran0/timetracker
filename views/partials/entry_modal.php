@@ -61,7 +61,7 @@ $lunchAttr = (!empty($user['lunch_start']) && !empty($user['lunch_end']))
         </div>
 
         <?php /* The same text a new report enters per row under "Notes": it is the report's description. */ ?>
-        <label class="edit-only"><?= te('Description') ?> <span class="muted"><?= te('(applies to all days)') ?></span>
+        <label class="edit-only"><?= te('Description') ?>
             <textarea name="description" rows="3" maxlength="5000" placeholder="<?= te('What did you work on? (optional)') ?>"></textarea>
         </label>
 
