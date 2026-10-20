@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3 – 2026-10-20
+
+- New report dialog: the column headings (Start, End, Break, Action, Net) now line up exactly over their fields. The Notes column has a fixed width, so the heading row and the rows share the same column widths.
+
 ## 0.4.2 – 2026-10-20
 
 - The Client drop-down in the New report dialog is compact again instead of stretching across the whole dialog.

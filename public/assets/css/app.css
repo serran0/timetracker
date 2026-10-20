@@ -353,6 +353,7 @@ dialog.dialog form { padding: 20px 22px 18px; }
 dialog.dialog-wide { width: min(760px, calc(100% - 24px)); }
 .days { border: 1px solid var(--border); border-radius: 10px; margin: 2px 0 14px; background: var(--surface-2); }
 .days-head, .dlg-row { display: grid; grid-template-columns: 28px minmax(150px, 1.6fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(80px, 1fr) 62px 28px; gap: 8px; align-items: center; padding: 6px 10px; }
+.days-head .col-net { text-align: right; }
 .days-head { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; padding-bottom: 2px; }
 .days:not(.multi) .col-inc, .days:not(.multi) [data-remove] { visibility: hidden; }
 .days.editing [data-remove], .days.editing .col-inc { display: none; }
@@ -382,7 +383,8 @@ dialog.dialog-wide { width: min(760px, calc(100% - 24px)); }
 @media (min-width: 900px) {
     #entry-dialog:has(#entry-form:not(.mode-edit)) { width: min(1100px, calc(100% - 24px)); }
     #entry-form:not(.mode-edit) .days-head .new-only { display: block; }
-    #entry-form:not(.mode-edit) .days-head, #entry-form:not(.mode-edit) .dlg-row { grid-template-columns: 28px minmax(160px, 1.5fr) 74px 74px 78px minmax(140px, 1.4fr) auto 62px 28px; }
+    #entry-form:not(.mode-edit) .days-head, #entry-form:not(.mode-edit) .dlg-row { grid-template-columns: 28px minmax(160px, 1.5fr) 74px 74px 78px minmax(140px, 1.4fr) 112px 62px 28px; }
+    #entry-form:not(.mode-edit) .dlg-row [data-notes] { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
     #entry-form:not(.mode-edit) .row-extra { display: contents; }
     #entry-form:not(.mode-edit) .dlg-row .col-net, #entry-form:not(.mode-edit) .days-head .col-net { grid-column: 8; grid-row: 1; }
     #entry-form:not(.mode-edit) .dlg-row [data-remove] { grid-column: 9; grid-row: 1; }
