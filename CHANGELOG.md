@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.4 – 2026-10-20
+
+- The action drop-down in the New report dialog always starts on the top option; the last used action is no longer remembered (also for rows added with Add action). Editing a report still shows its own action.
+
 ## 0.4.3 – 2026-10-20
 
 - New report dialog: the column headings (Start, End, Break, Action, Net) now line up exactly over their fields. The Notes column has a fixed width, so the heading row and the rows share the same column widths.

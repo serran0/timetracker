@@ -109,7 +109,7 @@
             select.appendChild(o);
             return false;
         }
-        const wanted = preferredActionId || store.get('tt_action_' + clientId);
+        const wanted = preferredActionId; // otherwise the first (top) action; the last one used is deliberately not remembered
         const match = Array.from(select.options).find((o) => o.value === String(wanted));
         select.value = (match || select.options[0]).value;
         return true;
@@ -283,7 +283,6 @@
             date: lv && lv.date ? lv.date : fmtDate(new Date()),
             start: toHHMM(start),
             end: toHHMM(Math.min(1440, start + 60)),
-            action_id: last ? rowField(last, 'action').value : '',
         });
         fillActions(rowField(row, 'action'), form.client_id.value, rowField(row, 'action').dataset.wanted);
         rowField(row, 'action').focus();
@@ -407,8 +406,6 @@
         saveBtn.disabled = false;
         if (result.ok) {
             store.set('tt_client', form.client_id.value);
-            const lastAction = editing ? form.action_id.value : String(entries[entries.length - 1].action_id);
-            store.set('tt_action_' + form.client_id.value, lastAction);
             window.location.reload();
         } else {
             showErrors(result.errors || [tr('Could not save.')]);
