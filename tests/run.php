@@ -248,6 +248,24 @@ $o = $wtxt(false);
 check('day group is unchanged by default', [str_contains($o, 'Week total'), substr_count($o, 'Day total')], [false, 3]);
 check('export option group_week: default off, parsed, stored', [ReportBuilder::options([])['group_week'], ReportBuilder::options(['group_week' => '1'])['group_week'], isset(ReportBuilder::storable(ReportBuilder::options(['submitted' => '1']))['group_week'])], [false, true, false]);
 
+// Group by week + summarise consecutive days with the same action
+$m = static fn(string $d, string $act, string $desc = '', string $s = '08:00', string $e = '16:00') => $mk($d, $s, $e, 0, 'Acme AB', $act, $desc, '100.00');
+$ments = [
+    $m('2026-10-19', 'Normal'), $m('2026-10-20', 'Normal'), $m('2026-10-20', 'OT1', 'Fix', '18:00', '20:00'), $m('2026-10-20', 'OT2', 'Fix', '20:00', '22:00'),
+    $m('2026-10-21', 'Normal'), $m('2026-10-21', 'OT1', 'Fix 2', '18:00', '20:00'), $m('2026-10-22', 'Normal'), $m('2026-10-23', 'Normal'),
+    $m('2026-10-26', 'Normal'), $m('2026-10-27', 'Normal'), $m('2026-10-28', 'Normal'), $m('2026-10-29', 'Normal'), $m('2026-10-30', 'Normal'),
+];
+$mtxt = static fn(bool $merge, array $cols = ['date', 'hours', 'action', 'description']) => TextExporter::render($ments, ['cols' => $cols, 'duration' => 'hm', 'decimal' => '.', 'totals' => true, 'group_week' => true, 'group_merge' => $merge, 'format' => 'txt', 'delimiter' => ','], $meta);
+$o = $mtxt(true);
+$has = static fn(string $re, string $s): bool => preg_match($re, $s) === 1;
+check('merge: five Normal days in a week become one line', $has('/^  2026-10-26 - 2026-10-30\s+40:00  Normal\r?$/m', $o), true);
+check('merge: runs broken by other actions', [$has('/^  2026-10-19 - 2026-10-20\s+16:00  Normal\r?$/m', $o), $has('/^  2026-10-22 - 2026-10-23\s+16:00  Normal\r?$/m', $o), $has('/^  2026-10-21\s+8:00  Normal\r?$/m', $o)], [true, true, true]);
+check('merge: other actions and descriptions stay', [$has('/^  2026-10-20\s+2:00  OT1\r?$/m', $o), str_contains($o, 'Fix 2'), preg_match_all('/^  2026-10-\d\d.*Normal\r?$/m', $o)], [true, true, 4]);
+check('merge: week totals unchanged', [str_contains($o, 'Week total: 46:00 (46.00 h)'), str_contains($o, 'Week total: 40:00 (40.00 h)')], [true, true]);
+check('merge: off lists every day', preg_match_all('/^  2026-10-\d\d.*Normal\r?$/m', $mtxt(false)), 10);
+check('merge: no time span on a merged line', $has('/^  2026-10-26 - 2026-10-30\s+40:00\r?$/m', $mtxt(true, ['date', 'start', 'end', 'hours'])), true);
+check('merge option parsed/stored', [ReportBuilder::options([])['group_merge'], ReportBuilder::options(['group_merge' => '1'])['group_merge']], [false, true]);
+
 $out = $txt(['client', 'action']);
 check('text: client/action only', str_contains($out, 'Acme AB / Normal working time'), true);
 check('text: no dates without date columns', str_contains($out, '2026-10-05') || str_contains($out, 'Monday'), false);

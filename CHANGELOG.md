@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.6 – 2026-10-23
+
+- **Export: summarise consecutive days.** With *Group by week* on, a new sub-option merges reports that follow each other in the week's list, on the same or the next calendar day, with the same client, action, rate and (when the Description column is ticked) description, into one line with the date range and the summed hours: `2026-10-26 - 2026-10-30  40:00  Normaltid`. A run is broken by any other report in between, so a day with overtime splits the Normaltid lines around it. A merged line shows no start/end time. Week totals, summaries and amounts are unchanged. The option is remembered with the other format choices.
+
 ## 0.4.5 – 2026-10-23
 
 - **Export: new option "Group by week".** In the plain-text export, all days of a week are gathered under one heading ("Week 43 (2026-10-19 – 2026-10-25)") instead of one section per day. Each line then starts with its own weekday/date (when those columns are ticked), and "Add totals" shows a week total instead of day totals. The option is remembered with the other format choices. CSV and Excel exports are flat tables and are unaffected.

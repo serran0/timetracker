@@ -2,7 +2,7 @@
 
 A light, modern PHP web app for consultants who bill clients by the hour. Track worked time in a calendar, then export it at the end of the month. Administrators manage users, settings, backups and the audit log in a separate admin panel.
 
-**Version 0.4.5** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
+**Version 0.4.6** · PHP 8.4 (runs on 8.2–8.4) · MySQL / MariaDB · no Composer packages, no build step.
 
 ## Features
 
@@ -22,7 +22,7 @@ A light, modern PHP web app for consultants who bill clients by the hour. Track 
 - **Working hours** per weekday (several intervals per day). A **lunch window** (e.g. 12:00–13:00) is pre-filled as an **unpaid break** on new reports and deducted from the hours; the break is stored per report and can be changed. Right-click a day and choose **Report whole working day** for a one-step 08–17 report with lunch deducted.
 - **Swedish red days** (public holidays plus Midsommarafton, Julafton and Nyårsafton) can be shown in every calendar view as a faded red overlay with a translated name, switched on or off per user. They are calculated from their rules, so nothing is downloaded. You can also add your own **work-free days** (single days or ranges). Both are left out of whole-week reports.
 - **VAT:** wherever an amount is calculated, the figure including the client's VAT follows in parentheses, e.g. `3 325.00 (4 172.88)`. Clients without VAT show no parentheses.
-- **Export** to CSV, Excel (.xlsx) or plain text (all three follow the ticked columns), with chosen columns, decimal hours or h:mm, delimiter, decimal mark, a totals row, an *Include VAT* option and *Group by week* (plain text: one section per week, with a week total, instead of one per day). Your format choices are saved the moment you change them and come back next time. Spreadsheet formulas in text fields are neutralised.
+- **Export** to CSV, Excel (.xlsx) or plain text (all three follow the ticked columns), with chosen columns, decimal hours or h:mm, delimiter, decimal mark, a totals row, an *Include VAT* option and *Group by week* (plain text: one section per week, with a week total, instead of one per day), optionally summarising consecutive days with the same action into one line (`2026-10-26 - 2026-10-30  40:00  Normaltid`). Your format choices are saved the moment you change them and come back next time. Spreadsheet formulas in text fields are neutralised.
 - **Languages:** English and Swedish, chosen per user. The whole interface, dates, numbers and exports follow it. The standard action names are translated while unmodified; actions you have renamed are never touched.
 
 ### Accounts and the admin panel

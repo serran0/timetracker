@@ -64,6 +64,7 @@ final class ReportBuilder
             'totals'    => !array_key_exists('submitted', $q) || !empty($q['totals']),
             'vat'       => !array_key_exists('submitted', $q) || !empty($q['vat']), // also show amounts including VAT
             'group_week' => !empty($q['group_week']), // plain text: one section per week instead of one per day
+            'group_merge' => !empty($q['group_merge']), // with group_week: consecutive days with the same action become one line
         ];
     }
 
@@ -80,6 +81,7 @@ final class ReportBuilder
             'totals'    => $opts['totals'] ? '1' : null,
             'vat'       => $opts['vat'] ? '1' : null,
             'group_week' => $opts['group_week'] ? '1' : null,
+            'group_merge' => $opts['group_merge'] ? '1' : null,
         ], static fn($v) => $v !== null);
     }
 

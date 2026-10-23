@@ -286,6 +286,7 @@
             totals: !!(box.querySelector('input[name=totals]') || {}).checked,
             vat: !!(box.querySelector('input[name=vat]') || {}).checked,
             group_week: !!(box.querySelector('input[name=group_week]') || {}).checked,
+            group_merge: !!(box.querySelector('input[name=group_merge]') || {}).checked,
         };
     };
     const save = async () => {

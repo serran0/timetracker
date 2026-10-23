@@ -65,9 +65,11 @@ final class TextExporter
         $showTotals = !empty($opts['totals']);
 
         // One entry line from the ticked columns.
-        $line = static function (array $r) use ($has, $dur, $money, $amt, $hasAmount): array {
+        $line = static function (array $r, bool $merged = false) use ($has, $dur, $money, $amt, $hasAmount): array {
             $parts = [];
-            if ($has('start') && $has('end')) {
+            if ($merged) {
+                // a summarised range has no single time span: only the total duration is shown
+            } elseif ($has('start') && $has('end')) {
                 $parts[] = $r['start'] . '-' . $r['end'];
             } elseif ($has('start')) {
                 $parts[] = t('from {time}', ['time' => $r['start']]);
@@ -130,12 +132,23 @@ final class TextExporter
                 $L[] = $rule('-');
             }
             $sectionMin = 0;
-            foreach ($rows as $r) {
+            $units = $byWeek && !empty($opts['group_merge']) ? self::mergeRuns($rows, $has('description')) : array_map(static fn(array $r): array => [$r], $rows);
+            foreach ($units as $unit) {
+                $r = $unit[0];
+                $merged = count($unit) > 1;
+                if ($merged) {
+                    foreach (['minutes', 'amount', 'amount_vat'] as $k) {
+                        $r[$k] = $r[$k] === null ? null : array_sum(array_column($unit, $k));
+                    }
+                }
                 $sectionMin += $r['minutes'];
-                $parts = $line($r);
+                $parts = $line($r, $merged);
                 if ($byWeek && ($has('date') || $has('weekday'))) {
-                    $rd = new DateTimeImmutable($r['entry_date']);
-                    array_unshift($parts, implode(' ', array_filter([$has('weekday') ? date_l10n($rd, 'D') : '', $has('date') ? $rd->format('Y-m-d') : ''])));
+                    $label = static fn(array $x): string => implode(' ', array_filter([
+                        $has('weekday') ? date_l10n(new DateTimeImmutable($x['entry_date']), 'D') : '',
+                        $has('date') ? $x['entry_date'] : '',
+                    ]));
+                    array_unshift($parts, $merged ? $label($unit[0]) . ' - ' . $label(end($unit)) : $label($r));
                 }
                 if ($parts) {
                     $L[] = $indent . implode('  ', $parts);
@@ -211,6 +224,46 @@ final class TextExporter
         }
 
         return rtrim(implode("\r\n", $L)) . "\r\n";
+    }
+
+    /**
+     * Groups reports that follow each other in the list (same client, action, rate and – when shown – description)
+     * on the same or the very next calendar day. A group that spans more than one day is returned as one unit
+     * (its entries), anything else stays a unit of one report.
+     *
+     * @param array<int, array> $rows reports of one week, in date order
+     * @return array<int, array<int, array>>
+     */
+    private static function mergeRuns(array $rows, bool $withDescription): array
+    {
+        $key = static fn(array $r): string => implode("\0", [
+            $r['client_name'], (string) ($r['client_reference'] ?? ''), $r['action_label'], (string) $r['billable'],
+            (string) $r['effective_rate'], $withDescription ? trim((string) ($r['description'] ?? '')) : '',
+        ]);
+        $units = [];
+        $run = [];
+        $flush = static function () use (&$run, &$units): void {
+            if ($run && $run[0]['entry_date'] !== end($run)['entry_date']) {
+                $units[] = $run;
+            } else {
+                foreach ($run as $r) {
+                    $units[] = [$r];
+                }
+            }
+            $run = [];
+        };
+        foreach ($rows as $r) {
+            if ($run) {
+                $last = end($run);
+                $next = (new DateTimeImmutable($last['entry_date']))->modify('+1 day')->format('Y-m-d');
+                if ($key($r) !== $key($last) || ($r['entry_date'] !== $last['entry_date'] && $r['entry_date'] !== $next)) {
+                    $flush();
+                }
+            }
+            $run[] = $r;
+        }
+        $flush();
+        return $units;
     }
 
     public static function send(array $entries, array $opts, array $meta): never
