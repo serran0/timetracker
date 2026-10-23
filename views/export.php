@@ -117,6 +117,7 @@ $toStr = $to->format('Y-m-d');
             <label class="check-label"><input type="checkbox" name="totals" value="1" <?= $opts['totals'] ? 'checked' : '' ?>> <?= te('Add a totals row') ?></label>
             <label class="check-label"><input type="checkbox" name="group_week" value="1" <?= $opts['group_week'] ? 'checked' : '' ?>> <?= te('Group by week (plain text: one section per week instead of one per day)') ?></label>
             <label class="check-label sub-option"><input type="checkbox" name="group_merge" value="1" <?= $opts['group_merge'] ? 'checked' : '' ?>> <?= te('…and summarise consecutive days with the same action into one line (needs Group by week)') ?></label>
+            <label class="check-label sub-option"><input type="hidden" name="week_range" value="0"><input type="checkbox" name="week_range" value="1" <?= $opts['week_range'] ? 'checked' : '' ?>> <?= te('…and show the date range of each week (needs Group by week)') ?></label>
             <label class="check-label"><input type="checkbox" name="vat" value="1" <?= $opts['vat'] ? 'checked' : '' ?>> <?= te('Include VAT (amounts also shown including VAT)') ?></label>
         </section>
     </div>

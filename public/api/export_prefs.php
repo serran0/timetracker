@@ -51,6 +51,7 @@ $opts = ReportBuilder::options([
     'vat'       => !empty($body['vat']) ? '1' : '',
     'group_week' => !empty($body['group_week']) ? '1' : '',
     'group_merge' => !empty($body['group_merge']) ? '1' : '',
+    'week_range' => !empty($body['week_range']) ? '1' : '0',
 ]);
 Db::run('UPDATE users SET export_prefs = ? WHERE id = ?', [json_encode(ReportBuilder::storable($opts), JSON_THROW_ON_ERROR), (int) $user['id']]);
 json_out(['ok' => true]);

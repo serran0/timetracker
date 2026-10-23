@@ -154,6 +154,7 @@ return [
     'Day off removed.' => 'Den lediga dagen har tagits bort.',
     'Day total: {hours}' => 'Dagssumma: {hours}',
     'Week total: {hours}' => 'Veckosumma: {hours}',
+    '…and show the date range of each week (needs Group by week)' => '…och visa veckans datumintervall (kräver Gruppera per vecka)',
     '…and summarise consecutive days with the same action into one line (needs Group by week)' => '…och slå ihop på varandra följande dagar med samma aktivitet till en rad (kräver Gruppera per vecka)',
     'Group by week (plain text: one section per week instead of one per day)' => 'Gruppera per vecka (oformaterad text: en sektion per vecka i stället för en per dag)',
     'Day {n}' => 'Dag {n}',

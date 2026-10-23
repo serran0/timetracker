@@ -264,6 +264,10 @@ check('merge: other actions and descriptions stay', [$has('/^  2026-10-20\s+2:00
 check('merge: week totals unchanged', [str_contains($o, 'Week total: 46:00 (46.00 h)'), str_contains($o, 'Week total: 40:00 (40.00 h)')], [true, true]);
 check('merge: off lists every day', preg_match_all('/^  2026-10-\d\d.*Normal\r?$/m', $mtxt(false)), 10);
 check('merge: no time span on a merged line', $has('/^  2026-10-26 - 2026-10-30\s+40:00\r?$/m', $mtxt(true, ['date', 'start', 'end', 'hours'])), true);
+$nr = TextExporter::render($ments, ['cols' => ['date', 'hours'], 'duration' => 'hm', 'decimal' => '.', 'totals' => true, 'group_week' => true, 'week_range' => false, 'format' => 'txt', 'delimiter' => ','], $meta);
+check('week range hidden: heading is just the week', [preg_match('/^Week 43\r?$/m', $nr), str_contains($nr, '2026-10-19 – 2026-10-25')], [1, false]);
+check('week range shown by default', str_contains(TextExporter::render($ments, ['cols' => ['date', 'hours'], 'duration' => 'hm', 'decimal' => '.', 'totals' => true, 'group_week' => true, 'format' => 'txt', 'delimiter' => ','], $meta), '(2026-10-19 – 2026-10-25)'), true);
+check('week_range option: on by default and for old saved prefs, off only when saved as 0', [ReportBuilder::options([])['week_range'], ReportBuilder::options(ReportBuilder::restore('{"format":"txt"}'))['week_range'], ReportBuilder::options(['week_range' => '0'])['week_range'], ReportBuilder::storable(ReportBuilder::options(['submitted' => '1', 'week_range' => '0']))['week_range'] ?? null, isset(ReportBuilder::storable(ReportBuilder::options(['submitted' => '1']))['week_range'])], [true, true, false, '0', false]);
 check('merge option parsed/stored', [ReportBuilder::options([])['group_merge'], ReportBuilder::options(['group_merge' => '1'])['group_merge']], [false, true]);
 
 $out = $txt(['client', 'action']);

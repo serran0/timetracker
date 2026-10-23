@@ -117,10 +117,10 @@ final class TextExporter
             if ($showHeadings) {
                 if ($byWeek) {
                     $monday = $d->modify('monday this week');
-                    $heading = [
-                        t('Week {n}', ['n' => $d->format('W')]),
-                        '(' . $monday->format('Y-m-d') . ' – ' . $monday->modify('+6 days')->format('Y-m-d') . ')',
-                    ];
+                    $heading = [t('Week {n}', ['n' => $d->format('W')])];
+                    if ($opts['week_range'] ?? true) {
+                        $heading[] = '(' . $monday->format('Y-m-d') . ' – ' . $monday->modify('+6 days')->format('Y-m-d') . ')';
+                    }
                 } else {
                     $heading = array_filter([
                         $has('date') ? $d->format('Y-m-d') : '',
