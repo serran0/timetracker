@@ -285,6 +285,7 @@
             decimal: val('decimal'),
             totals: !!(box.querySelector('input[name=totals]') || {}).checked,
             vat: !!(box.querySelector('input[name=vat]') || {}).checked,
+            group_week: !!(box.querySelector('input[name=group_week]') || {}).checked,
         };
     };
     const save = async () => {

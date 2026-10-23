@@ -63,6 +63,7 @@ final class ReportBuilder
             'decimal'   => ($q['decimal'] ?? '') === ',' ? ',' : '.',
             'totals'    => !array_key_exists('submitted', $q) || !empty($q['totals']),
             'vat'       => !array_key_exists('submitted', $q) || !empty($q['vat']), // also show amounts including VAT
+            'group_week' => !empty($q['group_week']), // plain text: one section per week instead of one per day
         ];
     }
 
@@ -78,6 +79,7 @@ final class ReportBuilder
             'decimal'   => $opts['decimal'],
             'totals'    => $opts['totals'] ? '1' : null,
             'vat'       => $opts['vat'] ? '1' : null,
+            'group_week' => $opts['group_week'] ? '1' : null,
         ], static fn($v) => $v !== null);
     }
 

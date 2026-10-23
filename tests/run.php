@@ -232,6 +232,22 @@ check('text: no client summary when client unticked', str_contains($out, 'SUMMAR
 check('text: no amount when unticked', str_contains($out, 'SEK'), false);
 check('text: total hours still shown', str_contains($out, 'TOTAL HOURS    : 10:00'), true);
 
+// Group by week: one section per ISO week, each line carries its own date
+$wents = [
+    $mk('2026-10-05', '08:00', '17:00', 60, 'Acme AB', 'Normal working time', 'Mon job', '100.00'),
+    $mk('2026-10-07', '09:00', '11:00', 0, 'Acme AB', 'Normal working time', 'Wed job', '100.00'),
+    $mk('2026-10-13', '09:00', '10:00', 0, 'Acme AB', 'Normal working time', 'Next week', '100.00'),
+];
+$wtxt = static fn(bool $week) => TextExporter::render($wents, ['cols' => ['date', 'weekday', 'start', 'end', 'hours', 'description'], 'duration' => 'decimal', 'decimal' => '.', 'totals' => true, 'group_week' => $week, 'format' => 'txt', 'delimiter' => ','], $meta);
+$o = $wtxt(true);
+check('week group: one heading per week', [substr_count($o, 'Week 41'), substr_count($o, 'Week 42'), str_contains($o, '(2026-10-05 – 2026-10-11)')], [1, 1, true]);
+check('week group: no day headings', str_contains($o, "Monday") || str_contains($o, 'Day total'), false);
+check('week group: lines carry date', [str_contains($o, 'Mon 2026-10-05'), str_contains($o, 'Wed 2026-10-07'), str_contains($o, 'Tue 2026-10-13')], [true, true, true]);
+check('week group: week totals', [str_contains($o, 'Week total: 10:00 (10.00 h)') || str_contains($o, 'Week total: 10:00'), str_contains($o, 'Week total: 1:00')], [true, true]);
+$o = $wtxt(false);
+check('day group is unchanged by default', [str_contains($o, 'Week total'), substr_count($o, 'Day total')], [false, 3]);
+check('export option group_week: default off, parsed, stored', [ReportBuilder::options([])['group_week'], ReportBuilder::options(['group_week' => '1'])['group_week'], isset(ReportBuilder::storable(ReportBuilder::options(['submitted' => '1']))['group_week'])], [false, true, false]);
+
 $out = $txt(['client', 'action']);
 check('text: client/action only', str_contains($out, 'Acme AB / Normal working time'), true);
 check('text: no dates without date columns', str_contains($out, '2026-10-05') || str_contains($out, 'Monday'), false);

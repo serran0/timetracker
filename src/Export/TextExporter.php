@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace TimeTracker\Export;
 
 use DateTimeImmutable;
-use TimeTracker\Calendar;
 use TimeTracker\Repository\Entries;
 
 /**
@@ -14,6 +13,8 @@ use TimeTracker\Repository\Entries;
  *  - date / weekday / week     -> the day headings (none ticked = one flat list, no headings)
  *  - start / end / hours       -> time range and duration
  *  - client / reference / action / billable / rate / amount / description -> the rest of the line
+ * "Group by week" replaces the day sections with one section per week (day and total lines then carry the
+ * date / weekday of each report themselves).
  * "Add totals" switches the day totals, summaries and grand totals on or off; they only show
  * figures for columns that are ticked (hours, amount, client, action).
  */
@@ -59,7 +60,8 @@ final class TextExporter
             return implode("\r\n", $L) . "\r\n";
         }
 
-        $showHeadings = $has('date') || $has('weekday') || $has('week');
+        $byWeek = !empty($opts['group_week']);
+        $showHeadings = $byWeek || $has('date') || $has('weekday') || $has('week');
         $showTotals = !empty($opts['totals']);
 
         // One entry line from the ticked columns.
@@ -102,21 +104,39 @@ final class TextExporter
         };
 
         $indent = '  ';
-        foreach (Calendar::byDate($entries) as $date => $rows) {
-            $d = new DateTimeImmutable($date);
+        // Sections: one per day, or one per ISO week.
+        $sections = [];
+        foreach ($entries as $r) {
+            $d = new DateTimeImmutable($r['entry_date']);
+            $sections[$byWeek ? $d->format('o-W') : $r['entry_date']][] = $r;
+        }
+        foreach ($sections as $rows) {
+            $d = new DateTimeImmutable($rows[0]['entry_date']);
             if ($showHeadings) {
-                $heading = array_filter([
-                    $has('date') ? $d->format('Y-m-d') : '',
-                    $has('weekday') ? date_l10n($d, 'l') : '',
-                    $has('week') ? '(' . t('week {n}', ['n' => $d->format('W')]) . ')' : '',
-                ]);
+                if ($byWeek) {
+                    $monday = $d->modify('monday this week');
+                    $heading = [
+                        t('Week {n}', ['n' => $d->format('W')]),
+                        '(' . $monday->format('Y-m-d') . ' – ' . $monday->modify('+6 days')->format('Y-m-d') . ')',
+                    ];
+                } else {
+                    $heading = array_filter([
+                        $has('date') ? $d->format('Y-m-d') : '',
+                        $has('weekday') ? date_l10n($d, 'l') : '',
+                        $has('week') ? '(' . t('week {n}', ['n' => $d->format('W')]) . ')' : '',
+                    ]);
+                }
                 $L[] = implode(' ', $heading);
                 $L[] = $rule('-');
             }
-            $dayMin = 0;
+            $sectionMin = 0;
             foreach ($rows as $r) {
-                $dayMin += $r['minutes'];
+                $sectionMin += $r['minutes'];
                 $parts = $line($r);
+                if ($byWeek && ($has('date') || $has('weekday'))) {
+                    $rd = new DateTimeImmutable($r['entry_date']);
+                    array_unshift($parts, implode(' ', array_filter([$has('weekday') ? date_l10n($rd, 'D') : '', $has('date') ? $rd->format('Y-m-d') : ''])));
+                }
                 if ($parts) {
                     $L[] = $indent . implode('  ', $parts);
                 }
@@ -130,7 +150,9 @@ final class TextExporter
                 }
             }
             if ($showHeadings && $showTotals && $has('hours')) {
-                $L[] = $indent . t('Day total: {hours}', ['hours' => $dualDur($dayMin)]);
+                $L[] = $indent . ($byWeek
+                    ? t('Week total: {hours}', ['hours' => $dualDur($sectionMin)])
+                    : t('Day total: {hours}', ['hours' => $dualDur($sectionMin)]));
             }
             if ($showHeadings) {
                 $L[] = '';

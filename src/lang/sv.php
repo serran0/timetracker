@@ -153,6 +153,8 @@ return [
     'Day off added.' => 'Den lediga dagen har lagts till.',
     'Day off removed.' => 'Den lediga dagen har tagits bort.',
     'Day total: {hours}' => 'Dagssumma: {hours}',
+    'Week total: {hours}' => 'Veckosumma: {hours}',
+    'Group by week (plain text: one section per week instead of one per day)' => 'Gruppera per vecka (oformaterad text: en sektion per vecka i stället för en per dag)',
     'Day {n}' => 'Dag {n}',
     'Decimal hours (7.50)' => 'Decimala timmar (7,50)',
     'Decimal mark' => 'Decimaltecken',

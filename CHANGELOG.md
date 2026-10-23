@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.5 – 2026-10-23
+
+- **Export: new option "Group by week".** In the plain-text export, all days of a week are gathered under one heading ("Week 43 (2026-10-19 – 2026-10-25)") instead of one section per day. Each line then starts with its own weekday/date (when those columns are ticked), and "Add totals" shows a week total instead of day totals. The option is remembered with the other format choices. CSV and Excel exports are flat tables and are unaffected.
+
 ## 0.4.4 – 2026-10-20
 
 - The action drop-down in the New report dialog always starts on the top option; the last used action is no longer remembered (also for rows added with Add action). Editing a report still shows its own action.

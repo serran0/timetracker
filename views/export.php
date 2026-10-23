@@ -115,6 +115,7 @@ $toStr = $to->format('Y-m-d');
                 </label>
             </div>
             <label class="check-label"><input type="checkbox" name="totals" value="1" <?= $opts['totals'] ? 'checked' : '' ?>> <?= te('Add a totals row') ?></label>
+            <label class="check-label"><input type="checkbox" name="group_week" value="1" <?= $opts['group_week'] ? 'checked' : '' ?>> <?= te('Group by week (plain text: one section per week instead of one per day)') ?></label>
             <label class="check-label"><input type="checkbox" name="vat" value="1" <?= $opts['vat'] ? 'checked' : '' ?>> <?= te('Include VAT (amounts also shown including VAT)') ?></label>
         </section>
     </div>

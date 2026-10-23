@@ -49,6 +49,7 @@ $opts = ReportBuilder::options([
     'decimal'   => $body['decimal'] ?? '',
     'totals'    => !empty($body['totals']) ? '1' : '',
     'vat'       => !empty($body['vat']) ? '1' : '',
+    'group_week' => !empty($body['group_week']) ? '1' : '',
 ]);
 Db::run('UPDATE users SET export_prefs = ? WHERE id = ?', [json_encode(ReportBuilder::storable($opts), JSON_THROW_ON_ERROR), (int) $user['id']]);
 json_out(['ok' => true]);
